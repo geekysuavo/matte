@@ -360,6 +360,24 @@ AST ast_get_down (AST node, int index) {
   return NULL;
 }
 
+/* ast_get_root(): get the root node of a matte ast-node.
+ *
+ * arguments:
+ *  @node: matte syntax tree node to access.
+ *
+ * returns:
+ *  root matte ast-node.
+ */
+AST ast_get_root (AST node) {
+  /* search up the tree to the root. */
+  AST up = node;
+  while (up->up)
+    up = up->up;
+
+  /* return the top node as the root, regardless of its node type. */
+  return up;
+}
+
 /* ast_shrink_down(): decrease the number of downstream nodes in
  * a matte abstract syntax tree node by exactly one.
  *
@@ -379,31 +397,6 @@ inline void ast_shrink_down (AST node) {
   node->n_down--;
   if (node->n_down < 0)
     node->n_down = 0;
-}
-
-/* ast_get_symbols(): get the symbol table that holds symbols for the
- * current matte ast-node or sub-tree.
- *
- * arguments:
- *  @node: matte syntax tree node to access.
- *
- * returns:
- *  symbol table for the matte ast-node, if available.
- */
-Symbols ast_get_symbols (AST node) {
-  /* search up the tree for the symbol table. */
-  AST up = node;
-  while (up) {
-    /* if the current node has a table, return it. */
-    if (up->syms)
-      return up->syms;
-
-    /* move up the tree. */
-    up = up->up;
-  }
-
-  /* no symbol table available. */
-  return NULL;
 }
 
 /* ast_rip(): rip a matte ast-node from an abstract syntax tree.
@@ -567,67 +560,153 @@ AST ast_merge (AST a, AST b) {
   return super;
 }
 
-/* ast_find_symbol(): find a symbol in a matte abstract syntax tree.
+/* ast_get_symbols(): get the symbol table that holds symbols for the
+ * current matte ast-node or sub-tree.
  *
  * arguments:
- *  @node: matte ast-node to access.
- *  @stype: symbol type to lookup.
- *  @sname: symbol name to lookup.
+ *  @node: matte syntax tree node to access.
  *
  * returns:
- *  integer indicating lookup success (1) or failure (0).
+ *  symbol table for the matte ast-node, if available.
  */
-int ast_find_symbol (AST node, SymbolType stype, const char *sname) {
-  /* loop until a symbol table is found. */
-  AST super = node;
-  while (super) {
-    /* if a symbol table is available, lookup the symbol. */
-    if (symbols_find(super->syms, stype, sname))
-      return 1;
+Symbols ast_get_symbols (AST node) {
+  /* search up the tree for the symbol table. */
+  AST up = node;
+  while (up) {
+    /* if the current node has a table, return it. */
+    if (up->syms)
+      return up->syms;
 
-    /* no symbol found. move to the upstream node. */
-    super = super->up;
+    /* move up the tree. */
+    up = up->up;
   }
 
-  /* return 'not found' */
+  /* no symbol table available. */
+  return NULL;
+}
+
+/* ast_get_globals(): get the global symbol table for the current
+ * matte ast-node or sub-tree.
+ *
+ * arguments:
+ *  @node: matte syntax tree node to access.
+ *
+ * returns:
+ *  global symbol table for the node.
+ */
+Symbols ast_get_globals (AST node) {
+  /* return the symbol table of the root node. */
+  AST root = ast_get_root(node);
+  return root->syms;
+}
+
+/* symbols_add_from_ast(): helper function for ast_add_symbol() that
+ * registers a symbol with a symbol table using ast-node data, but
+ * does not store the resulting symbol lookup information in any
+ * final place.
+ *
+ * arguments:
+ *  @syms: matte symbol table to modify.
+ *  @stype: symbol type to register.
+ *  @data: matte ast-node to use for data.
+ *
+ * returns:
+ *  symbol index (or status) returned from symbols_add().
+ */
+static inline long
+symbols_add_from_ast (Symbols syms, SymbolType stype, AST data) {
+  /* register the symbol data based on symbol type. */
+  if (stype & SYMBOL_INT) {
+    /* supply the integer data. */
+    return symbols_add(syms, stype, NULL, data->data_int);
+  }
+  else if (stype & SYMBOL_FLOAT) {
+    /* supply the float data. */
+    return symbols_add(syms, stype, NULL, data->data_float);
+  }
+  else if (stype & SYMBOL_COMPLEX) {
+    /* supply the complex data. */
+    return symbols_add(syms, stype, NULL, data->data_complex);
+  }
+  else if (stype & SYMBOL_STRING) {
+    /* supply the string data. */
+    return symbols_add(syms, stype, NULL, data->data_str);
+  }
+  else {
+    /* supply no data. */
+    return symbols_add(syms, stype, data->data_str);
+  }
+
+  /* return failure. */
   return 0;
 }
 
 /* ast_add_symbol(): add a symbol into a matte abstract syntax tree.
  *
  * arguments:
- *  @node: matte ast-node to modify.
+ *  @node: matte ast-node to register the symbol with.
+ *  @data: matte ast-node to access for data.
  *  @stype: symbol type to register.
- *  @sname: symbol name to register.
  *
  * returns:
  *  integer indicating success (1) or failure (0).
  */
-int ast_add_symbol (AST node, SymbolType stype, const char *sname) {
-  /* loop until a symbol table is found. */
-  AST super = node;
+int ast_add_symbol (AST node, AST data, SymbolType stype) {
+  /* declare required variables:
+   *  @super: ast node for tree searching.
+   *  @gs, @ls: destination symbol tables.
+   *  @gid, @lid: symbol indices from the tables.
+   */
+  Symbols gs, ls;
+  long gid, lid;
+  AST super;
+
+  /* initialize the variables. */
+  gs = ls = NULL;
+
+  /* check if a global symbol registration was requested. */
+  if (stype & SYMBOL_GLOBAL)
+    gs = ast_get_globals(node);
+
+  /* loop until a suitable local symbol table is found. */
+  super = node;
   while (super) {
-    /* if a symbol table is available, register the symbol. */
+    /* if a symbol table is available, store into it. */
     if (super->syms) {
-      /* store and return the symbol index. */
-      node->sym_index = symbols_add(super->syms, stype, sname);
-
-      /* check that symbol addition was successful. */
-      if (node->sym_index)
-        node->sym_table = super->syms;
-      else
-        return 0;
-
-      /* return success. */
-      return 1;
+      ls = super->syms;
+      break;
     }
 
     /* move to the upstream node. */
     super = super->up;
   }
 
-  /* return failure. */
-  return 0;
+  /* fail if no local symbol table was located. */
+  if (!ls)
+    return 0;
+
+  /* store the registered symbol index. checks within symbols_add()
+   * will ensure that symbol duplication will not occur if gs==ls.
+   */
+  lid = symbols_add_from_ast(ls, stype, data);
+  gid = symbols_add_from_ast(gs, stype, data);
+
+  /* check that symbol registration was successful. */
+  if (gs && gid) {
+    /* store the global symbol information. */
+    node->sym_index = gid;
+    node->sym_table = gs;
+  }
+  else if (ls && lid) {
+    /* store the local symbol information. */
+    node->sym_index = lid;
+    node->sym_table = ls;
+  }
+  else
+    return 0;
+
+  /* return success. */
+  return 1;
 }
 
 /* ast_get_symbol_name(): get the name of the symbol registered with

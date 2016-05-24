@@ -11,9 +11,13 @@
 #include <matte/object.h>
 #include <matte/symbols.h>
 
-/* function declarations (builtins.c): */
+/* core function declarations (builtins.c): */
+
+int matte_globals_init (Symbols gs);
 
 int matte_builtins_init (Symbols gs);
+
+/* built-in function declarations (builtins.c): */
 
 Object matte_sum (Object argin);
 

@@ -1729,10 +1729,15 @@ AST ast_new_with_data (Parser p) {
 
   /* determine whether we can store any simple data in the node. */
   switch (p->tok) {
-    /* identifiers and strings: set the string data. */
+    /* identifiers: directly set the string data. */
     case T_IDENT:
+      node->data_str = scanner_get_string(p->scan);
+      break;
+
+    /* strings: set and modify the string data. */
     case T_STRING:
       node->data_str = scanner_get_string(p->scan);
+      node->data_str[0] = node->data_str[strlen(node->data_str) - 1] = '"';
       break;
 
     /* integers: set the int data. */

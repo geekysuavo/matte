@@ -135,10 +135,12 @@ inline void complex_set_value (Complex f, complex double value) {
  * see Complex_type for more detailed information.
  */
 int complex_disp (Complex f, const char *var) {
-  printf("%s = %lg %s %lg\n",
-         var, creal(f->value),
-         cimag(f->value) < 0.0 ? "-" : "+",
-         cimag(f->value));
+  const double re = creal(f->value);
+  const double im = cimag(f->value);
+
+  printf("%s = %lg %s %lgi\n", var, re,
+         im < 0.0 ? "-" : "+",
+         im < 0.0 ? -im : im);
 
   return 1;
 }

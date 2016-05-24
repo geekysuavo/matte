@@ -125,9 +125,13 @@ static int init_symbols (Compiler c, AST node, AST root) {
       return 0;
   }
 
-  /* pre-register global built-in functions with the global table. */
-  if (ntype == AST_TYPE_ROOT && !matte_builtins_init(node->syms))
-    return 0;
+  /* check if the current node is the root. */
+  if (ntype == AST_TYPE_ROOT) {
+    /* pre-register global built-ins with the global table. */
+    if (!matte_builtins_init(node->syms) ||
+        !matte_globals_init(node->syms))
+      return 0;
+  }
 
   /* traverse based on node type. */
   if (ntype == AST_TYPE_FUNCTION) {
@@ -136,7 +140,7 @@ static int init_symbols (Compiler c, AST node, AST root) {
       /* register a symbol with each node. */
       for (i = 0; i < node->down[2]->n_down; i++) {
         down = node->down[2]->down[i];
-        if (!ast_add_symbol(down, SYMBOL_TYPE_ARGIN, down->data_str))
+        if (!ast_add_symbol(down, down, SYMBOL_ARGIN))
           return 0;
       }
     }
@@ -148,26 +152,21 @@ static int init_symbols (Compiler c, AST node, AST root) {
         /* multiple arguments. */
         for (i = 0; i < node->down[0]->n_down; i++) {
           down = node->down[0]->down[i];
-          if (!ast_add_symbol(down, SYMBOL_TYPE_ARGOUT, down->data_str))
+          if (!ast_add_symbol(down, down, SYMBOL_ARGOUT))
             return 0;
         }
       }
       else {
         /* single argument. */
         down = node->down[0];
-        if (!ast_add_symbol(down, SYMBOL_TYPE_ARGOUT, down->data_str))
+        if (!ast_add_symbol(down, down, SYMBOL_ARGOUT))
           return 0;
       }
     }
 
     /* register the function name (second child). */
-    sid = symbols_add(root->syms, SYMBOL_TYPE_FUNC, node->down[1]->data_str);
-    if (!sid)
+    if (!ast_add_symbol(node->down[1], node->down[1], SYMBOL_GLOBAL_FUNC))
       return 0;
-
-    /* store the function symbol in it's node. */
-    node->down[1]->sym_table = root->syms;
-    node->down[1]->sym_index = sid;
 
     /* traverse the function statements (fourth child). */
     if (!init_symbols(c, node->down[3], root))
@@ -176,14 +175,14 @@ static int init_symbols (Compiler c, AST node, AST root) {
   else if (ntok == T_GLOBAL) {
     /* register global symbols. */
     for (i = 0; i < node->n_down; i++) {
-      if (!ast_add_symbol(root, SYMBOL_TYPE_VAR, node->down[i]->data_str))
+      if (!ast_add_symbol(node, node->down[i], SYMBOL_GLOBAL_VAR))
         return 0;
     }
   }
   else if (ntok == T_PERSISTENT) {
     /* register persistent symbols. */
     for (i = 0; i < node->n_down; i++) {
-      if (!ast_add_symbol(node, SYMBOL_TYPE_VAR, node->down[i]->data_str))
+      if (!ast_add_symbol(node, node->down[i], SYMBOL_STATIC_VAR))
         return 0;
     }
   }
@@ -193,13 +192,13 @@ static int init_symbols (Compiler c, AST node, AST root) {
       /* register names of the matrix lhs. */
       AST row = node->down[0];
       for (i = 0; i < row->n_down; i++) {
-        if (!ast_add_symbol(node, SYMBOL_TYPE_VAR, row->down[i]->data_str))
+        if (!ast_add_symbol(node, row->down[i], SYMBOL_VAR))
           return 0;
       }
     }
     else {
       /* register the name lhs. */
-      if (!ast_add_symbol(node, SYMBOL_TYPE_VAR, node->down[0]->data_str))
+      if (!ast_add_symbol(node, node->down[0], SYMBOL_VAR))
         return 0;
     }
 
@@ -207,10 +206,24 @@ static int init_symbols (Compiler c, AST node, AST root) {
     if (!init_symbols(c, node->down[1], root))
       return 0;
   }
-  else if (ntok == T_INT     || ntok == T_FLOAT  ||
-           ntok == T_COMPLEX || ntok == T_STRING) {
-    /* register the 'literal' symbol. */
-    if (!ast_add_symbol(node, SYMBOL_TYPE_VAR, NULL))
+  else if (ntok == T_INT) {
+    /* register the integer literal. */
+    if (!ast_add_symbol(node, node, SYMBOL_INT))
+      return 0;
+  }
+  else if (ntok == T_FLOAT) {
+    /* register the float literal. */
+    if (!ast_add_symbol(node, node, SYMBOL_FLOAT))
+      return 0;
+  }
+  else if (ntok == T_COMPLEX) {
+    /* register the complex literal. */
+    if (!ast_add_symbol(node, node, SYMBOL_COMPLEX))
+      return 0;
+  }
+  else if (ntok == T_STRING) {
+    /* register the string literal. */
+    if (!ast_add_symbol(node, node, SYMBOL_STRING))
       return 0;
   }
   else {
@@ -222,7 +235,7 @@ static int init_symbols (Compiler c, AST node, AST root) {
     if (ntype == AST_TYPE_ROW || ntype == AST_TYPE_COLUMN ||
         (ntok >= T_INC && ntok <= T_OR)) {
       /* register the symbol. */
-      if (!ast_add_symbol(node, SYMBOL_TYPE_VAR, NULL))
+      if (!ast_add_symbol(node, node, SYMBOL_TEMP_VAR))
         return 0;
     }
 
@@ -250,6 +263,9 @@ static int init_symbols (Compiler c, AST node, AST root) {
  */
 static int resolve_symbols (Compiler c, AST node, AST root) {
   /* declare required variables:
+   *  @super: upstream ast-node for symbol searching.
+   *  @syms: symbol table for symbol searching.
+   *  @sid: symbol index from table lookups.
    *  @i: general-purpose loop counter.
    */
   AST super;
@@ -270,21 +286,21 @@ static int resolve_symbols (Compiler c, AST node, AST root) {
     super = node;
     while (super) {
       /* lookup the symbol in the current node's table. */
-      sid = symbols_find(super->syms, SYMBOL_TYPE_ANY, node->data_str);
+      sid = symbols_find(super->syms, SYMBOL_ANY, node->data_str);
       if (sid) {
         /* symbol found. store it in the node. */
         node->sym_table = super->syms;
         node->sym_index = sid;
 
         /* check if the symbol is a function. */
-        if (super->syms->sym_type[sid - 1] == SYMBOL_TYPE_FUNC) {
+        if (super->syms->sym_type[sid - 1] & SYMBOL_FUNC) {
           /* get the symbol table for the node. */
           syms = ast_get_symbols(node);
           if (!syms) return 0;
 
           /* register symbols for the function arguments and results. */
-          if (!symbols_add(syms, SYMBOL_TYPE_VAR, "args") ||
-              !symbols_add(syms, SYMBOL_TYPE_VAR, "rets"))
+          if (!symbols_add(syms, SYMBOL_VAR, "args") ||
+              !symbols_add(syms, SYMBOL_VAR, "rets"))
             return 0;
 
           /* determine the call mode of the function. */
@@ -300,7 +316,8 @@ static int resolve_symbols (Compiler c, AST node, AST root) {
               return 0;
 
             /* register a temporary symbol for the result. */
-            if (!ast_add_symbol(super->down[0], SYMBOL_TYPE_VAR, NULL))
+            if (!ast_add_symbol(super->down[0], super->down[0],
+                                SYMBOL_TEMP_VAR))
               return 0;
 
             /* also store the temporary symbol at the root. */
@@ -351,7 +368,7 @@ static int resolve_symbols (Compiler c, AST node, AST root) {
  *  @node: matte ast-node to process.
  */
 static void write_statements (Compiler c, AST node) {
-  /* FIXME: comment this sheeut. */
+  /* FIXME: comment and refactor. */
   const char *sname;
   AST down;
   int i;
@@ -419,9 +436,7 @@ static void write_statements (Compiler c, AST node) {
     W(");\n");
   }
   else if (ntok == T_ASSIGN) {
-    W("  if (%s) object_free(%s);\n",
-      ast_get_symbol_name(node),
-      ast_get_symbol_name(node));
+    W("  object_free(%s);\n", ast_get_symbol_name(node));
     W("  %s = %s;\n",
       ast_get_symbol_name(node),
       ast_get_symbol_name(node->down[1]));
@@ -457,14 +472,26 @@ static void write_statements (Compiler c, AST node) {
     W("  object_free(args);\n");
     W("  object_free(rets);\n");
   }
+/*
   else if (ntok == T_INT) {
-    W("  Object %s = (Object) int_new_with_value(%ld);\n",
+    W("  Object %s = (Object) int_new_with_value(%ldL);\n",
       ast_get_symbol_name(node), node->data_int);
   }
   else if (ntok == T_FLOAT) {
     W("  Object %s = (Object) float_new_with_value(%le);\n",
       ast_get_symbol_name(node), node->data_float);
   }
+  else if (ntok == T_COMPLEX) {
+    W("  Object %s = (Object) complex_new_with_value(%le + %le * I);\n",
+      ast_get_symbol_name(node),
+      creal(node->data_complex),
+      cimag(node->data_complex));
+  }
+  else if (ntok == T_STRING) {
+    W("  Object %s = (Object) string_new_with_value(%s);\n",
+      ast_get_symbol_name(node), node->data_str);
+  }
+*/
 
   if (node->node_disp) {
     W("  object_disp(%s, \"%s\");\n",
@@ -495,14 +522,14 @@ static void write_globals (Compiler c) {
   /* write the function declarations. */
   W("\n");
   for (i = 0; i < gs->n; i++) {
-    if (gs->sym_type[i] != SYMBOL_TYPE_FUNC) continue;
+    if (!(gs->sym_type[i] & SYMBOL_FUNC)) continue;
     W("Object matte_%s (Object argin);\n", gs->sym_name[i]);
   }
 
   /* write the variable declarations. */
   W("\n");
   for (i = 0; i < gs->n; i++) {
-    if (gs->sym_type[i] != SYMBOL_TYPE_VAR ||
+    if (!(gs->sym_type[i] & SYMBOL_VAR) ||
         gs->sym_name[i][0] == '_')
      continue;
 
@@ -516,7 +543,7 @@ static void write_globals (Compiler c) {
  *  @c: matte compiler to utilize.
  */
 static void write_functions (Compiler c) {
-  /* FIXME: comment this sheeut. */
+  /* FIXME: comment and refactor to use symbol lookups. */
   AST node, down;
   int i, j;
 
@@ -527,17 +554,47 @@ static void write_functions (Compiler c) {
     W("\nObject matte_%s (Object argin) {\n", node->down[1]->data_str);
 
     down = node->down[2];
-    for (j = 0; j < down->n_down; j++)
-      W("  Object %s = object_list_get((ObjectList) argin, %d);\n",
-        down->down[j]->data_str, j);
+    if (down) {
+      for (j = 0; j < down->n_down; j++)
+        W("  Object %s = object_list_get((ObjectList) argin, %d);\n",
+          down->down[j]->data_str, j);
+    }
 
     W("\n");
     for (j = 0; j < node->syms->n; j++) {
-      if (node->syms->sym_type[j] != SYMBOL_TYPE_VAR ||
-          node->syms->sym_name[j][0] == '_')
+      if (!(node->syms->sym_type[j] & SYMBOL_VAR) ||
+            node->syms->sym_type[j] & SYMBOL_GLOBAL ||
+            node->syms->sym_type[j] & SYMBOL_TEMP)
        continue;
 
       W("  Object %s = NULL;\n", node->syms->sym_name[j]);
+    }
+
+    W("\n");
+    /* FIXME: unionize literal handling in ast/symbols. */
+    /* FIXME: add literal definitions to write_main() */
+    for (j = 0; j < node->syms->n; j++) {
+      if (node->syms->sym_type[j] & SYMBOL_INT) {
+        W("  Object %s = (Object) int_new_with_value(%ldL);\n",
+          symbols_get_name(node->syms, j),
+          symbols_get_int(node->syms, j));
+      }
+      else if (node->syms->sym_type[j] & SYMBOL_FLOAT) {
+        W("  Object %s = (Object) float_new_with_value(%le);\n",
+          symbols_get_name(node->syms, j),
+          symbols_get_float(node->syms, j));
+      }
+      else if (node->syms->sym_type[j] & SYMBOL_COMPLEX) {
+        W("  Object %s = (Object) complex_new_with_value(%le + %le * I);\n",
+          symbols_get_name(node->syms, j),
+          creal(symbols_get_complex(node->syms, j)),
+          cimag(symbols_get_complex(node->syms, j)));
+      }
+      else if (node->syms->sym_type[j] & SYMBOL_STRING) {
+        W("  Object %s = (Object) string_new_with_value(%s);\n",
+          symbols_get_name(node->syms, j),
+          symbols_get_string(node->syms, j));
+      }
     }
 
     W("\n");
@@ -568,17 +625,32 @@ static void write_functions (Compiler c) {
  *  @c: matte compiler to utilize.
  */
 static void write_main (Compiler c) {
-  /* FIXME: comment this sheeut. */
+  /* declare required variables:
+   *  @node: general-purpose ast-node.
+   *  @i: general-purpose loop counter.
+   */
   AST node;
-  int i;
+  int i, n;
 
-  W("\nint %s (int argc, char **argv) {\n",
-    c->mode == COMPILE_TO_MEM ? "matte_main" : "main");
+  /* check if compile-to-memory mode is enabled. */
+  if (c->mode == COMPILE_TO_MEM) {
+    /* write a general-purpose main function. */
+    W("\nObject matte_main (Object argin) {\n");
+  }
+  else {
+    /* write an application entry point. */
+    W("\nint main (int argc, char **argv) {\n");
+  }
 
+  /* write all global statements into the main function. */
   for (i = 0; i < c->tree->n_down; i++)
     write_statements(c, c->tree->down[i]);
 
-  W("\n  return 0;\n}\n");
+  /* write the end of the main function. */
+  if (c->mode == COMPILE_TO_MEM)
+    W("\n  return NULL;\n}\n");
+  else
+    W("\n  return 0;\n}\n");
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -735,9 +807,11 @@ static int compile_to_mem (Compiler c) {
   /* declare required variables for dynamic loading:
    *  @lib, @sym: pointers to dlopen() and dlsym() results.
    *  @fn: main function pointer.
+   *  @results: return values.
    */
   void *lib, *sym;
-  int (*fn) (int, char**);
+  Object (*fn) (Object);
+  Object results;
 
   /* obtain two temporary file descriptors. */
   strcpy(ftmpc, "/tmp/matteXXXXXX.c");
@@ -780,10 +854,10 @@ static int compile_to_mem (Compiler c) {
 
     /* run the main function. */
     fn = sym;
-    ret = fn(0, NULL);
+    results = fn(NULL);
 
     /* return the result. */
-    return (ret == 0);
+    return (results != NULL);
   }
 
   /* remove the temporary files. */
@@ -851,12 +925,6 @@ Compiler compiler_new (Object args) {
   c->fout = string_new(NULL);
   c->cflags = string_new(NULL);
   c->ccode = string_new(NULL);
-
-  /* FIXME: these are debug cflags. remove them asap. */
-  compiler_add_cflag(c, "-ggdb");
-  compiler_add_cflag(c, "-I.");
-  compiler_add_cflag(c, "-I/usr/local/atlas/include");
-  compiler_add_cflag(c, "-Llib");
 
   /* initialize the error count. */
   c->err = 0;

@@ -224,11 +224,14 @@ int complex_vector_set_length (ComplexVector x, long n) {
  */
 int complex_vector_disp (ComplexVector x, const char *var) {
   printf("%s =\n", var);
-  for (long i = 0; i < x->n; i++)
-    printf("\n  %lg %s %lg",
-           creal(x->data[i]),
-           cimag(x->data[i]) < 0.0 ? "-" : "+",
-           cimag(x->data[i]));
+
+  for (long i = 0; i < x->n; i++) {
+    const double re = creal(x->data[i]);
+    const double im = cimag(x->data[i]);
+    printf("\n  %lg %s %lgi", re,
+           im < 0.0 ? "-" : "+",
+           im < 0.0 ? -im : im);
+  }
 
   printf("\n\n");
   return 1;

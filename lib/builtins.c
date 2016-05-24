@@ -6,6 +6,28 @@
 /* include the matte header. */
 #include <matte/matte.h>
 
+/* matte_globals_init(): initialize built-in global variables with the
+ * global compiler symbol table.
+ *
+ * arguments:
+ *  @gs: global symbol table to register symbols with.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+int matte_globals_init (Symbols gs) {
+  /* declare required variables:
+   *  @ret: return value from all symbol registrations.
+   */
+  int ret = 1;
+
+  /* register the global variables. */
+  ret = ret && symbols_add(gs, SYMBOL_GLOBAL_INT, "end", -1L);
+
+  /* return the result. */
+  return ret;
+}
+
 /* matte_builtins_init(): initialize built-in functions with the global
  * compiler symbol table.
  *
@@ -22,7 +44,7 @@ int matte_builtins_init (Symbols gs) {
   int ret = 1;
 
   /* register global functions. */
-  ret = ret && symbols_add(gs, SYMBOL_TYPE_FUNC, "sum");
+  ret = ret && symbols_add(gs, SYMBOL_GLOBAL_FUNC, "sum");
 
   /* return the result. */
   return ret;

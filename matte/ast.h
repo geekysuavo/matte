@@ -113,9 +113,9 @@ AST ast_get_down (AST node, int index);
 
 #define ast_last(node) ast_get_down(node, -1)
 
-void ast_shrink_down (AST node);
+AST ast_get_root (AST node);
 
-Symbols ast_get_symbols (AST node);
+void ast_shrink_down (AST node);
 
 AST ast_rip (AST node);
 
@@ -123,9 +123,11 @@ AST ast_slip (AST node, AST slip);
 
 AST ast_merge (AST a, AST b);
 
-int ast_find_symbol (AST node, SymbolType stype, const char *sname);
+Symbols ast_get_symbols (AST node);
 
-int ast_add_symbol (AST node, SymbolType stype, const char *sname);
+Symbols ast_get_globals (AST node);
+
+int ast_add_symbol (AST node, AST data, SymbolType stype);
 
 const char *ast_get_symbol_name (AST node);
 

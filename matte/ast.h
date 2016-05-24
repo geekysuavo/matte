@@ -58,17 +58,14 @@ struct _AST {
   int n_down;
 
   /* @node_type: type of the syntax tree node.
+   * @node_data: data in the syntax tree node.
    * @node_disp: display flag of the node.
+   * @has_str: if the node data is a string.
    */
   ASTNodeType node_type;
+  SymbolData node_data;
   bool node_disp;
-
-  /* @data_*: simple data that may be contained by an ast-node.
-   */
-  char *data_str;
-  long data_int;
-  double data_float;
-  complex double data_complex;
+  bool has_str;
 
   /* @syms: symbol table for an ast-node and its downstream sub-tree.
    * @sym_table: table of the current node's symbol.
@@ -87,8 +84,6 @@ AST ast_new (Object args);
 
 AST ast_new_with_type (ASTNodeType type);
 
-AST ast_new_with_disp (bool disp);
-
 AST ast_new_with_down (AST down);
 
 AST ast_new_with_parms (ASTNodeType type, bool disp, AST down);
@@ -99,11 +94,25 @@ void ast_free (AST node);
 
 ASTNodeType ast_get_type (AST node);
 
+long ast_get_int (AST node);
+
+double ast_get_float (AST node);
+
+complex double ast_get_complex (AST node);
+
+const char *ast_get_string (AST node);
+
+void ast_set_int (AST node, long value);
+
+void ast_set_float (AST node, double value);
+
+void ast_set_complex (AST node, complex double value);
+
+void ast_set_string (AST node, const char *value);
+
 void ast_set_type (AST node, ASTNodeType type);
 
 void ast_set_disp (AST node, bool disp);
-
-void ast_set_up (AST node, AST up);
 
 int ast_add_down (AST node, AST down);
 

@@ -34,10 +34,8 @@ AST ast_new (Object args) {
   node->node_disp = false;
 
   /* initialize the node data. */
-  node->data_str = NULL;
-  node->data_int = 0;
-  node->data_float = 0.0;
-  node->data_complex = 0.0;
+  node->node_data.iv = 0;
+  node->has_str = false;
 
   /* initialize the symbol table. */
   node->syms = NULL;
@@ -66,26 +64,6 @@ AST ast_new_with_type (ASTNodeType type) {
 
   /* set the node type and return the new tree node. */
   ast_set_type(node, type);
-  return node;
-}
-
-/* ast_new_with_disp(): allocate a new matte abstract syntax tree node
- * with a specified display flag value.
- *
- * arguments:
- *  @disp: display flag to set.
- *
- * returns:
- *  newly allocated matte ast-node.
- */
-AST ast_new_with_disp (bool disp) {
-  /* allocate a new ast-node. */
-  AST node = ast_new(NULL);
-  if (!node)
-    return NULL;
-
-  /* set the display flag and return the new tree node. */
-  ast_set_disp(node, disp);
   return node;
 }
 
@@ -179,13 +157,12 @@ AST ast_copy (AST node) {
   ndup->node_type = node->node_type;
   ndup->node_disp = node->node_disp;
 
-  /* store the node string data. */
-  if (node->data_str) ndup->data_str = strdup(node->data_str);
-
-  /* store the node numeric data. */
-  ndup->data_int     = node->data_int;
-  ndup->data_float   = node->data_float;
-  ndup->data_complex = node->data_complex;
+  /* store the node data. */
+  ndup->has_str = node->has_str;
+  if (node->has_str)
+    ndup->node_data.sv = strdup(node->node_data.sv);
+  else
+    ndup->node_data = node->node_data;
 
   /* store the node symbol table. */
   ndup->syms = node->syms;
@@ -217,9 +194,9 @@ void ast_free (AST node) {
   /* free the array of child nodes. */
   free(node->down);
 
-  /* free the node data. */
-  if (node->data_str)
-    free(node->data_str);
+  /* free the node data based on node type. */
+  if (node->has_str && node->node_data.sv)
+    free(node->node_data.sv);
 
   /* free the symbol table. */
   if (node->syms)
@@ -241,6 +218,102 @@ ASTNodeType ast_get_type (AST node) {
 
   /* return the node type. */
   return node->node_type;
+}
+
+/* ast_get_int(): get the integer data of a matte ast-node.
+ */
+inline long ast_get_int (AST node) {
+  /* return the node data. */
+  return (node && node->has_str == false ? node->node_data.iv : 0L);
+}
+
+/* ast_get_double(): get the double data of a matte ast-node.
+ */
+inline double ast_get_float (AST node) {
+  /* return the node data. */
+  return (node && node->has_str == false ? node->node_data.fv : 0.0);
+}
+
+/* ast_get_complex(): get the complex data of a matte ast-node.
+ */
+inline complex double ast_get_complex (AST node) {
+  /* return the node data. */
+  return (node && node->has_str == false ? node->node_data.cv : 0.0);
+}
+
+/* ast_get_string(): get the string data of a matte ast-node.
+ */
+inline const char *ast_get_string (AST node) {
+  /* return the node data. */
+  return (node && node->has_str == true ? node->node_data.sv : NULL);
+}
+
+/* ast_reset_data(): reset the data field of a matte ast-node.
+ *
+ * arguments:
+ *  @node: matte ast-node to modify. must be non-null.
+ */
+static inline void ast_reset_data (AST node) {
+  /* free any existing string data. */
+  if (node->has_str)
+    free(node->node_data.sv);
+
+  /* reset the data union and lower the string flag. */
+  memset(&(node->node_data), 0, sizeof(SymbolData));
+  node->has_str = false;
+}
+
+/* ast_set_int(): set the integer data of a matte ast-node.
+ *
+ * arguments:
+ *  @node: matte syntax tree node to modify.
+ *  @value: new value to store.
+ */
+void ast_set_int (AST node, long value) {
+  /* set the integer data. */
+  if (!node) return;
+  ast_reset_data(node);
+  node->node_data.iv = value;
+}
+
+/* ast_set_float(): set the float data of a matte ast-node.
+ *
+ * arguments:
+ *  @node: matte syntax tree node to modify.
+ *  @value: new value to store.
+ */
+void ast_set_float (AST node, double value) {
+  /* set the float data. */
+  if (!node) return;
+  ast_reset_data(node);
+  node->node_data.fv = value;
+}
+
+/* ast_set_complex(): set the complex data of a matte ast-node.
+ *
+ * arguments:
+ *  @node: matte syntax tree node to modify.
+ *  @value: new value to store.
+ */
+void ast_set_complex (AST node, complex double value) {
+  /* set the complex data. */
+  if (!node) return;
+  ast_reset_data(node);
+  node->node_data.cv = value;
+}
+
+/* ast_set_string(): set the string data of a matte ast-node.
+ *
+ * arguments:
+ *  @node: matte syntax tree node to modify.
+ *  @value: new value to store.
+ */
+void ast_set_string (AST node, const char *value) {
+  /* set the string data. */
+  if (!node) return;
+  ast_reset_data(node);
+  node->node_data.sv = strdup(value);
+  node->has_str = true;
 }
 
 /* ast_set_type(): set the type of a matte ast-node.
@@ -271,21 +344,6 @@ void ast_set_disp (AST node, bool disp) {
 
   /* set the node display flag. */
   node->node_disp = disp;
-}
-
-/* ast_set_up(): set the upstream node of a matte ast-node.
- *
- * arguments:
- *  @node: matte syntax tree node to modify.
- *  @up new upstream node to set.
- */
-void ast_set_up (AST node, AST up) {
-  /* return if either node is null. */
-  if (!node || !up)
-    return;
-
-  /* set the upstream node. */
-  node->up = up;
 }
 
 /* ast_add_down(): add a downstream node to a matte ast-node.
@@ -616,25 +674,13 @@ Symbols ast_get_globals (AST node) {
 static inline long
 symbols_add_from_ast (Symbols syms, SymbolType stype, AST data) {
   /* register the symbol data based on symbol type. */
-  if (stype & SYMBOL_INT) {
-    /* supply the integer data. */
-    return symbols_add(syms, stype, NULL, data->data_int);
-  }
-  else if (stype & SYMBOL_FLOAT) {
-    /* supply the float data. */
-    return symbols_add(syms, stype, NULL, data->data_float);
-  }
-  else if (stype & SYMBOL_COMPLEX) {
-    /* supply the complex data. */
-    return symbols_add(syms, stype, NULL, data->data_complex);
-  }
-  else if (stype & SYMBOL_STRING) {
-    /* supply the string data. */
-    return symbols_add(syms, stype, NULL, data->data_str);
+  if (stype & SYMBOL_LITERAL) {
+    /* supply the literal data. */
+    return symbols_add(syms, stype, NULL, data->node_data);
   }
   else {
     /* supply no data. */
-    return symbols_add(syms, stype, data->data_str);
+    return symbols_add(syms, stype, data->node_data.sv);
   }
 
   /* return failure. */
@@ -721,7 +767,7 @@ int ast_add_symbol (AST node, AST data, SymbolType stype) {
 const char *ast_get_symbol_name (AST node) {
   /* if a symbol is registered with the node, then return it's name. */
   if (node->sym_index && node->sym_table)
-    return node->sym_table->sym_name[node->sym_index - 1];
+    return symbol_name(node->sym_table, node->sym_index - 1);
 
   /* otherwise, return null. */
   return NULL;

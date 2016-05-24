@@ -115,6 +115,11 @@ static int init_symbols (Compiler c, AST node, AST root) {
   const ASTNodeType ntype = ast_get_type(node);
   const ScannerToken ntok = (ScannerToken) ntype;
 
+  /* get the current variable symbol type based on symbol scope. */
+  SymbolType vartype = SYMBOL_VAR;
+  if (ast_get_symbols(node) == ast_get_globals(node))
+    vartype |= SYMBOL_GLOBAL;
+
   /* allocate symbol tables for certain node types. */
   if (ntype == AST_TYPE_ROOT ||
       ntype == AST_TYPE_CLASS ||
@@ -192,13 +197,13 @@ static int init_symbols (Compiler c, AST node, AST root) {
       /* register names of the matrix lhs. */
       AST row = node->down[0];
       for (i = 0; i < row->n_down; i++) {
-        if (!ast_add_symbol(node, row->down[i], SYMBOL_VAR))
+        if (!ast_add_symbol(node, row->down[i], vartype))
           return 0;
       }
     }
     else {
       /* register the name lhs. */
-      if (!ast_add_symbol(node, node->down[0], SYMBOL_VAR))
+      if (!ast_add_symbol(node, node->down[0], vartype))
         return 0;
     }
 
@@ -286,7 +291,7 @@ static int resolve_symbols (Compiler c, AST node, AST root) {
     super = node;
     while (super) {
       /* lookup the symbol in the current node's table. */
-      sid = symbols_find(super->syms, SYMBOL_ANY, node->data_str);
+      sid = symbols_find(super->syms, SYMBOL_ANY, ast_get_string(node));
       if (sid) {
         /* symbol found. store it in the node. */
         node->sym_table = super->syms;
@@ -338,7 +343,7 @@ static int resolve_symbols (Compiler c, AST node, AST root) {
 
     /* check if no symbol was found. */
     if (!node->sym_table || !node->sym_index)
-      fail("symbol '%s' is undefined", node->data_str);
+      fail("symbol '%s' is undefined", ast_get_string(node));
   }
   else if (ntype == AST_TYPE_FUNCTION) {
     /* traverse only into the statement list. */
@@ -455,7 +460,7 @@ static void write_statements (Compiler c, AST node) {
       W("  args = (Object) object_list_new(NULL);\n");
     }
 
-    W("  rets = matte_%s(args);\n", node->down[1]->data_str);
+    W("  rets = matte_%s(args);\n", ast_get_string(node->down[1]));
 
     down = node->down[0];
     if (ast_get_type(down) == (ASTNodeType) T_IDENT) {
@@ -472,31 +477,65 @@ static void write_statements (Compiler c, AST node) {
     W("  object_free(args);\n");
     W("  object_free(rets);\n");
   }
-/*
-  else if (ntok == T_INT) {
-    W("  Object %s = (Object) int_new_with_value(%ldL);\n",
-      ast_get_symbol_name(node), node->data_int);
-  }
-  else if (ntok == T_FLOAT) {
-    W("  Object %s = (Object) float_new_with_value(%le);\n",
-      ast_get_symbol_name(node), node->data_float);
-  }
-  else if (ntok == T_COMPLEX) {
-    W("  Object %s = (Object) complex_new_with_value(%le + %le * I);\n",
-      ast_get_symbol_name(node),
-      creal(node->data_complex),
-      cimag(node->data_complex));
-  }
-  else if (ntok == T_STRING) {
-    W("  Object %s = (Object) string_new_with_value(%s);\n",
-      ast_get_symbol_name(node), node->data_str);
-  }
-*/
 
   if (node->node_disp) {
     W("  object_disp(%s, \"%s\");\n",
       ast_get_symbol_name(node),
       ast_get_symbol_name(node));
+  }
+}
+
+/* write_symbols(): write variable and literal symbol initializers from
+ * a symbol table for use within a matte function.
+ *
+ * arguments:
+ *  @c: matte compiler to utilize.
+ *  @syms: symbol table to access.
+ */
+static void write_symbols (Compiler c, Symbols syms) {
+  /* loop once to write all non-global, non-temp variables. */
+  for (long i = 0; i < syms->n; i++) {
+    /* do not write globals or temps. only write local vars. */
+    if (!symbol_has_type(syms, i, SYMBOL_VAR) ||
+         symbol_has_type(syms, i, SYMBOL_GLOBAL | SYMBOL_TEMP))
+     continue;
+
+    /* write the variable symbol. */
+    W("  Object %s = NULL;\n", symbol_name(syms, i));
+  }
+
+  /* loop again to write all literals. */
+  W("\n");
+  for (long i = 0; i < syms->n; i++) {
+    /* do not write global symbols. */
+    if (symbol_has_type(syms, i, SYMBOL_GLOBAL)) continue;
+
+    /* write based on type. */
+    if (symbol_has_type(syms, i, SYMBOL_INT)) {
+      /* integer literal. */
+      W("  Object %s = (Object) int_new_with_value(%ldL);\n",
+        symbol_name(syms, i),
+        symbol_int(syms, i));
+    }
+    else if (symbol_has_type(syms, i, SYMBOL_FLOAT)) {
+      /* float literal. */
+      W("  Object %s = (Object) float_new_with_value(%le);\n",
+        symbol_name(syms, i),
+        symbol_float(syms, i));
+    }
+    else if (symbol_has_type(syms, i, SYMBOL_COMPLEX)) {
+      /* complex literal. */
+      W("  Object %s = (Object) complex_new_with_value(%le + %le * I);\n",
+        symbol_name(syms, i),
+        creal(symbol_complex(syms, i)),
+        cimag(symbol_complex(syms, i)));
+    }
+    else if (symbol_has_type(syms, i, SYMBOL_STRING)) {
+      /* string literal. */
+      W("  Object %s = (Object) string_new_with_value(%s);\n",
+        symbol_name(syms, i),
+        symbol_string(syms, i));
+    }
   }
 }
 
@@ -551,51 +590,18 @@ static void write_functions (Compiler c) {
     node = c->tree->down[i];
     if (ast_get_type(node) != AST_TYPE_FUNCTION) continue;
 
-    W("\nObject matte_%s (Object argin) {\n", node->down[1]->data_str);
+    W("\nObject matte_%s (Object argin) {\n",
+      ast_get_string(node->down[1]));
 
     down = node->down[2];
     if (down) {
       for (j = 0; j < down->n_down; j++)
         W("  Object %s = object_list_get((ObjectList) argin, %d);\n",
-          down->down[j]->data_str, j);
+          ast_get_string(down->down[j]), j);
     }
 
     W("\n");
-    for (j = 0; j < node->syms->n; j++) {
-      if (!(node->syms->sym_type[j] & SYMBOL_VAR) ||
-            node->syms->sym_type[j] & SYMBOL_GLOBAL ||
-            node->syms->sym_type[j] & SYMBOL_TEMP)
-       continue;
-
-      W("  Object %s = NULL;\n", node->syms->sym_name[j]);
-    }
-
-    W("\n");
-    /* FIXME: unionize literal handling in ast/symbols. */
-    /* FIXME: add literal definitions to write_main() */
-    for (j = 0; j < node->syms->n; j++) {
-      if (node->syms->sym_type[j] & SYMBOL_INT) {
-        W("  Object %s = (Object) int_new_with_value(%ldL);\n",
-          symbols_get_name(node->syms, j),
-          symbols_get_int(node->syms, j));
-      }
-      else if (node->syms->sym_type[j] & SYMBOL_FLOAT) {
-        W("  Object %s = (Object) float_new_with_value(%le);\n",
-          symbols_get_name(node->syms, j),
-          symbols_get_float(node->syms, j));
-      }
-      else if (node->syms->sym_type[j] & SYMBOL_COMPLEX) {
-        W("  Object %s = (Object) complex_new_with_value(%le + %le * I);\n",
-          symbols_get_name(node->syms, j),
-          creal(symbols_get_complex(node->syms, j)),
-          cimag(symbols_get_complex(node->syms, j)));
-      }
-      else if (node->syms->sym_type[j] & SYMBOL_STRING) {
-        W("  Object %s = (Object) string_new_with_value(%s);\n",
-          symbols_get_name(node->syms, j),
-          symbols_get_string(node->syms, j));
-      }
-    }
+    write_symbols(c, node->syms);
 
     W("\n");
     write_statements(c, node->down[3]);
@@ -608,11 +614,11 @@ static void write_functions (Compiler c) {
     else if (down->n_down) {
       W("  return object_list_argout(%d", down->n_down);
       for (j = 0; j < down->n_down; j++)
-        W(", %s", down->down[j]->data_str);
+        W(", %s", ast_get_string(down->down[j]));
       W(");\n");
     }
     else {
-      W("  return object_list_argout(1, %s);\n", down->data_str);
+      W("  return object_list_argout(1, %s);\n", ast_get_string(down));
     }
 
     W("}\n");
@@ -642,13 +648,16 @@ static void write_main (Compiler c) {
     W("\nint main (int argc, char **argv) {\n");
   }
 
+  /* write all global variables and literals. */
+  write_symbols(c, c->tree->syms);
+
   /* write all global statements into the main function. */
   for (i = 0; i < c->tree->n_down; i++)
     write_statements(c, c->tree->down[i]);
 
   /* write the end of the main function. */
   if (c->mode == COMPILE_TO_MEM)
-    W("\n  return NULL;\n}\n");
+    W("\n  return end;\n}\n");
   else
     W("\n  return 0;\n}\n");
 }
@@ -855,9 +864,10 @@ static int compile_to_mem (Compiler c) {
     /* run the main function. */
     fn = sym;
     results = fn(NULL);
+    object_free(results);
 
     /* return the result. */
-    return (results != NULL);
+    return 1;
   }
 
   /* remove the temporary files. */

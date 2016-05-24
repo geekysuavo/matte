@@ -12,7 +12,7 @@ BIN=bin/matte
 LIB=lib/libmatte.so
 
 MATTE_ENV=env DYLD_LIBRARY_PATH=lib
-MATTE_FLAGS=-Wp,-I. -Wp,-I/usr/local/atlas/include -Wl,-Llib -c
+MATTE_FLAGS=-Wp,-I. -Wp,-I/usr/local/atlas/include -Wl,-Llib
 
 all: $(BIN) $(LIB)
 

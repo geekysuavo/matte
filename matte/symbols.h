@@ -25,6 +25,8 @@
 #define SYMBOL_GLOBAL_FLOAT    (SYMBOL_GLOBAL | SYMBOL_VAR | SYMBOL_FLOAT)
 #define SYMBOL_GLOBAL_COMPLEX  (SYMBOL_GLOBAL | SYMBOL_VAR | SYMBOL_COMPLEX)
 #define SYMBOL_GLOBAL_STRING   (SYMBOL_GLOBAL | SYMBOL_VAR | SYMBOL_STRING)
+#define SYMBOL_LITERAL \
+  (SYMBOL_INT | SYMBOL_FLOAT | SYMBOL_COMPLEX | SYMBOL_STRING)
 
 /* Symbols: pointer to a struct _Symbols. */
 typedef struct _Symbols *Symbols;
@@ -32,6 +34,9 @@ struct _ObjectType Symbols_type;
 
 /* SymbolType: an enum _SymbolType. */
 typedef enum _SymbolType SymbolType;
+
+/* SymbolData: a union _SymbolData. */
+typedef union _SymbolData SymbolData;
 
 /* _SymbolType: enumeration that holds the types of symbols that may
  * be found within a symbol table.
@@ -60,6 +65,16 @@ enum _SymbolType {
   SYMBOL_TEMP      = 0x0400
 };
 
+/* _SymbolData: union that holds any literal or identifier data value
+ * that may conceivably be contained within an abstract syntax tree node.
+ */
+union _SymbolData {
+  long iv;              /* integer data.              */
+  double fv;            /* float data.                */
+  complex double cv;    /* complex data.              */
+  char *sv;             /* identifier or string data. */
+};
+
 /* Symbols: structure for holding a symbol table.
  */
 struct _Symbols {
@@ -67,14 +82,16 @@ struct _Symbols {
   OBJECT_BASE;
 
   /* @sym_type: array of basic types of the symbols.
-   * @sym_name: array of string names of the symbols.
    * @sym_data: array of data values of the symbols.
+   * @own_data: whether the symbol has allocated data.
+   * @sym_name: array of string names of the symbols.
    * @n: number of user-defined symbols.
    * @nt: number of temporary symbols.
    */
   SymbolType *sym_type;
+  SymbolData *sym_data;
   char **sym_name;
-  void **sym_data;
+  bool *own_data;
   long n, nt;
 };
 
@@ -90,15 +107,17 @@ long symbols_find (Symbols syms, SymbolType stype, const char *sname, ...);
 
 long symbols_add (Symbols syms, SymbolType stype, const char *sname, ...);
 
-const char *symbols_get_name (Symbols syms, long index);
+int symbol_has_type (Symbols syms, long index, SymbolType stype);
 
-long symbols_get_int (Symbols syms, long index);
+const char *symbol_name (Symbols syms, long index);
 
-double symbols_get_float (Symbols syms, long index);
+long symbol_int (Symbols syms, long index);
 
-complex double symbols_get_complex (Symbols syms, long index);
+double symbol_float (Symbols syms, long index);
 
-const char *symbols_get_string (Symbols syms, long index);
+complex double symbol_complex (Symbols syms, long index);
+
+const char *symbol_string (Symbols syms, long index);
 
 #endif /* !__MATTE_SYMBOLS_H__ */
 

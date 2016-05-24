@@ -26,8 +26,9 @@ Symbols symbols_new (Object args) {
 
   /* initialize the symbol array. */
   syms->sym_type = NULL;
-  syms->sym_name = NULL;
   syms->sym_data = NULL;
+  syms->own_data = NULL;
+  syms->sym_name = NULL;
   syms->nt = 0;
   syms->n = 0;
 
@@ -45,18 +46,21 @@ void symbols_free (Symbols syms) {
   if (!syms)
     return;
 
-  /* free the symbol names. */
-  for (long i = 0; i < syms->n; i++)
+  /* loop over the symbols. */
+  for (long i = 0; i < syms->n; i++) {
+    /* free the symbol name. */
     free(syms->sym_name[i]);
 
-  /* free the symbol data values. */
-  for (long i = 0; i < syms->n; i++)
-    free(syms->sym_data[i]);
+    /* if the symbol has allocated data, free it. */
+    if (syms->own_data[i])
+      free(syms->sym_data[i].sv);
+  }
 
   /* free the arrays of symbol names, types, and data values. */
-  free(syms->sym_name);
   free(syms->sym_type);
   free(syms->sym_data);
+  free(syms->own_data);
+  free(syms->sym_name);
 }
 
 /* symbols_find(): lookup a symbol in a matte symbol table.
@@ -72,72 +76,52 @@ void symbols_free (Symbols syms) {
  *  is returned. otherwise, zero (0) is returned.
  */
 long symbols_find (Symbols syms, SymbolType stype, const char *sname, ...) {
-  /* declare required variables:
-   *  @vl: variable-length argument list for literal data.
-   */
+  /* declare variables for reading the optional data argument. */
+  SymbolData sdata;
   va_list vl;
 
   /* return 'not found' if the symbol table is null. */
   if (!syms)
     return 0;
 
-  /* search based on the symbol type. */
-  va_start(vl, sname);
-  if (stype & SYMBOL_INT) {
-    /* get the integer literal data. */
-    long data = (long) va_arg(vl, long);
+  /* check if the symbol type implies an extra argument. */
+  if (stype & SYMBOL_LITERAL) {
+    /* read the extra argument. */
+    va_start(vl, sname);
+    sdata = (SymbolData) va_arg(vl, SymbolData);
     va_end(vl);
 
-    /* search for the symbol. */
-    for (long i = 0; i < syms->n; i++) {
-      if (!syms->sym_data[i]) continue;
-      if (syms->sym_type[i] & stype &&
-          *((long*) syms->sym_data[i]) == data)
-        return i + 1;
+    /* search based on the symbol type. */
+    if (stype & SYMBOL_INT) {
+      /* search for an integer literal. */
+      for (long i = 0; i < syms->n; i++) {
+        if (syms->sym_type[i] & stype && syms->sym_data[i].iv == sdata.iv)
+          return i + 1;
+      }
+    }
+    else if (stype & SYMBOL_FLOAT) {
+      /* search for a float literal. */
+      for (long i = 0; i < syms->n; i++) {
+        if (syms->sym_type[i] & stype && syms->sym_data[i].fv == sdata.fv)
+          return i + 1;
+      }
+    }
+    else if (stype & SYMBOL_COMPLEX) {
+      /* search for a complex literal. */
+      for (long i = 0; i < syms->n; i++) {
+        if (syms->sym_type[i] & stype && syms->sym_data[i].cv == sdata.cv)
+          return i + 1;
+      }
+    }
+    else if (stype & SYMBOL_STRING) {
+      /* search for a string literal. */
+      for (long i = 0; i < syms->n; i++) {
+        if (syms->sym_type[i] & stype &&
+            strcmp(syms->sym_data[i].sv, sdata.sv) == 0)
+          return i + 1;
+      }
     }
   }
-  else if (stype & SYMBOL_FLOAT) {
-    /* get the float literal data. */
-    double data = (double) va_arg(vl, double);
-    va_end(vl);
-
-    /* search for the symbol. */
-    for (long i = 0; i < syms->n; i++) {
-      if (!syms->sym_data[i]) continue;
-      if (syms->sym_type[i] & stype &&
-          *((double*) syms->sym_data[i]) == data)
-        return i + 1;
-    }
-  }
-  else if (stype & SYMBOL_COMPLEX) {
-    /* get the complex literal data. */
-    complex double data = (complex double) va_arg(vl, complex double);
-    va_end(vl);
-
-    /* search for the symbol. */
-    for (long i = 0; i < syms->n; i++) {
-      if (!syms->sym_data[i]) continue;
-      if (syms->sym_type[i] & stype &&
-          *((complex double*) syms->sym_data[i]) == data)
-        return i + 1;
-    }
-  }
-  else if (stype & SYMBOL_STRING) {
-    /* get the string literal data. */
-    char *data = (char*) va_arg(vl, char*);
-    va_end(vl);
-
-    /* search for the symbol. */
-    for (long i = 0; i < syms->n; i++) {
-      if (!syms->sym_data[i]) continue;
-      if (syms->sym_type[i] & stype &&
-          strcmp((char*) syms->sym_data[i], data) == 0)
-        return i + 1;
-    }
-  }
-
-  /* end variable-length argument parsing. */
-  va_end(vl);
 
   /* fail if the symbol name is null. */
   if (!sname)
@@ -174,175 +158,159 @@ long symbols_add (Symbols syms, SymbolType stype, const char *sname, ...) {
    */
   long sid;
   va_list vl;
-
-  /* declare and initialize variables for holding literal data. */
-  long data_int = 0L;
-  double data_float = 0.0;
-  complex double data_complex = 0.0;
-  char *data_str = NULL;
+  SymbolData sdata;
 
   /* return failure if the symbol table is null. */
   if (!syms)
     return 0;
 
   /* check if the symbol type implies an extra data argument. */
-  va_start(vl, sname);
-  if (stype & SYMBOL_INT) {
-    /* store the data and perform an integer literal search. */
-    data_int = (long) va_arg(vl, long);
-    sid = symbols_find(syms, stype, sname, data_int);
-  }
-  else if (stype & SYMBOL_FLOAT) {
-    /* store the data and perform a float literal search. */
-    data_float = (double) va_arg(vl, double);
-    sid = symbols_find(syms, stype, sname, data_float);
-  }
-  else if (stype & SYMBOL_COMPLEX) {
-    /* store the data and perform a complex literal search. */
-    data_complex = (complex double) va_arg(vl, complex double);
-    sid = symbols_find(syms, stype, sname, data_complex);
-  }
-  else if (stype & SYMBOL_STRING) {
-    /* store the data and perform a string literal search. */
-    data_str = (char*) va_arg(vl, char*);
-    sid = symbols_find(syms, stype, sname, data_str);
+  if (stype & SYMBOL_LITERAL) {
+    /* read the extra argument. */
+    va_start(vl, sname);
+    sdata = (SymbolData) va_arg(vl, SymbolData);
+    va_end(vl);
+
+    /* search for a literal symbol. */
+    sid = symbols_find(syms, stype, sname, sdata);
   }
   else {
     /* perform a search without data. */
     sid = symbols_find(syms, stype, sname);
   }
 
-  /* end variable-length argument handling. */
-  va_end(vl);
-
   /* if the symbol is already in the table, return its index. */
   if (sid) return sid;
 
   /* increment the symbol table size. */
-  syms->n++;
+  sid = syms->n++;
 
   /* reallocate the symbol type array. */
   syms->sym_type = (SymbolType*)
     realloc(syms->sym_type, syms->n * sizeof(SymbolType));
 
+  /* reallocate the symbol data array. */
+  syms->sym_data = (SymbolData*)
+    realloc(syms->sym_data, syms->n * sizeof(SymbolData));
+
+  /* reallocate the symbol ownership array. */
+  syms->own_data = (bool*)
+    realloc(syms->own_data, syms->n * sizeof(bool));
+
   /* reallocate the symbol name array. */
   syms->sym_name = (char**)
     realloc(syms->sym_name, syms->n * sizeof(char*));
 
-  /* reallocate the symbol data array. */
-  syms->sym_data = (void**)
-    realloc(syms->sym_data, syms->n * sizeof(void*));
-
   /* check if reallocation failed. */
-  if (!syms->sym_type || !syms->sym_name || !syms->sym_data)
+  if (!syms->sym_type || !syms->sym_data ||
+      !syms->own_data || !syms->sym_name)
     fail("unable to reallocate array");
 
   /* store the symbol type; initialize the symbol data. */
-  syms->sym_type[syms->n - 1] = stype;
-  syms->sym_data[syms->n - 1] = NULL;
+  syms->sym_type[sid] = stype;
+  syms->sym_data[sid].iv = 0L;
+  syms->own_data[sid] = false;
 
   /* check if the symbol name is defined. */
   if (sname && !(stype & SYMBOL_TEMP)) {
     /* store the symbol name. */
-    syms->sym_name[syms->n - 1] = strdup(sname);
+    syms->sym_name[sid] = strdup(sname);
   }
   else {
     /* generate a new symbol name. */
-    char *sbuf = (char*) malloc(20 * sizeof(char));
-    if (sbuf) snprintf(sbuf, 20, "_t%ld", syms->nt);
+    char *sbuf = (char*) malloc(32 * sizeof(char));
+    if (sbuf) snprintf(sbuf, 32, "_t%ld", syms->nt);
 
     /* store the symbol name. */
-    syms->sym_name[syms->n - 1] = sbuf;
+    syms->sym_name[sid] = sbuf;
     syms->nt++;
   }
 
   /* check if symbol data should be stored. */
-  if (stype & SYMBOL_INT) {
-    /* allocate a data pointer. */
-    long *data = (long*) malloc(sizeof(long));
-    if (data) *data = data_int;
-
-    /* set the integer data. */
-    syms->sym_data[syms->n - 1] = (void*) data;
-  }
-  else if (stype & SYMBOL_FLOAT) {
-    /* allocate a data pointer. */
-    double *data = (double*) malloc(sizeof(double));
-    if (data) *data = data_float;
-
-    /* set the float data. */
-    syms->sym_data[syms->n - 1] = (void*) data;
-  }
-  else if (stype & SYMBOL_COMPLEX) {
-    /* allocate a data pointer. */
-    complex double *data = (complex double*)
-      malloc(sizeof(complex double));
-    if (data) *data = data_complex;
-
-    /* set the complex data. */
-    syms->sym_data[syms->n - 1] = (void*) data;
-  }
-  else if (stype & SYMBOL_STRING) {
-    /* set the string data. */
-    syms->sym_data[syms->n - 1] = (void*) strdup(data_str);
+  if (stype & SYMBOL_LITERAL) {
+    /* check if string allocation is required. */
+    if (stype & SYMBOL_STRING) {
+      syms->sym_data[sid].sv = strdup(sdata.sv);
+      syms->own_data[sid] = true;
+    }
+    else
+      syms->sym_data[sid] = sdata;
   }
 
   /* return success. */
-  return syms->n;
+  return sid + 1;
 }
 
-inline const char *symbols_get_name (Symbols syms, long index) {
+/* symbol_has_type(): check the type of a registered symbol.
+ *
+ * arguments:
+ *  @syms: matte symbol table to access.
+ *  @index: zero-based symbol index in the table.
+ */
+inline int symbol_has_type (Symbols syms, long index, SymbolType stype) {
+  /* return whether the symbol matches the type combination. */
+  return (syms && index >= 0 && index < syms->n ?
+          syms->sym_type[index] & stype : 0);
+}
+
+/* symbol_name(): return the name string of a registered symbol.
+ *
+ * arguments:
+ *  @syms: matte symbol table to access.
+ *  @index: zero-based symbol index in the table.
+ */
+inline const char *symbol_name (Symbols syms, long index) {
   /* return the symbol name string. */
   return (syms && index >= 0 && index < syms->n ?
           syms->sym_name[index] : NULL);
 }
 
-/* symbols_get_int(): return the integer data of a symbol.
+/* symbol_int(): return the integer data of a symbol.
  *
  * arguments:
  *  @syms: matte symbol table to access.
  *  @index: zero-based symbol index in the table.
  */
-inline long symbols_get_int (Symbols syms, long index) {
+inline long symbol_int (Symbols syms, long index) {
   /* return the symbol data as an integer. */
-  return (syms && index >= 0 && index < syms->n && syms->sym_data[index] ?
-          *((long*) syms->sym_data[index]) : 0L);
+  return (syms && index >= 0 && index < syms->n ?
+          syms->sym_data[index].iv : 0L);
 }
 
-/* symbols_get_float(): return the float data of a symbol.
+/* symbol_float(): return the float data of a symbol.
  *
  * arguments:
  *  @syms: matte symbol table to access.
  *  @index: zero-based symbol index in the table.
  */
-inline double symbols_get_float (Symbols syms, long index) {
+inline double symbol_float (Symbols syms, long index) {
   /* return the symbol data as a float. */
-  return (syms && index >= 0 && index < syms->n && syms->sym_data[index] ?
-          *((double*) syms->sym_data[index]) : 0.0);
+  return (syms && index >= 0 && index < syms->n ?
+          syms->sym_data[index].fv : 0.0);
 }
 
-/* symbols_get_complex(): return the complex data of a symbol.
+/* symbol_complex(): return the complex data of a symbol.
  *
  * arguments:
  *  @syms: matte symbol table to access.
  *  @index: zero-based symbol index in the table.
  */
-inline complex double symbols_get_complex (Symbols syms, long index) {
+inline complex double symbol_complex (Symbols syms, long index) {
   /* return the symbol data as a complex. */
-  return (syms && index >= 0 && index < syms->n && syms->sym_data[index] ?
-          *((complex double*) syms->sym_data[index]) : 0.0);
+  return (syms && index >= 0 && index < syms->n ?
+          syms->sym_data[index].cv : 0.0);
 }
 
-/* symbols_get_string(): return the string data of a symbol.
+/* symbol_string(): return the string data of a symbol.
  *
  * arguments:
  *  @syms: matte symbol table to access.
  *  @index: zero-based symbol index in the table.
  */
-inline const char *symbols_get_string (Symbols syms, long index) {
+inline const char *symbol_string (Symbols syms, long index) {
   /* return the symbol data as a string. */
-  return (syms && index >= 0 && index < syms->n && syms->sym_data[index] ?
-          (char*) syms->sym_data[index] : NULL);
+  return (syms && index >= 0 && index < syms->n && syms->own_data[index] ?
+          syms->sym_data[index].sv : NULL);
 }
 
 /* Symbols_type: object type structure for matte symbol tables.

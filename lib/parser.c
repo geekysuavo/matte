@@ -661,7 +661,7 @@ PARSE_RULE (range)
     if (node->n_down == 2) {
       ast_add_down(node, node->down[1]);
       node->down[1] = ast_new_with_type(T_INT);
-      node->down[1]->data_int = 1;
+      ast_set_int(node->down[1], 1L);
       node->down[1]->up = node;
     }
     else if (node->n_down != 3)
@@ -1719,8 +1719,15 @@ int parser_set_string (Parser p, const char *str) {
  *  newly allocated and initialized matte ast-node.
  */
 AST ast_new_with_data (Parser p) {
+  /* declare required variables:
+   *  @node: new matte ast-node.
+   *  @str: string value from scanner.
+   */
+  AST node;
+  char *str;
+
   /* allocate a new ast-node. */
-  AST node = ast_new_with_type(p->tok);
+  node = ast_new_with_type(p->tok);
   if (!node)
     return NULL;
 
@@ -1731,28 +1738,32 @@ AST ast_new_with_data (Parser p) {
   switch (p->tok) {
     /* identifiers: directly set the string data. */
     case T_IDENT:
-      node->data_str = scanner_get_string(p->scan);
+      str = scanner_get_string(p->scan);
+      ast_set_string(node, str);
+      free(str);
       break;
 
     /* strings: set and modify the string data. */
     case T_STRING:
-      node->data_str = scanner_get_string(p->scan);
-      node->data_str[0] = node->data_str[strlen(node->data_str) - 1] = '"';
+      str = scanner_get_string(p->scan);
+      str[0] = str[strlen(str) - 1] = '"';
+      ast_set_string(node, str);
+      free(str);
       break;
 
     /* integers: set the int data. */
     case T_INT:
-      node->data_int = scanner_get_int(p->scan);
+      ast_set_int(node, scanner_get_int(p->scan));
       break;
 
     /* floats: set the float data. */
     case T_FLOAT:
-      node->data_float = scanner_get_float(p->scan);
+      ast_set_float(node, scanner_get_float(p->scan));
       break;
 
     /* complex floats: set the complex data. */
     case T_COMPLEX:
-      node->data_complex = scanner_get_complex(p->scan);
+      ast_set_complex(node, scanner_get_complex(p->scan));
       break;
 
     /* all other tokens: no data. */

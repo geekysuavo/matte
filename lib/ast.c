@@ -34,15 +34,16 @@ AST ast_new (Object args) {
   node->node_disp = false;
 
   /* initialize the node data. */
-  node->node_data.iv = 0;
+  node->node_data.iv = 0L;
   node->has_str = false;
+  node->pos = 0L;
 
   /* initialize the symbol table. */
   node->syms = NULL;
 
   /* initialize the symbol lookup information. */
   node->sym_table = NULL;
-  node->sym_index = 0;
+  node->sym_index = 0L;
 
   /* return the new tree node. */
   return node;
@@ -156,6 +157,7 @@ AST ast_copy (AST node) {
   ndup->up = node->up;
   ndup->node_type = node->node_type;
   ndup->node_disp = node->node_disp;
+  ndup->pos = node->pos;
 
   /* store the node data. */
   ndup->has_str = node->has_str;
@@ -344,6 +346,17 @@ void ast_set_disp (AST node, bool disp) {
 
   /* set the node display flag. */
   node->node_disp = disp;
+}
+
+/* ast_set_pos(): set the position value of a matte ast-node.
+ *
+ * arguments:
+ *  @node: matte ast-node to modify.
+ */
+inline void ast_set_pos (AST node, long pos) {
+  /* set the position data. */
+  if (!node) return;
+  node->pos = pos;
 }
 
 /* ast_add_down(): add a downstream node to a matte ast-node.

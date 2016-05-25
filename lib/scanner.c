@@ -9,8 +9,8 @@
 /* SCANNER_BUF_SIZE: total scanner buffer size.
  * SCANNER_BUF_MARGIN: buffer padding to maintain.
  */
-#define SCANNER_BUF_SIZE    4096
-#define SCANNER_BUF_MARGIN    16
+#define SCANNER_BUF_SIZE    4096L
+#define SCANNER_BUF_MARGIN    16L
 
 /* scanerr(): macro function to print an immediate scanner error
  * message. errorfn() handles un-termination.
@@ -148,7 +148,7 @@ static void errorfn (Scanner s, const char *format, ...) {
   fflush(stdout);
 
   /* print the initial portion of the error message. */
-  fprintf(stderr, "%s:%d: error: ", s->fname ? s->fname : "(string)",
+  fprintf(stderr, "%s:%ld: error: ", s->fname ? s->fname : "(string)",
           s->lineno);
 
   /* print the custom error message and a newline. */
@@ -190,7 +190,7 @@ static char lookahead (Scanner s, int n) {
    *  @nread_max: target number of characters to read.
    *  @p, @pbuf: pointers into the buffer.
    */
-  int nread, nread_max;
+  long nread, nread_max;
   char *p, *pbuf;
 
   /* determine the lookahead pointer. */
@@ -210,6 +210,7 @@ static char lookahead (Scanner s, int n) {
     p = s->tok;
     pbuf = s->buf;
     while (p < s->buf_end) {
+      s->buf_pos++;
       *pbuf = *p;
       pbuf++;
       p++;
@@ -754,14 +755,15 @@ Scanner scanner_new (Object args) {
 
   /* initialize the buffer string. */
   s->buf = s->buf_end = NULL;
-  s->buf_size = 0;
+  s->buf_size = 0L;
+  s->buf_pos = 0L;
 
   /* initialize the current token. */
   s->tok = s->tok_end = NULL;
 
   /* initialize the line number and error count. */
-  s->lineno = 1;
-  s->err = 0;
+  s->lineno = 1L;
+  s->err = 0L;
 
   /* return the new scanner. */
   return s;
@@ -843,14 +845,15 @@ static void scanner_close (Scanner s) {
 
   /* reset the buffer string. */
   s->buf = s->buf_end = NULL;
-  s->buf_size = 0;
+  s->buf_size = 0L;
+  s->buf_pos = 0L;
 
   /* reset the current token. */
   s->tok = s->tok_end = NULL;
 
   /* reset the line number and error count. */
-  s->lineno = 1;
-  s->err = 0;
+  s->lineno = 1L;
+  s->err = 0L;
 }
 
 /* scanner_free(): free all memory associated with a matte scanner.
@@ -880,7 +883,7 @@ int scanner_set_file (Scanner s, const char *fname) {
   /* declare required variables:
    *  @n: number of bytes read from the input file.
    */
-  int n;
+  long n;
 
   /* validate the input arguments. */
   if (!s || !fname)
@@ -998,9 +1001,23 @@ const char *scanner_get_filename (Scanner s) {
  * returns:
  *  current line number where the scanner is reading characters.
  */
-int scanner_get_lineno (Scanner s) {
+long scanner_get_lineno (Scanner s) {
   /* return the line number of the scanner, if possible. */
-  return (s ? (s->tok && *s->tok == '\n' ? s->lineno - 1 : s->lineno) : 1);
+  return (s ? (s->tok && *s->tok == '\n' ? s->lineno - 1L : s->lineno) : 1L);
+}
+
+/* scanner_get_pos(): get the current cursor position of a matte scanner.
+ *
+ * arguments:
+ *  @s: matte scanner to access.
+ *
+ * returns:
+ *  current byte number where the scanner cursor is located.
+ */
+long scanner_get_pos (Scanner s) {
+  /* return the position of the scanner, if possible. */
+  return (s && s->buf && s->tok && s->tok < s->buf_end ?
+          s->buf_pos + (s->tok - s->buf) : 0L);
 }
 
 /* scanner_get_linestr(): get a string indicating the current position
@@ -1020,7 +1037,7 @@ char *scanner_get_linestr (Scanner s) {
    *  @n: number of characters in the current line.
    */
   char *pa, *pb, *str;
-  int i, n;
+  long i, n;
 
   /* return if the scanner is null. */
   if (!s)
@@ -1046,10 +1063,10 @@ char *scanner_get_linestr (Scanner s) {
   pb--;
 
   /* compute the string length. */
-  n = pb - pa + 1;
+  n = pb - pa + 1L;
 
   /* allocate the line string. */
-  str = (char*) malloc((2 * n + 4) * sizeof(char));
+  str = (char*) malloc((2L * n + 4L) * sizeof(char));
   if (!str)
     return NULL;
 
@@ -1078,11 +1095,11 @@ char *scanner_get_linestr (Scanner s) {
  * returns:
  *  number of errors in the scanner, if any.
  */
-int scanner_get_errors (Scanner s) {
+long scanner_get_errors (Scanner s) {
   /* return the number of errors reported by the scanner.
    * if the scanner pointer is invalid, return an error.
    */
-  return (s ? s->err : 1);
+  return (s ? s->err : 1L);
 }
 
 /* scanner_get_string(): get a copy of the current token's lexeme. the
@@ -1206,7 +1223,7 @@ ScannerToken scanner_next (Scanner s) {
   /* get the token start character, as well as the previous character
    * in the stream, if such a character exists.
    */
-  char prev = (s->tok > s->buf ? *(s->tok - 1) : T_ERR);
+  char prev = (s->tok > s->buf ? *(s->tok - 1L) : T_ERR);
   char look = *s->tok;
 
   /* determine the state to move into. */

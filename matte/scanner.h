@@ -50,9 +50,10 @@ struct _Scanner {
   /* @buf: buffer string to be scanned.
    * @buf_end: end of the buffer string.
    * @buf_size: number of valid characters in the buffer.
+   * @buf_pos: offset position of the buffer in the file, if any.
    */
   char *buf, *buf_end;
-  int buf_size;
+  long buf_size, buf_pos;
 
   /* @tok: start of the current token/lexeme.
    * @tok_end: end of the current token/lexeme.
@@ -64,7 +65,7 @@ struct _Scanner {
   /* @lineno: current line number in the input stream.
    * @err: number of errors encountered by the scanner.
    */
-  int lineno, err;
+  long lineno, err;
 };
 
 /* function declarations (scanner.c): */
@@ -85,11 +86,13 @@ int scanner_set_string (Scanner s, const char *str);
 
 const char *scanner_get_filename (Scanner s);
 
-int scanner_get_lineno (Scanner s);
+long scanner_get_lineno (Scanner s);
+
+long scanner_get_pos (Scanner s);
 
 char *scanner_get_linestr (Scanner s);
 
-int scanner_get_errors (Scanner s);
+long scanner_get_errors (Scanner s);
 
 char *scanner_get_string (Scanner s);
 

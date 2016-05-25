@@ -245,7 +245,7 @@ static void errorfn (Parser p, const char *format, ...) {
   fflush(stdout);
 
   /* print the initial portion of the error message. */
-  fprintf(stderr, "%s:%d: error: ",
+  fprintf(stderr, "%s:%ld: error: ",
           scanner_get_filename(p->scan),
           scanner_get_lineno(p->scan));
 
@@ -587,6 +587,10 @@ PARSE_RULE (postfix)
  *  | T_ELEM_LDIV mult
  *  | %empty
  *  ;
+ */
+/* FIXME: add input positioning information to all important ast-nodes.
+ * FIXME: better yet, do: ast_new_with_parms() => ast_new_with_data()
+ * FIXME: whenever possible.
  */
 PARSE_RULE (mult)
   node = parse_postfix(p);
@@ -1719,6 +1723,9 @@ int parser_set_string (Parser p, const char *str) {
  *  newly allocated and initialized matte ast-node.
  */
 AST ast_new_with_data (Parser p) {
+/*FIXME
+AST ast_new_with_data (Parser p, AST down) {
+  FIXME*/
   /* declare required variables:
    *  @node: new matte ast-node.
    *  @str: string value from scanner.
@@ -1731,8 +1738,15 @@ AST ast_new_with_data (Parser p) {
   if (!node)
     return NULL;
 
-  /* set the display flag. */
+  /* set the position and display flag. */
+  ast_set_pos(node, scanner_get_pos(p->scan));
   ast_set_disp(node, false);
+
+  /* add the downstream node, if requested. */
+/*FIXME
+  if (down)
+    ast_add_down(node, down);
+  FIXME*/
 
   /* determine whether we can store any simple data in the node. */
   switch (p->tok) {

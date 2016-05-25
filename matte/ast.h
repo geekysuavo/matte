@@ -61,11 +61,13 @@ struct _AST {
    * @node_data: data in the syntax tree node.
    * @node_disp: display flag of the node.
    * @has_str: if the node data is a string.
+   * @pos: position in the input of the node.
    */
   ASTNodeType node_type;
   SymbolData node_data;
   bool node_disp;
   bool has_str;
+  long pos;
 
   /* @syms: symbol table for an ast-node and its downstream sub-tree.
    * @sym_table: table of the current node's symbol.
@@ -113,6 +115,8 @@ void ast_set_string (AST node, const char *value);
 void ast_set_type (AST node, ASTNodeType type);
 
 void ast_set_disp (AST node, bool disp);
+
+void ast_set_pos (AST node, long pos);
 
 int ast_add_down (AST node, AST down);
 

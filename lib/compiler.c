@@ -493,7 +493,18 @@ static void write_statements (Compiler c, AST node) {
  *  @syms: symbol table to access.
  */
 static void write_symbols (Compiler c, Symbols syms) {
-  /* loop once to write all non-global, non-temp variables. */
+  /* loop once to write all input arguments. */
+  for (long i = 0; i < syms->n; i++) {
+    /* write only input arguments. */
+    if (!symbol_has_type(syms, i, SYMBOL_ARGIN)) continue;
+
+    /* write the argin symbol. */
+    W("  Object %s = object_list_get((ObjectList) argin, %ld);\n",
+      symbol_name(syms, i), i);
+  }
+
+  /* loop again to write all non-global, non-temp variables. */
+  W("\n");
   for (long i = 0; i < syms->n; i++) {
     /* do not write globals or temps. only write local vars. */
     if (!symbol_has_type(syms, i, SYMBOL_VAR) ||
@@ -593,14 +604,6 @@ static void write_functions (Compiler c) {
     W("\nObject matte_%s (Object argin) {\n",
       ast_get_string(node->down[1]));
 
-    down = node->down[2];
-    if (down) {
-      for (j = 0; j < down->n_down; j++)
-        W("  Object %s = object_list_get((ObjectList) argin, %d);\n",
-          ast_get_string(down->down[j]), j);
-    }
-
-    W("\n");
     write_symbols(c, node->syms);
 
     W("\n");

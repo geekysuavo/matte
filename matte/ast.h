@@ -67,7 +67,13 @@ struct _AST {
   SymbolData node_data;
   bool node_disp;
   bool has_str;
-  long pos;
+
+  /* @fname: name of the file which spawned the node, if any.
+   * @lineno: line number in the buffer that spawned the node.
+   * @pos: absolute position in the buffer that spawned the node.
+   */
+  char *fname;
+  long line, pos;
 
   /* @syms: symbol table for an ast-node and its downstream sub-tree.
    * @sym_table: table of the current node's symbol.
@@ -116,7 +122,7 @@ void ast_set_type (AST node, ASTNodeType type);
 
 void ast_set_disp (AST node, bool disp);
 
-void ast_set_pos (AST node, long pos);
+void ast_set_source (AST node, const char *fname, long line, long pos);
 
 int ast_add_down (AST node, AST down);
 

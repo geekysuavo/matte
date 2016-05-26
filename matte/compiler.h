@@ -72,7 +72,7 @@ struct _Compiler {
 
   /* @err: number of errors encountered by the compiler.
    */
-  int err;
+  long err;
 };
 
 /* function declarations (compiler.c): */

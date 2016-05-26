@@ -102,7 +102,7 @@ int object_disp (Object obj, const char *var) {
 
   /* return if the object is untyped or has no display function. */
   if (!type || !type->fn_disp)
-    fail("%s (type %s) has no display method", var, obj->type->name);
+    fail("%s (type %s) has no disp method", var, obj->type->name);
 
   /* return the result of the display function. */
   return type->fn_disp(obj, var);

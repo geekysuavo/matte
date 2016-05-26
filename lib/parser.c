@@ -134,6 +134,20 @@ static inline bool accept (Parser p, ScannerToken tok) {
   return false;
 }
 
+/* ast_set_context(): set the source context of a matte ast-node using
+ * data contained in a matte parser's associated scanner.
+ *
+ * arguments:
+ *  @p: matte parser to access. must be non-null.
+ *  @node: ast-node to modify. must be non-null.
+ */
+static inline void ast_set_context (Parser p, AST node) {
+  /* set the filename, line number and position. */
+  ast_set_source(node, scanner_get_filename(p->scan),
+                       scanner_get_lineno(p->scan),
+                       scanner_get_pos(p->scan));
+}
+
 /* valid_lvalue(): check that a given sub-tree is a valid left-hand side
  * of an expression.
  *
@@ -330,14 +344,14 @@ PARSE_RULE (qualifier)
     if (!match(p, T_IDENT))
       PARSE_ERR_MISSING_TOKEN(T_IDENT);
 
-    node = ast_new_with_data(p);
+    node = ast_new_with_data(p, NULL);
     return ast_new_with_parms(T_AS, false, node);
   }
   else if (accept(p, T_POINT)) {
     if (!match(p, T_IDENT))
       PARSE_ERR_MISSING_TOKEN(T_IDENT);
 
-    node = ast_new_with_data(p);
+    node = ast_new_with_data(p, NULL);
     return ast_new_with_parms(T_POINT, false, node);
   }
   else if (accept(p, T_PAREN_OPEN)) {
@@ -375,7 +389,7 @@ PARSE_RULE (qualifier)
  */
 PARSE_RULE (name)
   if (match(p, T_IDENT)) {
-    node = ast_new_with_data(p);
+    node = ast_new_with_data(p, NULL);
   }
   else
     return NULL;
@@ -415,6 +429,7 @@ PARSE_RULE (asterisk)
 
   if (match(p, T_IDENT)) {
     node = ast_new_with_type(AST_TYPE_FN_HANDLE);
+    ast_set_context(p, node);
     next(p);
   }
   else if (accept(p, T_PAREN_OPEN)) {
@@ -456,7 +471,7 @@ PARSE_RULE (value)
            match(p, T_FLOAT) ||
            match(p, T_COMPLEX) ||
            match(p, T_STRING)) {
-    node = ast_new_with_data(p);
+    node = ast_new_with_data(p, NULL);
   }
   else if (accept(p, T_PAREN_OPEN)) {
     node = parse_expr(p);
@@ -466,7 +481,7 @@ PARSE_RULE (value)
     PARSE_REQUIRE(T_PAREN_CLOSE);
   }
   else if (p->end_valid && (match(p, T_END) || match(p, T_COLON))) {
-    node = ast_new_with_data(p);
+    node = ast_new_with_data(p, NULL);
   }
 
   return node;
@@ -482,7 +497,7 @@ PARSE_RULE (value)
  */
 PARSE_RULE (prefix)
   if (match(p, T_INC) || match(p, T_DEC)) {
-    node = ast_new_with_data(p);
+    node = ast_new_with_data(p, NULL);
     ast_add_down(node, parse_name(p));
     if (!ast_last(node))
       PARSE_ERR_MISSING("name");
@@ -512,13 +527,10 @@ PARSE_RULE (power)
     return NULL;
 
   if (match(p, T_HTR) || match(p, T_TR)) {
-    node = ast_new_with_parms(p->tok, false, node);
-    next(p);
+    node = ast_new_with_data(p, node);
   }
   else if (match(p, T_POW) || match(p, T_ELEM_POW)) {
-    node = ast_new_with_parms(p->tok, false, node);
-    next(p);
-
+    node = ast_new_with_data(p, node);
     ast_add_down(node, parse_prefix(p));
     if (!ast_last(node))
       PARSE_ERR_MISSING("expression");
@@ -541,7 +553,7 @@ PARSE_RULE (unary)
     node = parse_power(p);
   }
   else if (match(p, T_MINUS) || match(p, T_NOT)) {
-    node = ast_new_with_data(p);
+    node = ast_new_with_data(p, NULL);
     ast_add_down(node, parse_power(p));
     if (!ast_last(node))
       PARSE_ERR_MISSING("expression");
@@ -567,8 +579,7 @@ PARSE_RULE (postfix)
     return NULL;
 
   if (match(p, T_INC) || match(p, T_DEC)) {
-    node = ast_new_with_parms(p->tok, false, node);
-    next(p);
+    node = ast_new_with_data(p, node);
   }
 
   return node;
@@ -588,10 +599,6 @@ PARSE_RULE (postfix)
  *  | %empty
  *  ;
  */
-/* FIXME: add input positioning information to all important ast-nodes.
- * FIXME: better yet, do: ast_new_with_parms() => ast_new_with_data()
- * FIXME: whenever possible.
- */
 PARSE_RULE (mult)
   node = parse_postfix(p);
   if (!node)
@@ -600,9 +607,7 @@ PARSE_RULE (mult)
   while (match(p, T_MUL) || match(p, T_ELEM_MUL) ||
          match(p, T_DIV) || match(p, T_ELEM_DIV) ||
          match(p, T_LDIV) || match(p, T_ELEM_LDIV)) {
-    node = ast_new_with_parms(p->tok, false, node);
-    next(p);
-
+    node = ast_new_with_data(p, node);
     ast_add_down(node, parse_postfix(p));
     if (!ast_last(node))
       PARSE_ERR_MISSING("expression");
@@ -627,9 +632,7 @@ PARSE_RULE (add)
     return NULL;
 
   while (match(p, T_PLUS) || match(p, T_MINUS)) {
-    node = ast_new_with_parms(p->tok, false, node);
-    next(p);
-
+    node = ast_new_with_data(p, node);
     ast_add_down(node, parse_mult(p));
     if (!ast_last(node))
       PARSE_ERR_MISSING("expression");
@@ -697,9 +700,7 @@ PARSE_RULE (reln)
   while (match(p, T_LT) || match(p, T_LE) ||
          match(p, T_GT) || match(p, T_GE) ||
          match(p, T_EQ) || match(p, T_NE)) {
-    node = ast_new_with_parms(p->tok, false, node);
-    next(p);
-
+    node = ast_new_with_data(p, node);
     ast_add_down(node, parse_range(p));
     if (!ast_last(node))
       PARSE_ERR_MISSING("expression");
@@ -723,9 +724,7 @@ PARSE_RULE (ewand)
     return NULL;
 
   while (match(p, T_ELEM_AND)) {
-    node = ast_new_with_parms(p->tok, false, node);
-    next(p);
-
+    node = ast_new_with_data(p, node);
     ast_add_down(node, parse_reln(p));
     if (!ast_last(node))
       PARSE_ERR_MISSING("expression");
@@ -747,9 +746,7 @@ PARSE_RULE (ewor)
     return NULL;
 
   while (match(p, T_ELEM_OR)) {
-    node = ast_new_with_parms(p->tok, false, node);
-    next(p);
-
+    node = ast_new_with_data(p, node);
     ast_add_down(node, parse_ewand(p));
     if (!ast_last(node))
       PARSE_ERR_MISSING("expression");
@@ -773,9 +770,7 @@ PARSE_RULE (lgand)
     return NULL;
 
   while (match(p, T_AND)) {
-    node = ast_new_with_parms(p->tok, false, node);
-    next(p);
-
+    node = ast_new_with_data(p, node);
     ast_add_down(node, parse_ewor(p));
     if (!ast_last(node))
       PARSE_ERR_MISSING("expression");
@@ -797,9 +792,7 @@ PARSE_RULE (lgor)
     return NULL;
 
   while (match(p, T_OR)) {
-    node = ast_new_with_parms(p->tok, false, node);
-    next(p);
-
+    node = ast_new_with_data(p, node);
     ast_add_down(node, parse_lgand(p));
     if (!ast_last(node))
       PARSE_ERR_MISSING("expression");
@@ -838,9 +831,7 @@ PARSE_RULE (expr)
     if (!valid_lvalue(node))
       PARSE_ERR_LVALUE;
 
-    node = ast_new_with_parms(p->tok, false, node);
-    next(p);
-
+    node = ast_new_with_data(p, node);
     ast_add_down(node, parse_expr(p));
     if (!ast_last(node))
       PARSE_ERR_MISSING("expression");
@@ -870,7 +861,10 @@ PARSE_RULE (expr)
 
     AST lhs = ast_copy(node);
     lhs = ast_new_with_parms(T_ASSIGN, false, lhs);
+    ast_set_context(p, lhs);
+
     node = ast_new_with_parms(tbin, false, node);
+    ast_set_context(p, node);
     next(p);
 
     ast_add_down(node, parse_expr(p));
@@ -897,7 +891,7 @@ int parse_ids (Parser p, AST node) {
   int n = 0;
 
   while (match(p, T_IDENT)) {
-    ast_add_down(node, ast_new_with_data(p));
+    ast_add_down(node, ast_new_with_data(p, NULL));
     n++;
   }
 
@@ -947,7 +941,7 @@ PARSE_RULE (try)
   if (!match(p, T_IDENT))
     PARSE_ERR_MISSING("catch variable");
 
-  ast_add_down(node, ast_new_with_data(p));
+  ast_add_down(node, ast_new_with_data(p, NULL));
 
   PARSE_REQUIRE_STMT_END;
   ast_add_down(node, parse_stmts(p));
@@ -1055,7 +1049,7 @@ PARSE_RULE (for)
     PARSE_ERR_MISSING_TOKEN(T_IDENT);
 
   node = ast_new_with_type(T_FOR);
-  ast_add_down(node, ast_new_with_data(p));
+  ast_add_down(node, ast_new_with_data(p, NULL));
 
   PARSE_REQUIRE(T_ASSIGN);
   ast_add_down(node, parse_lgor(p));
@@ -1139,7 +1133,7 @@ PARSE_RULE (stmt)
   PARSE_NEWLINES;
 
   if (match(p, T_BREAK) || match(p, T_CONTINUE) || match(p, T_RETURN))
-    node = ast_new_with_data(p);
+    node = ast_new_with_data(p, NULL);
   else if (match(p, T_PERSISTENT))
     node = parse_persist(p);
   else if (match(p, T_GLOBAL))
@@ -1208,14 +1202,14 @@ PARSE_RULE (args)
   if (!match(p, T_IDENT))
     return NULL;
 
-  node = ast_new_with_data(p);
+  node = ast_new_with_data(p, NULL);
   node = ast_new_with_parms(AST_TYPE_IDS, false, node);
 
   while (accept(p, T_COMMA)) {
     if (!match(p, T_IDENT))
       PARSE_ERR_MISSING_TOKEN(T_IDENT);
 
-    ast_add_down(node, ast_new_with_data(p));
+    ast_add_down(node, ast_new_with_data(p, NULL));
   }
 
   return node;
@@ -1248,14 +1242,14 @@ PARSE_RULE (function)
 
   node = ast_new_with_type(AST_TYPE_FUNCTION);
   if (match(p, T_IDENT)) {
-    argout = ast_new_with_data(p);
+    argout = ast_new_with_data(p, NULL);
 
     if (accept(p, T_ASSIGN)) {
       ast_add_down(node, argout);
       if (!match(p, T_IDENT))
         PARSE_ERR_MISSING("function name");
 
-      ast_add_down(node, ast_new_with_data(p));
+      ast_add_down(node, ast_new_with_data(p, NULL));
     }
     else {
       ast_add_down(node, NULL);
@@ -1271,7 +1265,7 @@ PARSE_RULE (function)
     if (!match(p, T_IDENT))
       PARSE_ERR_MISSING("function name");
 
-    ast_add_down(node, ast_new_with_data(p));
+    ast_add_down(node, ast_new_with_data(p, NULL));
   }
   else PARSE_ERR;
 
@@ -1305,7 +1299,7 @@ PARSE_RULE (properties)
   node = ast_new_with_type(T_PROPERTIES);
 
   while (match(p, T_IDENT)) {
-    ast_add_down(node, ast_new_with_data(p));
+    ast_add_down(node, ast_new_with_data(p, NULL));
 
     if (accept(p, T_ASSIGN)) {
       ast_add_down(node, parse_value(p));
@@ -1359,7 +1353,7 @@ PARSE_RULE (events)
   node = ast_new_with_type(T_EVENTS);
 
   while (match(p, T_IDENT)) {
-    ast_add_down(node, ast_new_with_data(p));
+    ast_add_down(node, ast_new_with_data(p, NULL));
     PARSE_REQUIRE_STMT_END;
   }
 
@@ -1382,7 +1376,7 @@ PARSE_RULE (enums)
   node = ast_new_with_type(T_ENUM);
 
   while (match(p, T_IDENT)) {
-    ast_add_down(node, ast_new_with_data(p));
+    ast_add_down(node, ast_new_with_data(p, NULL));
 
     if (accept(p, T_PAREN_OPEN)) {
       ast_add_down(node, parse_value(p));
@@ -1411,13 +1405,13 @@ PARSE_RULE (inherits)
   if (!match(p, T_IDENT))
     PARSE_ERR_MISSING_TOKEN(T_IDENT);
 
-  ast_add_down(node, ast_new_with_data(p));
+  ast_add_down(node, ast_new_with_data(p, NULL));
 
   while (accept(p, T_ELEM_AND)) {
     if (!match(p, T_IDENT))
       PARSE_ERR_MISSING_TOKEN(T_IDENT);
 
-    ast_add_down(node, ast_new_with_data(p));
+    ast_add_down(node, ast_new_with_data(p, NULL));
   }
 
   return node;
@@ -1437,7 +1431,7 @@ PARSE_RULE (class)
   if (!match(p, T_IDENT))
     PARSE_ERR_MISSING_TOKEN(T_IDENT);
 
-  node = ast_new_with_data(p);
+  node = ast_new_with_data(p, NULL);
   node = ast_new_with_parms(AST_TYPE_CLASS, false, node);
   ast_add_down(node, parse_inherits(p));
 
@@ -1594,7 +1588,7 @@ Parser parser_new (Object args) {
   p->end_valid = false;
 
   /* initialize the error count. */
-  p->err = 0;
+  p->err = 0L;
 
   /* return the new parser. */
   return p;
@@ -1718,14 +1712,12 @@ int parser_set_string (Parser p, const char *str) {
  *
  * arguments:
  *  @p: matte parser to access.
+ *  @down: downstream node, or NULL for none.
  *
  * returns:
  *  newly allocated and initialized matte ast-node.
  */
-AST ast_new_with_data (Parser p) {
-/*FIXME
 AST ast_new_with_data (Parser p, AST down) {
-  FIXME*/
   /* declare required variables:
    *  @node: new matte ast-node.
    *  @str: string value from scanner.
@@ -1738,15 +1730,13 @@ AST ast_new_with_data (Parser p, AST down) {
   if (!node)
     return NULL;
 
-  /* set the position and display flag. */
-  ast_set_pos(node, scanner_get_pos(p->scan));
+  /* set the context and display flag. */
+  ast_set_context(p, node);
   ast_set_disp(node, false);
 
   /* add the downstream node, if requested. */
-/*FIXME
   if (down)
     ast_add_down(node, down);
-  FIXME*/
 
   /* determine whether we can store any simple data in the node. */
   switch (p->tok) {

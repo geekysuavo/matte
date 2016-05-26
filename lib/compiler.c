@@ -53,6 +53,60 @@ operators[] = {
   { T_ERR,           0, NULL                }
 };
 
+/* context(): build a context string from information contained within
+ * a matte ast-node.
+ *
+ * arguments:
+ *  @node: matte ast-node to access.
+ *
+ * returns:
+ *  string containing the immediate context surrounding the node.
+ */
+static char *context (AST node) {
+  /* declare required variables:
+   *  @buf: input buffer and final output string.
+   *  @fh: file handle for reading source data.
+   *  @i: general-purpose loop counter.
+   */
+  char *buf;
+  long i, n;
+  FILE *fh;
+
+  /* return null if the node is null or has invalid source info. */
+  if (!node || !node->fname || !node->line || node->pos < 0)
+    return NULL;
+
+  /* attempt to open the source file. return null on failure. */
+  fh = fopen(node->fname, "r");
+  if (!fh)
+    return NULL;
+
+  /* allocate the buffer string. */
+  buf = (char*) malloc(4096 * sizeof(char));
+  if (!buf) {
+    fclose(fh);
+    return NULL;
+  }
+
+  /* loop over the lines of the source file. */
+  for (i = n = 0; i < node->line; i++, n += strlen(buf)) {
+    fgets(buf, 4096, fh);
+    buf[4095] = '\0';
+  }
+
+  /* add spaces to place the cursor into the output string. */
+  n -= strlen(buf);
+  for (i = n; i < node->pos; i++)
+    strcat(buf, " ");
+
+  /* append the cursor onto the output string. */
+  strcat(buf, "^\n");
+
+  /* close the source file and return the output string. */
+  fclose(fh);
+  return buf;
+}
+
 /* simplify_concats(): simplify concatenation operations by compressing
  * trivial operation groups.
  *
@@ -583,6 +637,7 @@ static void write_globals (Compiler c) {
         gs->sym_name[i][0] == '_')
      continue;
 
+    /* write the global variable declaration. */
     W("Object %s = NULL;\n", gs->sym_name[i]);
   }
 }
@@ -940,7 +995,7 @@ Compiler compiler_new (Object args) {
   c->ccode = string_new(NULL);
 
   /* initialize the error count. */
-  c->err = 0;
+  c->err = 0L;
 
   /* return the new compiler. */
   return c;

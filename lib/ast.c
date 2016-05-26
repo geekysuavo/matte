@@ -36,7 +36,11 @@ AST ast_new (Object args) {
   /* initialize the node data. */
   node->node_data.iv = 0L;
   node->has_str = false;
-  node->pos = 0L;
+
+  /* initialize the node source information. */
+  node->fname = NULL;
+  node->line = 0L;
+  node->pos = -1L;
 
   /* initialize the symbol table. */
   node->syms = NULL;
@@ -200,9 +204,11 @@ void ast_free (AST node) {
   if (node->has_str && node->node_data.sv)
     free(node->node_data.sv);
 
+  /* free the node source filename. */
+  free(node->fname);
+
   /* free the symbol table. */
-  if (node->syms)
-    object_free((Object) node->syms);
+  object_free((Object) node->syms);
 }
 
 /* ast_get_type(): get the type of a matte ast-node.
@@ -348,14 +354,23 @@ void ast_set_disp (AST node, bool disp) {
   node->node_disp = disp;
 }
 
-/* ast_set_pos(): set the position value of a matte ast-node.
+/* ast_set_source(): set the source location of a matte ast-node.
  *
  * arguments:
  *  @node: matte ast-node to modify.
+ *  @fname: source filename, or NULL if none.
+ *  @line: source line number.
+ *  @pos: source byte position.
  */
-inline void ast_set_pos (AST node, long pos) {
+inline void ast_set_source (AST node, const char *fname,
+                            long line, long pos) {
+  /* return if the node is null. */
+  if (!node)
+    return;
+
   /* set the position data. */
-  if (!node) return;
+  node->fname = strdup(fname);
+  node->line = line;
   node->pos = pos;
 }
 

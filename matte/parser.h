@@ -46,7 +46,7 @@ struct _Parser {
 
   /* @err: number of errors encountered by the parser.
    */
-  int err;
+  long err;
 };
 
 /* function declarations (parser.c): */
@@ -65,7 +65,7 @@ int parser_set_file (Parser p, const char *fname);
 
 int parser_set_string (Parser p, const char *str);
 
-AST ast_new_with_data (Parser p);
+AST ast_new_with_data (Parser p, AST down);
 
 #endif /* !__MATTE_PARSER_H__ */
 

@@ -5,7 +5,7 @@ end
 
 function gtest
   global x;
-  x *= -0.1
+  x *= -0.1 + foo * bar
 end
 
 x = 55

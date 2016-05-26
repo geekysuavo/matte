@@ -237,6 +237,7 @@ static int valid_lvalue (AST node) {
  * arguments:
  *  @p: matte parser to access and modify.
  *  @format: printf-style error message format string.
+ *  @...: arguments corresponding to the format string.
  */
 static void errorfn (Parser p, const char *format, ...) {
   /* declare required variables:

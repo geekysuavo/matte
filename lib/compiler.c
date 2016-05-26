@@ -12,6 +12,13 @@
  */
 #define W(...) string_appendf(c->ccode, __VA_ARGS__)
 
+/* errorfn(): macro function to print an immediate compiler error message.
+ */
+#define errorfn(...) \
+  { char *errorfn_str = errorstr(__VA_ARGS__); \
+    if (errorfn_str) fprintf(stderr, "%s", errorfn_str); \
+    free(errorfn_str); }
+
 /* operators: array of c function names that are mapped to overloadable
  * operations in the matte compiler.
  */
@@ -53,22 +60,29 @@ operators[] = {
   { T_ERR,           0, NULL                }
 };
 
-/* context(): build a context string from information contained within
- * a matte ast-node.
+/* errorstr(): build a contextual error string from information contained
+ * within a matte ast-node.
  *
  * arguments:
- *  @node: matte ast-node to access.
+ *  @node: matte ast-node to access for context data.
+ *  @format: printf-style error message format string.
+ *  @...: arguments corresponding to the format string.
  *
  * returns:
- *  string containing the immediate context surrounding the node.
+ *  string containing the immediate context surrounding the node, combined
+ *  with formatted error information.
  */
-static char *context (AST node) {
+static char *errorstr (AST node, const char *format, ...) {
   /* declare required variables:
-   *  @buf: input buffer and final output string.
+   *  @str: object for manipulating output string data.
+   *  @vl: variable-length argument list for messages.
+   *  @buf: input buffer for each incoming line.
    *  @fh: file handle for reading source data.
    *  @i: general-purpose loop counter.
    */
-  char *buf;
+  char buf[4096], *str;
+  int nstr, nout;
+  va_list vl;
   long i, n;
   FILE *fh;
 
@@ -76,35 +90,67 @@ static char *context (AST node) {
   if (!node || !node->fname || !node->line || node->pos < 0)
     return NULL;
 
-  /* attempt to open the source file. return null on failure. */
+  /* allocate the buffer. */
+  nstr = strlen(node->fname) + 32;
+  str = (char*) malloc(nstr * sizeof(char));
+  if (!str)
+    return NULL;
+
+  /* initialize the output string. */
+  snprintf(str, nstr, "%s:%ld: error: ", node->fname, node->line);
+  i = strlen(str);
+
+  /* loop until the buffer contains the complete result. */
+  nstr += strlen(format);
+  do {
+    /* double the string size and reallocate. */
+    nstr *= 2;
+    str = (char*) realloc(str, nstr * sizeof(char));
+    if (!str)
+      return NULL;
+
+    /* print the error message. */
+    va_start(vl, format);
+    nout = vsnprintf(str + i, nstr, format, vl);
+    va_end(vl);
+  }
+  while (nout >= nstr);
+
+  /* append a newline to the output string. */
+  strcat(str, "\n");
+
+  /* attempt to open the source file. */
   fh = fopen(node->fname, "r");
-  if (!fh)
-    return NULL;
+  if (fh) {
+    /* loop over the lines of the source file. */
+    for (i = n = 0; i < node->line; i++, n += strlen(buf)) {
+      fgets(buf, 4096, fh);
+      buf[4095] = '\0';
+    }
 
-  /* allocate the buffer string. */
-  buf = (char*) malloc(4096 * sizeof(char));
-  if (!buf) {
+    /* close the source file. */
     fclose(fh);
-    return NULL;
+
+    /* reallocate the output string to contain the context. */
+    nstr += 2 * strlen(buf);
+    str = (char*) realloc(str, nstr * sizeof(char));
+    if (!str)
+      return NULL;
+
+    /* append the source line to the output string. */
+    strcat(str, buf);
+
+    /* add spaces to place the cursor into the output string. */
+    n -= strlen(buf);
+    for (i = n; i < node->pos; i++)
+      strcat(str, " ");
+
+    /* append the cursor onto the output string. */
+    strcat(str, "^\n");
   }
 
-  /* loop over the lines of the source file. */
-  for (i = n = 0; i < node->line; i++, n += strlen(buf)) {
-    fgets(buf, 4096, fh);
-    buf[4095] = '\0';
-  }
-
-  /* add spaces to place the cursor into the output string. */
-  n -= strlen(buf);
-  for (i = n; i < node->pos; i++)
-    strcat(buf, " ");
-
-  /* append the cursor onto the output string. */
-  strcat(buf, "^\n");
-
-  /* close the source file and return the output string. */
-  fclose(fh);
-  return buf;
+  /* return the output string. */
+  return str;
 }
 
 /* simplify_concats(): simplify concatenation operations by compressing
@@ -396,8 +442,10 @@ static int resolve_symbols (Compiler c, AST node, AST root) {
     /* FIXME: if still unresolved, search the path. */
 
     /* check if no symbol was found. */
-    if (!node->sym_table || !node->sym_index)
-      fail("symbol '%s' is undefined", ast_get_string(node));
+    if (!node->sym_table || !node->sym_index) {
+      errorfn(node, "symbol '%s' is undefined", ast_get_string(node));
+      return 0;
+    }
   }
   else if (ntype == AST_TYPE_FUNCTION) {
     /* traverse only into the statement list. */

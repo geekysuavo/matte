@@ -509,27 +509,32 @@ Vector range_transpose (Range a) {
 /* range_horzcat(): horizontal concatenation function for ranges.
  */
 Vector range_horzcat (int n, va_list vl) {
-  Vector x = vector_new_with_length(n);
+  Vector x = vector_new(NULL);
   if (!x)
     return NULL;
 
-  for (long i = 0; i < x->n; i++) {
+  for (long i = 0, ix = 0; i < n; i++) {
     Object obj = (Object) va_arg(vl, Object);
 
     if (IS_INT(obj)) {
-      x->data[i] = (double) int_get_value((Int) obj);
+      if (!vector_set_length(x, x->n + 1)) {
+        object_free((Object) x);
+        return NULL;
+      }
+
+      x->data[ix++] = (double) int_get_value((Int) obj);
     }
     else if (IS_RANGE(obj)) {
       Range r = (Range) obj;
       long nr = range_get_length(r);
 
-      if (!vector_set_length(x, i + nr)) {
+      if (!vector_set_length(x, x->n + nr)) {
         object_free((Object) x);
         return NULL;
       }
 
-      for (long ir = 0, elem = r->begin; ir < nr; ir++, i++, elem += r->step)
-        x->data[i] = (double) elem;
+      for (long elem = r->begin; elem <= r->end; elem += r->step)
+        x->data[ix++] = (double) elem;
     }
     else {
       object_free((Object) x);

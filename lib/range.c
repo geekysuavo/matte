@@ -523,7 +523,7 @@ Vector range_horzcat (int n, va_list vl) {
       Range r = (Range) obj;
       long nr = range_get_length(r);
 
-      if (!vector_set_length(x, x->n + nr)) {
+      if (!vector_set_length(x, i + nr)) {
         object_free((Object) x);
         return NULL;
       }

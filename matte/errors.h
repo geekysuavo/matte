@@ -14,6 +14,12 @@
 #include <string.h>
 #include <errno.h>
 
+/* definitions of useful ansi terminal codes for generating pretty text.
+ */
+#define ANSI_NORM "\x1B[0m"
+#define ANSI_BOLD "\x1B[01m"
+#define ANSI_RED  "\x1B[01;31m"
+
 /* error(): macro function to add an error message into the global error
  * message array.
  */

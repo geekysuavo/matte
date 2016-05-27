@@ -275,7 +275,7 @@ static void errorfn (Parser p, const char *format, ...) {
   fflush(stdout);
 
   /* print the initial portion of the error message. */
-  fprintf(stderr, "%s:%ld: error: ",
+  fprintf(stderr, ANSI_BOLD "%s:%ld:" ANSI_RED " error: " ANSI_NORM,
           scanner_get_filename(p->scan),
           scanner_get_lineno(p->scan));
 
@@ -1563,7 +1563,8 @@ static int parse (Parser p) {
     p->err += p->scan->err;
 
     /* output a final error message. */
-    fprintf(stderr, "%s: there were errors. cannot continue.\n",
+    fprintf(stderr, ANSI_BOLD "%s:" ANSI_NORM
+            " there were errors. cannot continue.\n",
             scanner_get_filename(p->scan));
 
     /* free the abstract syntax tree. */

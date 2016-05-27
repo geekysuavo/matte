@@ -148,7 +148,8 @@ static void errorfn (Scanner s, const char *format, ...) {
   fflush(stdout);
 
   /* print the initial portion of the error message. */
-  fprintf(stderr, "%s:%ld: error: ", s->fname ? s->fname : "(string)",
+  fprintf(stderr, ANSI_BOLD "%s:%ld:" ANSI_RED " error: " ANSI_NORM,
+          s->fname ? s->fname : "(string)",
           s->lineno);
 
   /* print the custom error message and a newline. */
@@ -321,7 +322,7 @@ static ScannerToken state_str (Scanner s, char ter) {
 
   /* return an error. */
   pushback(s, 1);
-  scanerr(s, "malformed string %s", s->tok);
+  scanerr(s, "malformed string " ANSI_BOLD "%s" ANSI_NORM, s->tok);
   return T_ERR;
 }
 
@@ -362,7 +363,7 @@ static ScannerToken state_float_end (Scanner s) {
 
   /* if no digits, return an error. */
   if (cur == '-' || cur == '+') {
-    scanerr(s, "malformed float '%s'", s->tok);
+    scanerr(s, "malformed float '" ANSI_BOLD "%s" ANSI_NORM "'", s->tok);
     return T_ERR;
   }
 
@@ -389,7 +390,7 @@ static ScannerToken state_float_exp (Scanner s) {
 
   /* if no digits, return an error. */
   pushback(s, 1);
-  scanerr(s, "malformed float '%s'", s->tok);
+  scanerr(s, "malformed float '" ANSI_BOLD "%s" ANSI_NORM "'", s->tok);
   return T_ERR;
 }
 
@@ -420,7 +421,7 @@ static ScannerToken state_float (Scanner s) {
     case 'E':
       /* if something like '1.e', return an error. */
       if (cur == '.') {
-        scanerr(s, "malformed float '%s'", s->tok);
+        scanerr(s, "malformed float '" ANSI_BOLD "%s" ANSI_NORM "'", s->tok);
         return T_ERR;
       }
 

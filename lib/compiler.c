@@ -12,12 +12,20 @@
  */
 #define W(...) string_appendf(c->ccode, __VA_ARGS__)
 
-/* errorfn(): macro function to print an immediate compiler error message.
+/* S(): macro function for obtaining the symbol name of a matte ast-node.
  */
-#define errorfn(...) \
-  { char *errorfn_str = errorstr(__VA_ARGS__); \
-    if (errorfn_str) fprintf(stderr, "%s", errorfn_str); \
-    free(errorfn_str); }
+#define S(nd) ast_get_symbol_name(nd)
+
+/* E(): macro function for obtaining an error string from a matte ast-node.
+ */
+#define E(nd, ...) ast_error_string(c, nd, true, __VA_ARGS__)
+
+/* asterr(): macro function to print an immediate compiler error message
+ * using information from a matte ast-node.
+ */
+#define asterr(nd, ...) \
+  { ast_error_string(c, nd, false, __VA_ARGS__); \
+    if (c->cerr) fprintf(stderr, "%s", c->cerr); }
 
 /* operators: array of c function names that are mapped to overloadable
  * operations in the matte compiler.
@@ -60,19 +68,22 @@ operators[] = {
   { T_ERR,           0, NULL                }
 };
 
-/* errorstr(): build a contextual error string from information contained
- * within a matte ast-node.
+/* ast_error_string(): build a contextual error string from information
+ * contained within a matte ast-node, and store it in the compiler for
+ * later use.
  *
  * arguments:
+ *  @c: matte compiler to store the string into.
  *  @node: matte ast-node to access for context data.
+ *  @escape: whether or not to escape newlines.
  *  @format: printf-style error message format string.
  *  @...: arguments corresponding to the format string.
  *
  * returns:
- *  string containing the immediate context surrounding the node, combined
- *  with formatted error information.
+ *  pointer to the error string maintained by the compiler object.
  */
-static char *errorstr (AST node, const char *format, ...) {
+static char *ast_error_string (Compiler c, AST node, bool escape,
+                               const char *format, ...) {
   /* declare required variables:
    *  @str: object for manipulating output string data.
    *  @vl: variable-length argument list for messages.
@@ -86,6 +97,12 @@ static char *errorstr (AST node, const char *format, ...) {
   long i, n;
   FILE *fh;
 
+  /* free the compiler error string, if allocated. */
+  if (c->cerr) {
+    free(c->cerr);
+    c->cerr = NULL;
+  }
+
   /* return null if the node is null or has invalid source info. */
   if (!node || !node->fname || !node->line || node->pos < 0)
     return NULL;
@@ -93,8 +110,7 @@ static char *errorstr (AST node, const char *format, ...) {
   /* allocate the buffer. */
   nstr = strlen(node->fname) + 32;
   str = (char*) malloc(nstr * sizeof(char));
-  if (!str)
-    return NULL;
+  if (!str) return NULL;
 
   /* initialize the output string. */
   snprintf(str, nstr, "%s:%ld: error: ", node->fname, node->line);
@@ -106,8 +122,7 @@ static char *errorstr (AST node, const char *format, ...) {
     /* double the string size and reallocate. */
     nstr *= 2;
     str = (char*) realloc(str, nstr * sizeof(char));
-    if (!str)
-      return NULL;
+    if (!str) return NULL;
 
     /* print the error message. */
     va_start(vl, format);
@@ -117,7 +132,10 @@ static char *errorstr (AST node, const char *format, ...) {
   while (nout >= nstr);
 
   /* append a newline to the output string. */
-  strcat(str, "\n");
+  if (escape)
+    strcat(str, "\\n\"\n\"");
+  else
+    strcat(str, "\n");
 
   /* attempt to open the source file. */
   fh = fopen(node->fname, "r");
@@ -131,14 +149,20 @@ static char *errorstr (AST node, const char *format, ...) {
     /* close the source file. */
     fclose(fh);
 
+    /* strip the newline from the buffer string. */
+    buf[strlen(buf) - 1] = '\0';
+
     /* reallocate the output string to contain the context. */
     nstr += 2 * strlen(buf);
     str = (char*) realloc(str, nstr * sizeof(char));
-    if (!str)
-      return NULL;
+    if (!str) return NULL;
 
     /* append the source line to the output string. */
     strcat(str, buf);
+    if (escape)
+      strcat(str, "\\n\"\n\" ");
+    else
+      strcat(str, "\n");
 
     /* add spaces to place the cursor into the output string. */
     n -= strlen(buf);
@@ -146,10 +170,15 @@ static char *errorstr (AST node, const char *format, ...) {
       strcat(str, " ");
 
     /* append the cursor onto the output string. */
-    strcat(str, "^\n");
+    strcat(str, "^");
+    if (escape)
+      strcat(str, "\\n");
+    else
+      strcat(str, "\n");
   }
 
-  /* return the output string. */
+  /* store and return the output string. */
+  c->cerr = str;
   return str;
 }
 
@@ -443,7 +472,7 @@ static int resolve_symbols (Compiler c, AST node, AST root) {
 
     /* check if no symbol was found. */
     if (!node->sym_table || !node->sym_index) {
-      errorfn(node, "symbol '%s' is undefined", ast_get_string(node));
+      asterr(node, "symbol '%s' is undefined", ast_get_string(node));
       return 0;
     }
   }
@@ -511,42 +540,44 @@ static void write_statements (Compiler c, AST node) {
   if (operators[i].fstr) {
     if (node->n_down == 1) {
       W("  Object %s = %s(%s);\n",
-        ast_get_symbol_name(node), operators[i].fstr,
-        ast_get_symbol_name(node->down[0]));
+        S(node), operators[i].fstr,
+        S(node->down[0]));
     }
     else if (node->n_down == 2) {
       W("  Object %s = %s(%s, %s);\n",
-        ast_get_symbol_name(node), operators[i].fstr,
-        ast_get_symbol_name(node->down[0]),
-        ast_get_symbol_name(node->down[1]));
+        S(node), operators[i].fstr,
+        S(node->down[0]),
+        S(node->down[1]));
     }
     else if (node->n_down == 3) {
       W("  Object %s = %s(%s, %s, %s);\n",
-        ast_get_symbol_name(node), operators[i].fstr,
-        ast_get_symbol_name(node->down[0]),
-        ast_get_symbol_name(node->down[1]),
-        ast_get_symbol_name(node->down[2]));
+        S(node), operators[i].fstr,
+        S(node->down[0]),
+        S(node->down[1]),
+        S(node->down[2]));
     }
+
+    W("  if (!%s) {\n"
+      "    fprintf(stderr, \"%%s\", \"%s\");\n"
+      "    return NULL;\n"
+      "  }\n", S(node), E(node, "operation failed"));
   }
   else if (ntype == AST_TYPE_ROW) {
     W("  Object %s = object_horzcat(%d",
-      ast_get_symbol_name(node), node->n_down);
+      S(node), node->n_down);
     for (i = 0; i < node->n_down; i++)
-      W(", %s", ast_get_symbol_name(node->down[i]));
+      W(", %s", S(node->down[i]));
     W(");\n");
   }
   else if (ntype == AST_TYPE_COLUMN) {
     W("  Object %s = object_vertcat(%d",
-      ast_get_symbol_name(node), node->n_down);
+      S(node), node->n_down);
     for (i = 0; i < node->n_down; i++)
-      W(", %s", ast_get_symbol_name(node->down[i]));
+      W(", %s", S(node->down[i]));
     W(");\n");
   }
   else if (ntok == T_ASSIGN) {
-    W("  object_free(%s);\n", ast_get_symbol_name(node));
-    W("  %s = %s;\n",
-      ast_get_symbol_name(node),
-      ast_get_symbol_name(node->down[1]));
+    W("  %s = %s;\n", S(node), S(node->down[1]));
   }
   else if (ntype == AST_TYPE_FN_CALL) {
     down = node->down[1];
@@ -555,36 +586,38 @@ static void write_statements (Compiler c, AST node) {
       down = down->down[0];
       W("  args = object_list_argout(%d", down->n_down);
       for (i = 0; i < down->n_down; i++)
-        W(", %s", ast_get_symbol_name(down->down[i]));
+        W(", %s", S(down->down[i]));
       W(");\n");
     }
     else {
       W("  args = (Object) object_list_new(NULL);\n");
     }
 
-    W("  rets = matte_%s(args);\n", ast_get_string(node->down[1]));
+    down = node->down[1];
+    W("  rets = matte_%s(args);\n"
+      "  if (!rets) {\n"
+      "    fprintf(stderr, \"%%s\", \"%s\");\n"
+      "    return NULL;\n"
+      "  }\n", S(down), E(down, "call to '%s' failed", S(down)));
 
     down = node->down[0];
     if (ast_get_type(down) == (ASTNodeType) T_IDENT) {
-      sname = ast_get_symbol_name(down);
+      sname = S(down);
       W("  %s%s = object_list_get((ObjectList) rets, 0);\n",
         sname[0] == '_' ? "Object " : "", sname);
     }
     else if (ast_get_type(down) == AST_TYPE_ROW) {
       for (i = 0; i < down->n_down; i++)
         W("  %s = object_list_get((ObjectList) rets, %d);\n",
-          ast_get_symbol_name(down->down[i]), i);
+          S(down->down[i]), i);
     }
 
     W("  object_free(args);\n");
     W("  object_free(rets);\n");
   }
 
-  if (node->node_disp) {
-    W("  object_disp(%s, \"%s\");\n",
-      ast_get_symbol_name(node),
-      ast_get_symbol_name(node));
-  }
+  if (node->node_disp)
+    W("  object_disp(%s, \"%s\");\n", S(node), S(node));
 }
 
 /* write_symbols(): write variable and literal symbol initializers from
@@ -696,15 +729,20 @@ static void write_globals (Compiler c) {
  *  @c: matte compiler to utilize.
  */
 static void write_functions (Compiler c) {
-  /* FIXME: comment and refactor to use symbol lookups. */
+  /* declare required variables:
+   *  @node, @down: general-purpose ast-nodes.
+   *  @i, @j: general-purpose loop counters.
+   */
   AST node, down;
   int i, j;
 
+  /* FIXME: comment and refactor to use symbol lookups. */
   for (i = 0; i < c->tree->n_down; i++) {
     node = c->tree->down[i];
     if (ast_get_type(node) != AST_TYPE_FUNCTION) continue;
 
-    W("\nObject matte_%s (Object argin) {\n",
+    W("\n");
+    W("Object matte_%s (Object argin) {\n",
       ast_get_string(node->down[1]));
 
     write_symbols(c, node->syms);
@@ -724,7 +762,7 @@ static void write_functions (Compiler c) {
       W(");\n");
     }
     else {
-      W("  return object_list_argout(1, %s);\n", ast_get_string(down));
+      W("  return object_list_argout(1, %s);\n", S(down));
     }
 
     W("}\n");
@@ -1040,7 +1078,10 @@ Compiler compiler_new (Object args) {
   c->mode = COMPILE_TO_MEM;
   c->fout = string_new(NULL);
   c->cflags = string_new(NULL);
+
+  /* initialize the c code and error strings. */
   c->ccode = string_new(NULL);
+  c->cerr = NULL;
 
   /* initialize the error count. */
   c->err = 0L;
@@ -1077,7 +1118,10 @@ void compiler_free (Compiler c) {
   /* free the output filename and flags strings. */
   object_free((Object) c->fout);
   object_free((Object) c->cflags);
+
+  /* free the c code and error strings. */
   object_free((Object) c->ccode);
+  free(c->cerr);
 }
 
 /* compiler_set_mode(): set the output mode of a compiler.

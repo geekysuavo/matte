@@ -656,10 +656,13 @@ PARSE_RULE (range)
   if (!node)
     return NULL;
 
-  while (accept(p, T_COLON)) {
-    if (ast_get_type(node) != (ASTNodeType) T_COLON)
+  while (match(p, T_COLON)) {
+    if (ast_get_type(node) != (ASTNodeType) T_COLON) {
       node = ast_new_with_parms(T_COLON, false, node);
+      ast_set_context(p, node);
+    }
 
+    next(p);
     ast_add_down(node, parse_add(p));
     if (!ast_last(node))
       PARSE_ERR_MISSING("expression");

@@ -3,9 +3,9 @@ function p = approx (n)
   p = 4 * sum(1.0 ./ (1 : 4 : n) - 1.0 ./ (3 : 4 : n));
 end
 
-function gtest
+function y = gtest
   global x;
-  x *= -0.1 + foo * bar
+  y = x *= -0.1
 end
 
 x = 55
@@ -18,4 +18,6 @@ pi = [approx(20), ...
       approx(20000), ...
       approx(200000), ...
       approx(2000000)]
+
+ccat = [1i, 2, approx(100)];
 

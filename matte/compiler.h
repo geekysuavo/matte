@@ -65,10 +65,15 @@ struct _Compiler {
   /* @mode: compilation mode enumeration value.
    * @fname: output filename, if requested.
    * @cflags: c compiler flag string.
-   * @ccode: output c source code.
    */
   CompilerMode mode;
-  String fout, cflags, ccode;
+  String fout, cflags;
+
+  /* @ccode: output c source code.
+   * @cerr: temporary error string storage location.
+   */
+  String ccode;
+  char *cerr;
 
   /* @err: number of errors encountered by the compiler.
    */

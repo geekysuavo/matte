@@ -268,8 +268,7 @@ static int init_symbols (Compiler c, AST node, AST root) {
   /* check if the current node is the root. */
   if (ntype == AST_TYPE_ROOT) {
     /* pre-register global built-ins with the global table. */
-    if (!matte_builtins_init(node->syms) ||
-        !matte_globals_init(node->syms))
+    if (!matte_builtins_init(node->syms))
       return 0;
   }
 

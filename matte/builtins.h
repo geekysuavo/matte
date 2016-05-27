@@ -21,5 +21,7 @@ int matte_builtins_init (Symbols gs);
 
 Object matte_sum (Object argin);
 
+Object matte_sprintf (Object argin);
+
 #endif /* !__MATTE_BUILTINS_H__ */
 

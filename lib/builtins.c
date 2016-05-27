@@ -6,29 +6,7 @@
 /* include the matte header. */
 #include <matte/matte.h>
 
-/* matte_globals_init(): initialize built-in global variables with the
- * global compiler symbol table.
- *
- * arguments:
- *  @gs: global symbol table to register symbols with.
- *
- * returns:
- *  integer indicating success (1) or failure (0).
- */
-int matte_globals_init (Symbols gs) {
-  /* declare required variables:
-   *  @ret: return value from all symbol registrations.
-   */
-  int ret = 1;
-
-  /* register the global variables. */
-  ret = ret && symbols_add(gs, SYMBOL_GLOBAL_INT, "end", -1L);
-
-  /* return the result. */
-  return ret;
-}
-
-/* matte_builtins_init(): initialize built-in functions with the global
+/* matte_builtins_init(): initialize built-in symbols with the global
  * compiler symbol table.
  *
  * arguments:
@@ -43,8 +21,12 @@ int matte_builtins_init (Symbols gs) {
    */
   int ret = 1;
 
+  /* register the global variables. */
+  ret = ret && symbols_add(gs, SYMBOL_GLOBAL_INT, "end", -1L);
+
   /* register global functions. */
   ret = ret && symbols_add(gs, SYMBOL_GLOBAL_FUNC, "sum");
+  ret = ret && symbols_add(gs, SYMBOL_GLOBAL_FUNC, "sprintf");
 
   /* return the result. */
   return ret;
@@ -156,6 +138,7 @@ int string_append_objs (String s, char *format, int begin, ObjectList lst) {
         string_appendf(s, pa, re);
         string_append_value(s, im < 0.0 ? " - " : " + ");
         string_appendf(s, pa, im < 0.0 ? -im : im);
+        string_append_value(s, "i");
       }
       else
         return 0;
@@ -185,7 +168,6 @@ Object matte_sum (Object argin) {
   Object x = object_list_get((ObjectList) argin, 0);
   Object dim = object_list_get((ObjectList) argin, 1);
 
-  Object argout = (Object) object_list_new(NULL);
   Object y = NULL;
 
   if (nargin == 1) {
@@ -217,7 +199,20 @@ Object matte_sum (Object argin) {
   else if (nargin == 2) {
   }
 
-  object_list_set((ObjectList) argout, 0, y);
-  return argout;
+  return object_list_argout(1, y);
+}
+
+Object matte_sprintf (Object argin) {
+  const int nargin = object_list_get_length((ObjectList) argin);
+  Object format = object_list_get((ObjectList) argin, 0);
+
+  String str = NULL;
+
+  if (IS_STRING(format)) {
+    str = string_new(NULL);
+    string_append_objs(str, ((String) format)->data, 1, (ObjectList) argin);
+  }
+
+  return object_list_argout(1, (Object) str);
 }
 

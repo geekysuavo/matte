@@ -25,3 +25,5 @@ pi = [approx(20), ...
 
 v = [1 : 2 : 10, -1, relerr(3.14159265359, approx(1000000)), -1, 2 : 2 : 10]
 
+str = sprintf(['hello world!'; 'the answer is %d'; 'complex %g'], 42, 1j)
+

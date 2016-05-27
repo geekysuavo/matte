@@ -52,6 +52,13 @@ typedef struct _ObjectType *ObjectType;
 /* Object: pointer to a struct _Object. */
 typedef struct _Object *Object;
 
+/* ObjectMethods: pointer to a struct _ObjectMethod. */
+typedef struct _ObjectMethod *ObjectMethods;
+
+/* general-purpose function pointer type definition:
+ */
+typedef Object (*matte_func) (Object);
+
 /* function pointer type definitions for matte objects:
  */
 typedef Object (*obj_allocator)   (ObjectType);
@@ -62,6 +69,18 @@ typedef Object (*obj_unary)       (Object);
 typedef Object (*obj_binary)      (Object, Object);
 typedef Object (*obj_ternary)     (Object, Object, Object);
 typedef Object (*obj_variadic)    (int, va_list);
+typedef Object (*obj_method)      (Object, Object);
+
+/* _ObjectMethod: structure that holds information about a matte object
+ * method.
+ */
+struct _ObjectMethod {
+  /* @name: string name of the method.
+   * @fn: method function pointer.
+   */
+  const char *name;
+  obj_method fn;
+};
 
 /* _ObjectType: structure that holds the core set of information required
  * by the matte object system.
@@ -79,6 +98,7 @@ struct _ObjectType {
   /* core object method table:
    */
   obj_constructor fn_new;
+  obj_constructor fn_copy;
   obj_allocator   fn_alloc;
   obj_destructor  fn_dealloc;
   obj_display     fn_disp;
@@ -115,6 +135,10 @@ struct _ObjectType {
   obj_binary   fn_subsref;     /* a(s)     subscripted reference.       */
   obj_ternary  fn_subsasgn;    /* a(s)=b   subscripted assignment.      */
   obj_unary    fn_subsindex;   /* b(a)     subscript index.             */
+
+  /* general-purpose method table:
+   */
+  ObjectMethods methods;
 };
 
 /* _Object: structure for type-casting between any number of matte objects.

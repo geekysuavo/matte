@@ -425,44 +425,47 @@ Vector vector_transpose (Vector a) {
 /* Vector_type: object type structure for matte vectors.
  */
 struct _ObjectType Vector_type = {
-  "Vector",                            /* name       */
-  sizeof(struct _Vector),              /* size       */
-  5,                                   /* precedence */
+  "Vector",                                      /* name       */
+  sizeof(struct _Vector),                        /* size       */
+  5,                                             /* precedence */
 
-  (obj_constructor) vector_new,        /* fn_new     */
-  (obj_allocator)   object_alloc,      /* fn_alloc   */
-  (obj_destructor)  vector_free,       /* fn_dealloc */
-  (obj_display)     vector_disp,       /* fn_disp    */
+  (obj_constructor) vector_new,                  /* fn_new     */
+  (obj_constructor) vector_copy,                 /* fn_copy    */
+  (obj_allocator)   object_alloc,                /* fn_alloc   */
+  (obj_destructor)  vector_free,                 /* fn_dealloc */
+  (obj_display)     vector_disp,                 /* fn_disp    */
 
-  (obj_binary)   vector_plus,          /* fn_plus       */
-  (obj_binary)   vector_minus,         /* fn_minus      */
-  (obj_unary)    vector_uminus,        /* fn_uminus     */
-  NULL,                                /* fn_times      */
-  NULL,                                /* fn_mtimes     */
-  NULL,                                /* fn_rdivide    */
-  NULL,                                /* fn_ldivide    */
-  NULL,                                /* fn_mrdivide   */
-  NULL,                                /* fn_mldivide   */
-  NULL,                                /* fn_power      */
-  NULL,                                /* fn_mpower     */
-  NULL,                                /* fn_lt         */
-  NULL,                                /* fn_gt         */
-  NULL,                                /* fn_le         */
-  NULL,                                /* fn_ge         */
-  NULL,                                /* fn_ne         */
-  NULL,                                /* fn_eq         */
-  NULL,                                /* fn_and        */
-  NULL,                                /* fn_or         */
-  NULL,                                /* fn_mand       */
-  NULL,                                /* fn_mor        */
-  NULL,                                /* fn_not        */
-  NULL,                                /* fn_colon      */
-  (obj_unary)    vector_transpose,     /* fn_ctranspose */
-  (obj_unary)    vector_transpose,     /* fn_transpose  */
-  NULL,                                /* fn_horzcat    */
-  NULL,                                /* fn_vertcat    */
-  NULL,                                /* fn_subsref    */
-  NULL,                                /* fn_subsasgn   */
-  NULL                                 /* fn_subsindex  */
+  (obj_binary)   vector_plus,                    /* fn_plus       */
+  (obj_binary)   vector_minus,                   /* fn_minus      */
+  (obj_unary)    vector_uminus,                  /* fn_uminus     */
+  NULL,                                          /* fn_times      */
+  NULL,                                          /* fn_mtimes     */
+  NULL,                                          /* fn_rdivide    */
+  NULL,                                          /* fn_ldivide    */
+  NULL,                                          /* fn_mrdivide   */
+  NULL,                                          /* fn_mldivide   */
+  NULL,                                          /* fn_power      */
+  NULL,                                          /* fn_mpower     */
+  NULL,                                          /* fn_lt         */
+  NULL,                                          /* fn_gt         */
+  NULL,                                          /* fn_le         */
+  NULL,                                          /* fn_ge         */
+  NULL,                                          /* fn_ne         */
+  NULL,                                          /* fn_eq         */
+  NULL,                                          /* fn_and        */
+  NULL,                                          /* fn_or         */
+  NULL,                                          /* fn_mand       */
+  NULL,                                          /* fn_mor        */
+  NULL,                                          /* fn_not        */
+  NULL,                                          /* fn_colon      */
+  (obj_unary)    vector_transpose,               /* fn_ctranspose */
+  (obj_unary)    vector_transpose,               /* fn_transpose  */
+  NULL,                                          /* fn_horzcat    */
+  NULL,                                          /* fn_vertcat    */
+  NULL,                                          /* fn_subsref    */
+  NULL,                                          /* fn_subsasgn   */
+  NULL,                                          /* fn_subsindex  */
+
+  NULL                                           /* methods */
 };
 

@@ -561,44 +561,47 @@ Vector range_vertcat (int n, va_list vl) {
 /* Range_type: object type structure for matte ranges.
  */
 struct _ObjectType Range_type = {
-  "Range",                             /* name       */
-  sizeof(struct _Range),               /* size       */
-  2,                                   /* precedence */
+  "Range",                                       /* name       */
+  sizeof(struct _Range),                         /* size       */
+  2,                                             /* precedence */
 
-  (obj_constructor) range_new,         /* fn_new     */
-  (obj_allocator)   object_alloc,      /* fn_alloc   */
-  NULL,                                /* fn_dealloc */
-  (obj_display)     range_disp,        /* fn_disp    */
+  (obj_constructor) range_new,                   /* fn_new     */
+  (obj_constructor) range_copy,
+  (obj_allocator)   object_alloc,                /* fn_alloc   */
+  NULL,                                          /* fn_dealloc */
+  (obj_display)     range_disp,                  /* fn_disp    */
 
-  (obj_binary) range_plus,             /* fn_plus       */
-  (obj_binary) range_minus,            /* fn_minus      */
-  (obj_unary)  range_uminus,           /* fn_uminus     */
-  (obj_binary) range_times,            /* fn_times      */
-  (obj_binary) range_times,            /* fn_mtimes     */
-  NULL,                                /* fn_rdivide    */
-  NULL,                                /* fn_ldivide    */
-  NULL,                                /* fn_mrdivide   */
-  NULL,                                /* fn_mldivide   */
-  NULL,                                /* fn_power      */
-  NULL,                                /* fn_mpower     */
-  (obj_binary)   range_lt,             /* fn_lt         */
-  (obj_binary)   range_gt,             /* fn_gt         */
-  (obj_binary)   range_le,             /* fn_le         */
-  (obj_binary)   range_ge,             /* fn_ge         */
-  (obj_binary)   range_ne,             /* fn_ne         */
-  (obj_binary)   range_eq,             /* fn_eq         */
-  (obj_binary)   range_and,            /* fn_and        */
-  (obj_binary)   range_or,             /* fn_or         */
-  (obj_binary)   range_mand,           /* fn_mand       */
-  (obj_binary)   range_mor,            /* fn_mor        */
-  (obj_unary)    range_not,            /* fn_not        */
-  NULL,                                /* fn_colon      */
-  (obj_unary)    range_transpose,      /* fn_ctranspose */
-  (obj_unary)    range_transpose,      /* fn_transpose  */
-  (obj_variadic) range_horzcat,        /* fn_horzcat    */
-  (obj_variadic) range_vertcat,        /* fn_vertcat    */
-  NULL,                                /* fn_subsref    */
-  NULL,                                /* fn_subsasgn   */
-  NULL                                 /* fn_subsindex  */
+  (obj_binary) range_plus,                       /* fn_plus       */
+  (obj_binary) range_minus,                      /* fn_minus      */
+  (obj_unary)  range_uminus,                     /* fn_uminus     */
+  (obj_binary) range_times,                      /* fn_times      */
+  (obj_binary) range_times,                      /* fn_mtimes     */
+  NULL,                                          /* fn_rdivide    */
+  NULL,                                          /* fn_ldivide    */
+  NULL,                                          /* fn_mrdivide   */
+  NULL,                                          /* fn_mldivide   */
+  NULL,                                          /* fn_power      */
+  NULL,                                          /* fn_mpower     */
+  (obj_binary)   range_lt,                       /* fn_lt         */
+  (obj_binary)   range_gt,                       /* fn_gt         */
+  (obj_binary)   range_le,                       /* fn_le         */
+  (obj_binary)   range_ge,                       /* fn_ge         */
+  (obj_binary)   range_ne,                       /* fn_ne         */
+  (obj_binary)   range_eq,                       /* fn_eq         */
+  (obj_binary)   range_and,                      /* fn_and        */
+  (obj_binary)   range_or,                       /* fn_or         */
+  (obj_binary)   range_mand,                     /* fn_mand       */
+  (obj_binary)   range_mor,                      /* fn_mor        */
+  (obj_unary)    range_not,                      /* fn_not        */
+  NULL,                                          /* fn_colon      */
+  (obj_unary)    range_transpose,                /* fn_ctranspose */
+  (obj_unary)    range_transpose,                /* fn_transpose  */
+  (obj_variadic) range_horzcat,                  /* fn_horzcat    */
+  (obj_variadic) range_vertcat,                  /* fn_vertcat    */
+  NULL,                                          /* fn_subsref    */
+  NULL,                                          /* fn_subsasgn   */
+  NULL,                                          /* fn_subsindex  */
+
+  NULL                                           /* methods */
 };
 

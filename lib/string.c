@@ -753,44 +753,47 @@ String string_vertcat (int n, va_list vl) {
 /* String_type: object type structure for matte strings.
  */
 struct _ObjectType String_type = {
-  "String",                            /* name       */
-  sizeof(struct _String),              /* size       */
-  0,                                   /* precedence */
+  "String",                                      /* name       */
+  sizeof(struct _String),                        /* size       */
+  0,                                             /* precedence */
 
-  (obj_constructor) string_new,        /* fn_new     */
-  (obj_allocator)   object_alloc,      /* fn_alloc   */
-  (obj_destructor)  string_free,       /* fn_dealloc */
-  (obj_display)     string_disp,       /* fn_disp    */
+  (obj_constructor) string_new,                  /* fn_new     */
+  (obj_constructor) string_copy,                 /* fn_copy    */
+  (obj_allocator)   object_alloc,                /* fn_alloc   */
+  (obj_destructor)  string_free,                 /* fn_dealloc */
+  (obj_display)     string_disp,                 /* fn_disp    */
 
-  NULL,                                /* fn_plus       */
-  NULL,                                /* fn_minus      */
-  NULL,                                /* fn_uminus     */
-  NULL,                                /* fn_times      */
-  NULL,                                /* fn_mtimes     */
-  NULL,                                /* fn_rdivide    */
-  NULL,                                /* fn_ldivide    */
-  NULL,                                /* fn_mrdivide   */
-  NULL,                                /* fn_mldivide   */
-  NULL,                                /* fn_power      */
-  NULL,                                /* fn_mpower     */
-  NULL,                                /* fn_lt         */
-  NULL,                                /* fn_gt         */
-  NULL,                                /* fn_le         */
-  NULL,                                /* fn_ge         */
-  NULL,                                /* fn_ne         */
-  NULL,                                /* fn_eq         */
-  NULL,                                /* fn_and        */
-  NULL,                                /* fn_or         */
-  NULL,                                /* fn_mand       */
-  NULL,                                /* fn_mor        */
-  NULL,                                /* fn_not        */
-  NULL,                                /* fn_colon      */
-  NULL,                                /* fn_ctranspose */
-  NULL,                                /* fn_transpose  */
-  (obj_variadic) string_horzcat,       /* fn_horzcat    */
-  (obj_variadic) string_vertcat,       /* fn_vertcat    */
-  NULL,                                /* fn_subsref    */
-  NULL,                                /* fn_subsasgn   */
-  NULL                                 /* fn_subsindex  */
+  NULL,                                          /* fn_plus       */
+  NULL,                                          /* fn_minus      */
+  NULL,                                          /* fn_uminus     */
+  NULL,                                          /* fn_times      */
+  NULL,                                          /* fn_mtimes     */
+  NULL,                                          /* fn_rdivide    */
+  NULL,                                          /* fn_ldivide    */
+  NULL,                                          /* fn_mrdivide   */
+  NULL,                                          /* fn_mldivide   */
+  NULL,                                          /* fn_power      */
+  NULL,                                          /* fn_mpower     */
+  NULL,                                          /* fn_lt         */
+  NULL,                                          /* fn_gt         */
+  NULL,                                          /* fn_le         */
+  NULL,                                          /* fn_ge         */
+  NULL,                                          /* fn_ne         */
+  NULL,                                          /* fn_eq         */
+  NULL,                                          /* fn_and        */
+  NULL,                                          /* fn_or         */
+  NULL,                                          /* fn_mand       */
+  NULL,                                          /* fn_mor        */
+  NULL,                                          /* fn_not        */
+  NULL,                                          /* fn_colon      */
+  NULL,                                          /* fn_ctranspose */
+  NULL,                                          /* fn_transpose  */
+  (obj_variadic) string_horzcat,                 /* fn_horzcat    */
+  (obj_variadic) string_vertcat,                 /* fn_vertcat    */
+  NULL,                                          /* fn_subsref    */
+  NULL,                                          /* fn_subsasgn   */
+  NULL,                                          /* fn_subsindex  */
+
+  NULL                                           /* methods */
 };
 

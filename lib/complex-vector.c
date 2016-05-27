@@ -281,6 +281,7 @@ struct _ObjectType ComplexVector_type = {
   6,                                             /* precedence */
 
   (obj_constructor) complex_vector_new,          /* fn_new     */
+  (obj_constructor) complex_vector_copy,         /* fn_copy    */
   (obj_allocator)   object_alloc,                /* fn_alloc   */
   (obj_destructor)  complex_vector_free,         /* fn_dealloc */
   (obj_display)     complex_vector_disp,         /* fn_disp    */
@@ -314,6 +315,8 @@ struct _ObjectType ComplexVector_type = {
   NULL,                                          /* fn_vertcat    */
   NULL,                                          /* fn_subsref    */
   NULL,                                          /* fn_subsasgn   */
-  NULL                                           /* fn_subsindex  */
+  NULL,                                          /* fn_subsindex  */
+
+  NULL                                           /* methods */
 };
 

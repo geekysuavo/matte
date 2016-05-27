@@ -306,44 +306,47 @@ Vector int_vertcat (int n, va_list vl) {
 /* Int_type: object type structure for matte integers.
  */
 struct _ObjectType Int_type = {
-  "Int",                               /* name       */
-  sizeof(struct _Int),                 /* size       */
-  1,                                   /* precedence */
+  "Int",                                         /* name       */
+  sizeof(struct _Int),                           /* size       */
+  1,                                             /* precedence */
 
-  (obj_constructor) int_new,           /* fn_new     */
-  (obj_allocator)   object_alloc,      /* fn_alloc   */
-  NULL,                                /* fn_dealloc */
-  (obj_display)     int_disp,          /* fn_disp    */
+  (obj_constructor) int_new,                     /* fn_new     */
+  (obj_constructor) int_copy,                    /* fn_copy    */
+  (obj_allocator)   object_alloc,                /* fn_alloc   */
+  NULL,                                          /* fn_dealloc */
+  (obj_display)     int_disp,                    /* fn_disp    */
 
-  (obj_binary)   int_plus,             /* fn_plus       */
-  (obj_binary)   int_minus,            /* fn_minus      */
-  (obj_unary)    int_uminus,           /* fn_uminus     */
-  (obj_binary)   int_times,            /* fn_times      */
-  (obj_binary)   int_times,            /* fn_mtimes     */
-  (obj_binary)   int_rdivide,          /* fn_rdivide    */
-  (obj_binary)   int_ldivide,          /* fn_ldivide    */
-  (obj_binary)   int_rdivide,          /* fn_mrdivide   */
-  (obj_binary)   int_ldivide,          /* fn_mldivide   */
-  (obj_binary)   int_power,            /* fn_power      */
-  (obj_binary)   int_power,            /* fn_mpower     */
-  (obj_binary)   int_lt,               /* fn_lt         */
-  (obj_binary)   int_gt,               /* fn_gt         */
-  (obj_binary)   int_le,               /* fn_le         */
-  (obj_binary)   int_ge,               /* fn_ge         */
-  (obj_binary)   int_ne,               /* fn_ne         */
-  (obj_binary)   int_eq,               /* fn_eq         */
-  (obj_binary)   int_and,              /* fn_and        */
-  (obj_binary)   int_or,               /* fn_or         */
-  (obj_binary)   int_and,              /* fn_mand       */
-  (obj_binary)   int_or,               /* fn_mor        */
-  (obj_unary)    int_not,              /* fn_not        */
-  (obj_ternary)  int_colon,            /* fn_colon      */
-  (obj_unary)    int_copy,             /* fn_ctranspose */
-  (obj_unary)    int_copy,             /* fn_transpose  */
-  (obj_variadic) int_horzcat,          /* fn_horzcat    */
-  (obj_variadic) int_vertcat,          /* fn_vertcat    */
-  NULL,                                /* fn_subsref    */
-  NULL,                                /* fn_subsasgn   */
-  NULL                                 /* fn_subsindex  */
+  (obj_binary)   int_plus,                       /* fn_plus       */
+  (obj_binary)   int_minus,                      /* fn_minus      */
+  (obj_unary)    int_uminus,                     /* fn_uminus     */
+  (obj_binary)   int_times,                      /* fn_times      */
+  (obj_binary)   int_times,                      /* fn_mtimes     */
+  (obj_binary)   int_rdivide,                    /* fn_rdivide    */
+  (obj_binary)   int_ldivide,                    /* fn_ldivide    */
+  (obj_binary)   int_rdivide,                    /* fn_mrdivide   */
+  (obj_binary)   int_ldivide,                    /* fn_mldivide   */
+  (obj_binary)   int_power,                      /* fn_power      */
+  (obj_binary)   int_power,                      /* fn_mpower     */
+  (obj_binary)   int_lt,                         /* fn_lt         */
+  (obj_binary)   int_gt,                         /* fn_gt         */
+  (obj_binary)   int_le,                         /* fn_le         */
+  (obj_binary)   int_ge,                         /* fn_ge         */
+  (obj_binary)   int_ne,                         /* fn_ne         */
+  (obj_binary)   int_eq,                         /* fn_eq         */
+  (obj_binary)   int_and,                        /* fn_and        */
+  (obj_binary)   int_or,                         /* fn_or         */
+  (obj_binary)   int_and,                        /* fn_mand       */
+  (obj_binary)   int_or,                         /* fn_mor        */
+  (obj_unary)    int_not,                        /* fn_not        */
+  (obj_ternary)  int_colon,                      /* fn_colon      */
+  (obj_unary)    int_copy,                       /* fn_ctranspose */
+  (obj_unary)    int_copy,                       /* fn_transpose  */
+  (obj_variadic) int_horzcat,                    /* fn_horzcat    */
+  (obj_variadic) int_vertcat,                    /* fn_vertcat    */
+  NULL,                                          /* fn_subsref    */
+  NULL,                                          /* fn_subsasgn   */
+  NULL,                                          /* fn_subsindex  */
+
+  NULL                                           /* methods */
 };
 

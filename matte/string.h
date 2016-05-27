@@ -78,5 +78,9 @@ int string_cmp (String s1, String s2);
 
 ObjectList string_split (String s, String pat);
 
+/* function declarations (builtins.c): */
+
+int string_append_objs (String s, char *format, int begin, ObjectList lst);
+
 #endif /* !__MATTE_STRING_H__ */
 

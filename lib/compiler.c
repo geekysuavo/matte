@@ -1323,44 +1323,47 @@ int compiler_execute (Compiler c) {
 /* Compiler_type: object type structure for matte compilers.
  */
 struct _ObjectType Compiler_type = {
-  "Compiler",                          /* name       */
-  sizeof(struct _Compiler),            /* size       */
-  0,                                   /* precedence */
+  "Compiler",                                    /* name       */
+  sizeof(struct _Compiler),                      /* size       */
+  0,                                             /* precedence */
 
-  (obj_constructor) compiler_new,      /* fn_new     */
-  (obj_allocator)   object_alloc,      /* fn_alloc   */
-  (obj_destructor)  compiler_free,     /* fn_dealloc */
-  NULL,                                /* fn_disp    */
+  (obj_constructor) compiler_new,                /* fn_new     */
+  NULL,                                          /* fn_copy    */
+  (obj_allocator)   object_alloc,                /* fn_alloc   */
+  (obj_destructor)  compiler_free,               /* fn_dealloc */
+  NULL,                                          /* fn_disp    */
 
-  NULL,  /* fn_plus       */
-  NULL,  /* fn_minus      */
-  NULL,  /* fn_uminus     */
-  NULL,  /* fn_times      */
-  NULL,  /* fn_mtimes     */
-  NULL,  /* fn_rdivide    */
-  NULL,  /* fn_ldivide    */
-  NULL,  /* fn_mrdivide   */
-  NULL,  /* fn_mldivide   */
-  NULL,  /* fn_power      */
-  NULL,  /* fn_mpower     */
-  NULL,  /* fn_lt         */
-  NULL,  /* fn_gt         */
-  NULL,  /* fn_le         */
-  NULL,  /* fn_ge         */
-  NULL,  /* fn_ne         */
-  NULL,  /* fn_eq         */
-  NULL,  /* fn_and        */
-  NULL,  /* fn_or         */
-  NULL,  /* fn_mand       */
-  NULL,  /* fn_mor        */
-  NULL,  /* fn_not        */
-  NULL,  /* fn_colon      */
-  NULL,  /* fn_ctranspose */
-  NULL,  /* fn_transpose  */
-  NULL,  /* fn_horzcat    */
-  NULL,  /* fn_vertcat    */
-  NULL,  /* fn_subsref    */
-  NULL,  /* fn_subsasgn   */
-  NULL   /* fn_subsindex  */
+  NULL,                                          /* fn_plus       */
+  NULL,                                          /* fn_minus      */
+  NULL,                                          /* fn_uminus     */
+  NULL,                                          /* fn_times      */
+  NULL,                                          /* fn_mtimes     */
+  NULL,                                          /* fn_rdivide    */
+  NULL,                                          /* fn_ldivide    */
+  NULL,                                          /* fn_mrdivide   */
+  NULL,                                          /* fn_mldivide   */
+  NULL,                                          /* fn_power      */
+  NULL,                                          /* fn_mpower     */
+  NULL,                                          /* fn_lt         */
+  NULL,                                          /* fn_gt         */
+  NULL,                                          /* fn_le         */
+  NULL,                                          /* fn_ge         */
+  NULL,                                          /* fn_ne         */
+  NULL,                                          /* fn_eq         */
+  NULL,                                          /* fn_and        */
+  NULL,                                          /* fn_or         */
+  NULL,                                          /* fn_mand       */
+  NULL,                                          /* fn_mor        */
+  NULL,                                          /* fn_not        */
+  NULL,                                          /* fn_colon      */
+  NULL,                                          /* fn_ctranspose */
+  NULL,                                          /* fn_transpose  */
+  NULL,                                          /* fn_horzcat    */
+  NULL,                                          /* fn_vertcat    */
+  NULL,                                          /* fn_subsref    */
+  NULL,                                          /* fn_subsasgn   */
+  NULL,                                          /* fn_subsindex  */
+
+  NULL                                           /* methods */
 };
 

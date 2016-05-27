@@ -729,44 +729,47 @@ Vector float_vertcat (int n, va_list vl) {
 /* Float_type: object type structure for matte floats.
  */
 struct _ObjectType Float_type = {
-  "Float",                             /* name       */
-  sizeof(struct _Float),               /* size       */
-  3,                                   /* precedence */
+  "Float",                                       /* name       */
+  sizeof(struct _Float),                         /* size       */
+  3,                                             /* precedence */
 
-  (obj_constructor) float_new,         /* fn_new     */
-  (obj_allocator)   object_alloc,      /* fn_alloc   */
-  NULL,                                /* fn_dealloc */
-  (obj_display)     float_disp,        /* fn_disp    */
+  (obj_constructor) float_new,                   /* fn_new     */
+  (obj_constructor) float_copy,                  /* fn_copy    */
+  (obj_allocator)   object_alloc,                /* fn_alloc   */
+  NULL,                                          /* fn_dealloc */
+  (obj_display)     float_disp,                  /* fn_disp    */
 
-  (obj_binary)   float_plus,           /* fn_plus       */
-  (obj_binary)   float_minus,          /* fn_minus      */
-  (obj_unary)    float_uminus,         /* fn_uminus     */
-  (obj_binary)   float_times,          /* fn_times      */
-  (obj_binary)   float_mtimes,         /* fn_mtimes     */
-  (obj_binary)   float_rdivide,        /* fn_rdivide    */
-  (obj_binary)   float_ldivide,        /* fn_ldivide    */
-  (obj_binary)   float_mrdivide,       /* fn_mrdivide   */
-  (obj_binary)   float_mldivide,       /* fn_mldivide   */
-  (obj_binary)   float_power,          /* fn_power      */
-  (obj_binary)   float_mpower,         /* fn_mpower     */
-  (obj_binary)   float_lt,             /* fn_lt         */
-  (obj_binary)   float_gt,             /* fn_gt         */
-  (obj_binary)   float_le,             /* fn_le         */
-  (obj_binary)   float_ge,             /* fn_ge         */
-  (obj_binary)   float_ne,             /* fn_ne         */
-  (obj_binary)   float_eq,             /* fn_eq         */
-  (obj_binary)   float_and,            /* fn_and        */
-  (obj_binary)   float_or,             /* fn_or         */
-  (obj_binary)   float_mand,           /* fn_mand       */
-  (obj_binary)   float_mor,            /* fn_mor        */
-  (obj_unary)    float_not,            /* fn_not        */
-  (obj_ternary)  float_colon,          /* fn_colon      */
-  (obj_unary)    float_copy,           /* fn_ctranspose */
-  (obj_unary)    float_copy,           /* fn_transpose  */
-  (obj_variadic) float_horzcat,        /* fn_horzcat    */
-  (obj_variadic) float_vertcat,        /* fn_vertcat    */
-  NULL,                                /* fn_subsref    */
-  NULL,                                /* fn_subsasgn   */
-  NULL                                 /* fn_subsindex  */
+  (obj_binary)   float_plus,                     /* fn_plus       */
+  (obj_binary)   float_minus,                    /* fn_minus      */
+  (obj_unary)    float_uminus,                   /* fn_uminus     */
+  (obj_binary)   float_times,                    /* fn_times      */
+  (obj_binary)   float_mtimes,                   /* fn_mtimes     */
+  (obj_binary)   float_rdivide,                  /* fn_rdivide    */
+  (obj_binary)   float_ldivide,                  /* fn_ldivide    */
+  (obj_binary)   float_mrdivide,                 /* fn_mrdivide   */
+  (obj_binary)   float_mldivide,                 /* fn_mldivide   */
+  (obj_binary)   float_power,                    /* fn_power      */
+  (obj_binary)   float_mpower,                   /* fn_mpower     */
+  (obj_binary)   float_lt,                       /* fn_lt         */
+  (obj_binary)   float_gt,                       /* fn_gt         */
+  (obj_binary)   float_le,                       /* fn_le         */
+  (obj_binary)   float_ge,                       /* fn_ge         */
+  (obj_binary)   float_ne,                       /* fn_ne         */
+  (obj_binary)   float_eq,                       /* fn_eq         */
+  (obj_binary)   float_and,                      /* fn_and        */
+  (obj_binary)   float_or,                       /* fn_or         */
+  (obj_binary)   float_mand,                     /* fn_mand       */
+  (obj_binary)   float_mor,                      /* fn_mor        */
+  (obj_unary)    float_not,                      /* fn_not        */
+  (obj_ternary)  float_colon,                    /* fn_colon      */
+  (obj_unary)    float_copy,                     /* fn_ctranspose */
+  (obj_unary)    float_copy,                     /* fn_transpose  */
+  (obj_variadic) float_horzcat,                  /* fn_horzcat    */
+  (obj_variadic) float_vertcat,                  /* fn_vertcat    */
+  NULL,                                          /* fn_subsref    */
+  NULL,                                          /* fn_subsasgn   */
+  NULL,                                          /* fn_subsindex  */
+
+  NULL                                           /* methods */
 };
 

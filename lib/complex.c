@@ -561,44 +561,47 @@ Object complex_power (Object a, Object b) {
 /* Complex_type: object type structure for matte complex floats.
  */
 struct _ObjectType Complex_type = {
-  "Complex",                           /* name       */
-  sizeof(struct _ComplexFloat),        /* size       */
-  4,                                   /* precedence */
+  "Complex",                                     /* name       */
+  sizeof(struct _ComplexFloat),                  /* size       */
+  4,                                             /* precedence */
 
-  (obj_constructor) complex_new,       /* fn_new     */
-  (obj_allocator)   object_alloc,      /* fn_alloc   */
-  NULL,                                /* fn_dealloc */
-  (obj_display) complex_disp,          /* fn_disp    */
+  (obj_constructor) complex_new,                 /* fn_new     */
+  (obj_constructor) complex_copy,                /* fn_copy    */
+  (obj_allocator)   object_alloc,                /* fn_alloc   */
+  NULL,                                          /* fn_dealloc */
+  (obj_display) complex_disp,                    /* fn_disp    */
 
-  (obj_binary)  complex_plus,          /* fn_plus       */
-  (obj_binary)  complex_minus,         /* fn_minus      */
-  (obj_unary)   complex_uminus,        /* fn_uminus     */
-  (obj_binary)  complex_times,         /* fn_times      */
-  NULL,                                /* fn_mtimes     */
-  (obj_binary)  complex_rdivide,       /* fn_rdivide    */
-  (obj_binary)  complex_ldivide,       /* fn_ldivide    */
-  NULL,                                /* fn_mrdivide   */
-  NULL,                                /* fn_mldivide   */
-  (obj_binary)  complex_power,         /* fn_power      */
-  NULL,                                /* fn_mpower     */
-  NULL,                                /* fn_lt         */
-  NULL,                                /* fn_gt         */
-  NULL,                                /* fn_le         */
-  NULL,                                /* fn_ge         */
-  NULL,                                /* fn_ne         */
-  NULL,                                /* fn_eq         */
-  NULL,                                /* fn_and        */
-  NULL,                                /* fn_or         */
-  NULL,                                /* fn_mand       */
-  NULL,                                /* fn_mor        */
-  NULL,                                /* fn_not        */
-  NULL,                                /* fn_colon      */
-  (obj_unary)   complex_copyconj,      /* fn_ctranspose */
-  (obj_unary)   complex_copy,          /* fn_transpose  */
-  NULL,                                /* fn_horzcat    */
-  NULL,                                /* fn_vertcat    */
-  NULL,                                /* fn_subsref    */
-  NULL,                                /* fn_subsasgn   */
-  NULL                                 /* fn_subsindex  */
+  (obj_binary)  complex_plus,                    /* fn_plus       */
+  (obj_binary)  complex_minus,                   /* fn_minus      */
+  (obj_unary)   complex_uminus,                  /* fn_uminus     */
+  (obj_binary)  complex_times,                   /* fn_times      */
+  NULL,                                          /* fn_mtimes     */
+  (obj_binary)  complex_rdivide,                 /* fn_rdivide    */
+  (obj_binary)  complex_ldivide,                 /* fn_ldivide    */
+  NULL,                                          /* fn_mrdivide   */
+  NULL,                                          /* fn_mldivide   */
+  (obj_binary)  complex_power,                   /* fn_power      */
+  NULL,                                          /* fn_mpower     */
+  NULL,                                          /* fn_lt         */
+  NULL,                                          /* fn_gt         */
+  NULL,                                          /* fn_le         */
+  NULL,                                          /* fn_ge         */
+  NULL,                                          /* fn_ne         */
+  NULL,                                          /* fn_eq         */
+  NULL,                                          /* fn_and        */
+  NULL,                                          /* fn_or         */
+  NULL,                                          /* fn_mand       */
+  NULL,                                          /* fn_mor        */
+  NULL,                                          /* fn_not        */
+  NULL,                                          /* fn_colon      */
+  (obj_unary)   complex_copyconj,                /* fn_ctranspose */
+  (obj_unary)   complex_copy,                    /* fn_transpose  */
+  NULL,                                          /* fn_horzcat    */
+  NULL,                                          /* fn_vertcat    */
+  NULL,                                          /* fn_subsref    */
+  NULL,                                          /* fn_subsasgn   */
+  NULL,                                          /* fn_subsindex  */
+
+  NULL                                           /* methods */
 };
 

@@ -1291,44 +1291,47 @@ ScannerToken scanner_next (Scanner s) {
 /* Scanner_type: object type structure for matte scanners.
  */
 struct _ObjectType Scanner_type = {
-  "Scanner",                           /* name       */
-  sizeof(struct _Scanner),             /* size       */
-  0,                                   /* precedence */
+  "Scanner",                                     /* name       */
+  sizeof(struct _Scanner),                       /* size       */
+  0,                                             /* precedence */
 
-  (obj_constructor) scanner_new,       /* fn_new     */
-  (obj_allocator)   object_alloc,      /* fn_alloc   */
-  (obj_destructor)  scanner_free,      /* fn_dealloc */
-  NULL,                                /* fn_disp    */
+  (obj_constructor) scanner_new,                 /* fn_new     */
+  NULL,                                          /* fn_copy    */
+  (obj_allocator)   object_alloc,                /* fn_alloc   */
+  (obj_destructor)  scanner_free,                /* fn_dealloc */
+  NULL,                                          /* fn_disp    */
 
-  NULL,  /* fn_plus       */
-  NULL,  /* fn_minus      */
-  NULL,  /* fn_uminus     */
-  NULL,  /* fn_times      */
-  NULL,  /* fn_mtimes     */
-  NULL,  /* fn_rdivide    */
-  NULL,  /* fn_ldivide    */
-  NULL,  /* fn_mrdivide   */
-  NULL,  /* fn_mldivide   */
-  NULL,  /* fn_power      */
-  NULL,  /* fn_mpower     */
-  NULL,  /* fn_lt         */
-  NULL,  /* fn_gt         */
-  NULL,  /* fn_le         */
-  NULL,  /* fn_ge         */
-  NULL,  /* fn_ne         */
-  NULL,  /* fn_eq         */
-  NULL,  /* fn_and        */
-  NULL,  /* fn_or         */
-  NULL,  /* fn_mand       */
-  NULL,  /* fn_mor        */
-  NULL,  /* fn_not        */
-  NULL,  /* fn_colon      */
-  NULL,  /* fn_ctranspose */
-  NULL,  /* fn_transpose  */
-  NULL,  /* fn_horzcat    */
-  NULL,  /* fn_vertcat    */
-  NULL,  /* fn_subsref    */
-  NULL,  /* fn_subsasgn   */
-  NULL   /* fn_subsindex  */
+  NULL,                                          /* fn_plus       */
+  NULL,                                          /* fn_minus      */
+  NULL,                                          /* fn_uminus     */
+  NULL,                                          /* fn_times      */
+  NULL,                                          /* fn_mtimes     */
+  NULL,                                          /* fn_rdivide    */
+  NULL,                                          /* fn_ldivide    */
+  NULL,                                          /* fn_mrdivide   */
+  NULL,                                          /* fn_mldivide   */
+  NULL,                                          /* fn_power      */
+  NULL,                                          /* fn_mpower     */
+  NULL,                                          /* fn_lt         */
+  NULL,                                          /* fn_gt         */
+  NULL,                                          /* fn_le         */
+  NULL,                                          /* fn_ge         */
+  NULL,                                          /* fn_ne         */
+  NULL,                                          /* fn_eq         */
+  NULL,                                          /* fn_and        */
+  NULL,                                          /* fn_or         */
+  NULL,                                          /* fn_mand       */
+  NULL,                                          /* fn_mor        */
+  NULL,                                          /* fn_not        */
+  NULL,                                          /* fn_colon      */
+  NULL,                                          /* fn_ctranspose */
+  NULL,                                          /* fn_transpose  */
+  NULL,                                          /* fn_horzcat    */
+  NULL,                                          /* fn_vertcat    */
+  NULL,                                          /* fn_subsref    */
+  NULL,                                          /* fn_subsasgn   */
+  NULL,                                          /* fn_subsindex  */
+
+  NULL                                           /* methods */
 };
 

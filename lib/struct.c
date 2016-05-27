@@ -43,13 +43,9 @@ void struct_free (Struct st) {
   if (!st)
     return;
 
-  /* free the key array, if it's allocated. */
-  if (st->keys)
-    free(st->keys);
-
-  /* free the object array, if it's allocated. */
-  if (st->objs)
-    free(st->objs);
+  /* free the key and object arrays. */
+  free(st->keys);
+  free(st->objs);
 }
 
 /* struct_get_length(): get the length of a matte struct.
@@ -295,44 +291,47 @@ int struct_delete (Struct st, const char *key) {
 /* Struct_type: object type structure for matte structs.
  */
 struct _ObjectType Struct_type = {
-  "Struct",                            /* name        */
-  sizeof(struct _Struct),              /* size        */
-  0,                                   /* precedence. */
+  "Struct",                                      /* name       */
+  sizeof(struct _Struct),                        /* size       */
+  0,                                             /* precedence */
 
-  (obj_constructor) struct_new,        /* fn_new     */
-  (obj_allocator)   object_alloc,      /* fn_alloc   */
-  (obj_destructor)  struct_free,       /* fn_dealloc */
-  NULL,                                /* fn_disp    */
+  (obj_constructor) struct_new,                  /* fn_new     */
+  NULL,                                          /* fn_copy    */
+  (obj_allocator)   object_alloc,                /* fn_alloc   */
+  (obj_destructor)  struct_free,                 /* fn_dealloc */
+  NULL,                                          /* fn_disp    */
 
-  NULL,  /* fn_plus       */
-  NULL,  /* fn_minus      */
-  NULL,  /* fn_uminus     */
-  NULL,  /* fn_times      */
-  NULL,  /* fn_mtimes     */
-  NULL,  /* fn_rdivide    */
-  NULL,  /* fn_ldivide    */
-  NULL,  /* fn_mrdivide   */
-  NULL,  /* fn_mldivide   */
-  NULL,  /* fn_power      */
-  NULL,  /* fn_mpower     */
-  NULL,  /* fn_lt         */
-  NULL,  /* fn_gt         */
-  NULL,  /* fn_le         */
-  NULL,  /* fn_ge         */
-  NULL,  /* fn_ne         */
-  NULL,  /* fn_eq         */
-  NULL,  /* fn_and        */
-  NULL,  /* fn_or         */
-  NULL,  /* fn_mand       */
-  NULL,  /* fn_mor        */
-  NULL,  /* fn_not        */
-  NULL,  /* fn_colon      */
-  NULL,  /* fn_ctranspose */
-  NULL,  /* fn_transpose  */
-  NULL,  /* fn_horzcat    */
-  NULL,  /* fn_vertcat    */
-  NULL,  /* fn_subsref    */
-  NULL,  /* fn_subsasgn   */
-  NULL   /* fn_subsindex  */
+  NULL,                                          /* fn_plus       */
+  NULL,                                          /* fn_minus      */
+  NULL,                                          /* fn_uminus     */
+  NULL,                                          /* fn_times      */
+  NULL,                                          /* fn_mtimes     */
+  NULL,                                          /* fn_rdivide    */
+  NULL,                                          /* fn_ldivide    */
+  NULL,                                          /* fn_mrdivide   */
+  NULL,                                          /* fn_mldivide   */
+  NULL,                                          /* fn_power      */
+  NULL,                                          /* fn_mpower     */
+  NULL,                                          /* fn_lt         */
+  NULL,                                          /* fn_gt         */
+  NULL,                                          /* fn_le         */
+  NULL,                                          /* fn_ge         */
+  NULL,                                          /* fn_ne         */
+  NULL,                                          /* fn_eq         */
+  NULL,                                          /* fn_and        */
+  NULL,                                          /* fn_or         */
+  NULL,                                          /* fn_mand       */
+  NULL,                                          /* fn_mor        */
+  NULL,                                          /* fn_not        */
+  NULL,                                          /* fn_colon      */
+  NULL,                                          /* fn_ctranspose */
+  NULL,                                          /* fn_transpose  */
+  NULL,                                          /* fn_horzcat    */
+  NULL,                                          /* fn_vertcat    */
+  NULL,                                          /* fn_subsref    */
+  NULL,                                          /* fn_subsasgn   */
+  NULL,                                          /* fn_subsindex  */
+
+  NULL                                           /* methods */
 };
 

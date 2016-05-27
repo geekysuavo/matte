@@ -21,6 +21,7 @@
 
 /* include the matte core object headers. */
 #include <matte/object.h>
+#include <matte/except.h>
 #include <matte/object-list.h>
 
 /* include the matte non-numeric object headers. */

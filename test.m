@@ -19,5 +19,8 @@ pi = [approx(20), ...
       approx(200000), ...
       approx(2000000)]
 
-ccat = [1i, 2, approx(100)];
+% hmm... looks like vectorization of ranges has a bug.
+v = [0 : 2 : 10]
+
+ccat = [1i; 2; approx(100)];
 

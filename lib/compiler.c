@@ -210,6 +210,12 @@ static void simplify_concats (AST node) {
       return;
     }
   }
+  else if (ntype == AST_TYPE_ROW && node->n_down == 1 &&
+           ast_get_type(node->down[0]) != (ASTNodeType) T_COLON) {
+    /* compress row->(expr) into expr for all expr != range. */
+    simplify_concats(ast_rip(node));
+    return;
+  }
 
   /* traverse further into the tree. */
   for (i = 0; i < node->n_down; i++)
@@ -563,18 +569,26 @@ static void write_statements (Compiler c, AST node) {
       "  }\n", S(node), E(node, "operation failed"));
   }
   else if (ntype == AST_TYPE_ROW) {
-    W("  Object %s = object_horzcat(%d",
-      S(node), node->n_down);
+    W("  Object %s = object_horzcat(%d", S(node), node->n_down);
     for (i = 0; i < node->n_down; i++)
       W(", %s", S(node->down[i]));
     W(");\n");
+
+    W("  if (!%s) {\n"
+      "    fprintf(stderr, \"%%s\", \"%s\");\n"
+      "    return NULL;\n"
+      "  }\n", S(node), E(node, "row concatenation failed"));
   }
   else if (ntype == AST_TYPE_COLUMN) {
-    W("  Object %s = object_vertcat(%d",
-      S(node), node->n_down);
+    W("  Object %s = object_vertcat(%d", S(node), node->n_down);
     for (i = 0; i < node->n_down; i++)
       W(", %s", S(node->down[i]));
     W(");\n");
+
+    W("  if (!%s) {\n"
+      "    fprintf(stderr, \"%%s\", \"%s\");\n"
+      "    return NULL;\n"
+      "  }\n", S(node), E(node, "column concatenation failed"));
   }
   else if (ntok == T_ASSIGN) {
     W("  %s = %s;\n", S(node), S(node->down[1]));

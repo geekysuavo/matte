@@ -75,6 +75,21 @@
     PARSE_ERR_MISSING("end of statement"); \
   PARSE_NEWLINES;
 
+/* SAVE_CONTEXT: macro to save the current scanner context into local
+ * variables, which may be accessed to set ast-node context at a later
+ * point in a parse rule.
+ */
+#define SAVE_CONTEXT \
+  const char *ctx_fname = scanner_get_filename(p->scan); \
+  const long ctx_line = scanner_get_lineno(p->scan); \
+  const long ctx_pos = scanner_get_pos(p->scan);
+
+/* SAVED_CONTEXT: macro to recall the local variables created by the
+ * SAVE_CONTEXT macro.
+ */
+#define SAVED_CONTEXT \
+  ctx_fname, ctx_line, ctx_pos
+
 /* parsing function declarations: */
 
 static AST parse_stmts (Parser p);
@@ -292,9 +307,12 @@ static void errorfn (Parser p, const char *format, ...) {
  *  ;
  */
 PARSE_RULE (row)
+  SAVE_CONTEXT;
   node = parse_expr(p);
-  if (node)
+  if (node) {
     node = ast_new_with_parms(AST_TYPE_ROW, false, node);
+    ast_set_source(node, SAVED_CONTEXT);
+  }
   else
     return NULL;
 
@@ -315,9 +333,12 @@ PARSE_RULE (row)
  *  ;
  */
 PARSE_RULE (column)
+  SAVE_CONTEXT;
   node = parse_row(p);
-  if (node)
+  if (node) {
     node = ast_new_with_parms(AST_TYPE_COLUMN, false, node);
+    ast_set_source(node, SAVED_CONTEXT);
+  }
   else
     return NULL;
 

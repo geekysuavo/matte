@@ -3,8 +3,9 @@
  * Released under the MIT License
  */
 
-/* include the ast-node header. */
+/* include the ast-node and exception headers. */
 #include <matte/ast.h>
+#include <matte/except.h>
 
 /* ast_type(): return a pointer to the ast-node object type.
  */
@@ -259,6 +260,24 @@ inline complex double ast_get_complex (AST node) {
 inline const char *ast_get_string (AST node) {
   /* return the node data. */
   return (node && node->has_str == true ? node->node_data.sv : NULL);
+}
+
+/* ast_get_func(): get the function name where a matte ast-node lives.
+ */
+const char *ast_get_func (AST node) {
+  /* search up the tree for a function node. */
+  AST up = node;
+  while (up) {
+    /* return the function name string, if identified. */
+    if (ast_get_type(up) == AST_TYPE_FUNCTION)
+      return ast_get_string(up->down[1]);
+
+    /* move up the tree. */
+    up = up->up;
+  }
+
+  /* no function found. return the main function name. */
+  return "main";
 }
 
 /* ast_reset_data(): reset the data field of a matte ast-node.

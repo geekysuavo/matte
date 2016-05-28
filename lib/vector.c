@@ -3,8 +3,9 @@
  * Released under the MIT License
  */
 
-/* include the vector header. */
+/* include the vector and exception headers. */
 #include <matte/vector.h>
+#include <matte/except.h>
 
 /* include headers for inferior types. */
 #include <matte/int.h>

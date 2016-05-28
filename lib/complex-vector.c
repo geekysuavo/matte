@@ -3,8 +3,9 @@
  * Released under the MIT License
  */
 
-/* include the complex vector header. */
+/* include the complex vector and exception headers. */
 #include <matte/complex-vector.h>
+#include <matte/except.h>
 
 /* include headers for inferior types. */
 #include <matte/int.h>

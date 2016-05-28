@@ -3,8 +3,9 @@
  * Released under the MIT License
  */
 
-/* include the parser header. */
+/* include the parser and exception headers. */
 #include <matte/parser.h>
+#include <matte/except.h>
 
 /* PARSE_RULE: macro to begin a new parsing rule (function).
  */

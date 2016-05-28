@@ -10,6 +10,69 @@
 #include <matte/object-list.h>
 #include <matte/string.h>
 
+/* exceptions: structure for holding information collected from calls
+ * to the fail() macro function.
+ */
+static Exception exceptions = NULL;
+
+/* exceptions_add(): append a call stack frame to the global exception.
+ *
+ * @fname: name of the source file that threw the exception.
+ * @func: name of the function that threw the exception.
+ * @line: line in the source file where the exception was thrown.
+ * @format: printf-style format string for custom error messages.
+ * @...: arguments that accompany the format string.
+ */
+void exceptions_add (const char *fname, const char *func,
+                     unsigned long line, const char *format, ...) {
+  /* declare required variables:
+   *  @vl: variable-length argument list for string formatting.
+   */
+  char msg[1024];
+  va_list vl;
+
+  /* ensure the global exceptions object is allocated. */
+  if (!exceptions) {
+    /* perform the initial allocation. */
+    exceptions = except_new(NULL, NULL);
+    if (!exceptions)
+      return;
+
+    /* build the message string. */
+    va_start(vl, format);
+    vsnprintf(msg, 1024, format, vl);
+    va_end(vl);
+
+    /* store the exception strings. */
+    except_set_strings(NULL, exceptions, "matte:runtime", msg);
+  }
+
+  /* add the call information into the call stack. */
+  except_add_call(NULL, exceptions, fname, func, line);
+}
+
+/* exceptions_get(): return a copy of the global exception.
+ *
+ * arguments:
+ *  @z: zone allocator to utilize.
+ *
+ * returns:
+ *  copy of the current state of the global exception object.
+ */
+Object exceptions_get (Zone z) {
+  /* copy the exception object into the zone allocator. */
+  return (Object) except_copy(z, exceptions);
+}
+
+/* exceptions_disp(): display the contents of the global exception.
+ */
+void exceptions_disp (void) {
+  /* display the exception. */
+  object_disp(NULL, (Object) exceptions, "");
+}
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
 /* except_type(): return a pointer to the exception object type.
  */
 ObjectType except_type (void) {
@@ -157,45 +220,20 @@ void except_delete (Zone z, Exception e) {
  *  @z: zone allocator to utilize.
  *  @e: matte exception to modify.
  *  @id: identifier string value.
- *  @format: message/format string value.
- *  @...: optional arguments for the format.
+ *  @msg: message string value.
  *
  * returns:
  *  integer indicating success (1) or failure (0).
  */
 int except_set_strings (Zone z, Exception e, const char *id,
-                        const char *format, ...) {
-  /* declare required variables:
-   *  @vl: variable-length argument list.
-   */
-  va_list vl;
-
+                        const char *msg) {
   /* return if the exception is null. */
   if (!e)
     return 0;
 
-  /* set the identifier string. */
-  string_set_value(e->id, id);
-
-  /* check if the message string contains format specifiers. */
-  if (strchr(format, '%')) {
-    /* yes. initialize the destination string. */
-    if (!string_set_length(e->msg, 1024))
-      return 0;
-
-    /* write the data into the destination string. */
-    va_start(vl, format);
-    vsnprintf(e->msg->data, e->msg->n, format, vl);
-    va_end(vl);
-
-    /* if possible, shrink the message string. */
-    if (!string_set_length(e->msg, strlen(e->msg->data)))
-      return 0;
-  }
-  else {
-    /* no. copy the string contents outright. */
-    string_set_value(e->msg, format);
-  }
+  /* set the string values. */
+  if (!string_set_value(e->id, id) || !string_set_value(e->msg, msg))
+    return 0;
 
   /* return success. */
   return 1;

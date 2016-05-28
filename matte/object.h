@@ -10,6 +10,7 @@
 /* include required standard c library headers. */
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <stddef.h>
 #include <string.h>
 #include <stdbool.h>
@@ -22,8 +23,7 @@
 #include <cblas.h>
 #include <clapack.h>
 
-/* include the require matte headers. */
-#include <matte/errors.h>
+/* include the required matte headers. */
 #include <matte/zone.h>
 
 /* MatteTranspose: type definition of blas/lapack transpose options.

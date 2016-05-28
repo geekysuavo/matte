@@ -3,8 +3,9 @@
  * Released under the MIT License
  */
 
-/* include the string header. */
+/* include the string and exception headers. */
 #include <matte/string.h>
+#include <matte/except.h>
 
 /* string_type(): return a pointer to the string object type.
  */

@@ -3,8 +3,9 @@
  * Released under the MIT License
  */
 
-/* include the symbol table header. */
+/* include the symbol table and exception headers. */
 #include <matte/symbols.h>
+#include <matte/except.h>
 
 /* symbols_type(): return a pointer to the symbol table object type.
  */

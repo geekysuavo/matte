@@ -110,6 +110,8 @@ complex double ast_get_complex (AST node);
 
 const char *ast_get_string (AST node);
 
+const char *ast_get_func (AST node);
+
 void ast_set_int (AST node, long value);
 
 void ast_set_float (AST node, double value);

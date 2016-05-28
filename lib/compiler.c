@@ -6,6 +6,7 @@
 /* include the compiler and builtins headers. */
 #include <matte/compiler.h>
 #include <matte/builtins.h>
+#include <matte/except.h>
 
 /* W(): macro function for writing to the c source code string
  * of a matte compiler.
@@ -24,8 +25,12 @@
  * using information from a matte ast-node.
  */
 #define asterr(nd, ...) \
+  { exceptions_add(nd->fname, ast_get_func(nd), nd->line, __VA_ARGS__); \
+    return 0; }
+/*
   { ast_error_string(c, nd, false, __VA_ARGS__); \
     if (c->cerr) fprintf(stderr, "%s", c->cerr); }
+ */
 
 /* operators: array of c function names that are mapped to overloadable
  * operations in the matte compiler.
@@ -476,10 +481,9 @@ static int resolve_symbols (Compiler c, AST node, AST root) {
     /* FIXME: if still unresolved, search the path. */
 
     /* check if no symbol was found. */
-    if (!node->sym_table || !node->sym_index) {
-      asterr(node, "symbol '%s' is undefined", ast_get_string(node));
-      return 0;
-    }
+    if (!node->sym_table || !node->sym_index)
+      asterr(node, "symbol '" ANSI_BOLD "%s" ANSI_NORM "' is undefined",
+             ast_get_string(node));
   }
   else if (ntype == AST_TYPE_FUNCTION) {
     /* traverse only into the statement list. */

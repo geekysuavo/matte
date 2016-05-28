@@ -14,6 +14,35 @@
 #include <matte/string.h>
 #include <matte/int.h>
 
+/* definitions of useful ansi terminal codes for generating pretty text.
+ */
+#define ANSI_NORM "\x1B[0m"
+#define ANSI_BOLD "\x1B[01m"
+#define ANSI_RED  "\x1B[01;31m"
+
+/* fail(): macro function to add an error message into the global
+ * exception object.
+ */
+#define fail(...) \
+  { exceptions_add(__FILE__, __FUNCTION__, __LINE__, __VA_ARGS__); \
+    return 0; }
+
+/* throw(): macro function to add an error message into the global
+ * exception object, copy the object into a zone allocator, and
+ * return the copied exception.
+ */
+#define throw(z, ...) \
+  { exceptions_add(__FILE__, __FUNCTION__, __LINE__, __VA_ARGS__); \
+    return exceptions_get(z); }
+
+/* die(): macro function to add an error message into the global
+ * exception object, print the contents of the object, and return
+ * an error status code for main().
+ */
+#define die(...) \
+  { exceptions_add(__FILE__, __FUNCTION__, __LINE__, __VA_ARGS__); \
+    exceptions_disp(); return 1; }
+
 /* IS_EXCEPTION: macro to check that an object is a matte exception.
  */
 #define IS_EXCEPTION(obj) \
@@ -62,16 +91,27 @@ struct _Exception {
   long n_cause;
 };
 
-/* function declarations (except.c): */
+/* global exception function declarations (except.c): */
+
+void exceptions_add (const char *fname, const char *func,
+                     unsigned long line, const char *format, ...);
+
+Object exceptions_get (Zone z);
+
+void exceptions_disp (void);
+
+/* object function declarations (except.c): */
 
 ObjectType except_type (void);
 
 Exception except_new (Zone z, Object args);
 
+Exception except_copy (Zone z, Exception e);
+
 void except_delete (Zone z, Exception e);
 
 int except_set_strings (Zone z, Exception e, const char *id,
-                        const char *format, ...);
+                        const char *msg);
 
 int except_add_call (Zone z, Exception e, const char *fname,
                      const char *func, long line);

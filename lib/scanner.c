@@ -3,8 +3,9 @@
  * Released under the MIT License
  */
 
-/* include the scanner header. */
+/* include the scanner and exception headers. */
 #include <matte/scanner.h>
+#include <matte/except.h>
 
 /* SCANNER_BUF_SIZE: total scanner buffer size.
  * SCANNER_BUF_MARGIN: buffer padding to maintain.

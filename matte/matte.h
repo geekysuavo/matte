@@ -16,9 +16,6 @@
 #include <math.h>
 #include <complex.h>
 
-/* include the matte error message handling header. */
-#include <matte/errors.h>
-
 /* include the matte core object headers. */
 #include <matte/object.h>
 #include <matte/except.h>

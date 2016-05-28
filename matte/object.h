@@ -158,6 +158,8 @@ Object object_alloc (Zone z, ObjectType type);
 
 void object_free (Zone z, void *ptr);
 
+void object_free_all (Zone z);
+
 int object_disp (Zone z, Object obj, const char *var);
 
 /* object method declarations (object.c): */

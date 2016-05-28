@@ -7,8 +7,9 @@
 #ifndef __MATTE_ZONE_H__
 #define __MATTE_ZONE_H__
 
-/* include the standard library header. */
+/* include the standard library headers. */
 #include <stdlib.h>
+#include <string.h>
 
 /* Zone: pointer to a struct _Zone. */
 typedef struct _Zone *Zone;
@@ -20,9 +21,10 @@ struct _Zone {
   /* @data: chunk of object struct data.
    * @n: number of objects in the zone.
    * @sz: number of bytes in the zone.
+   * @usz: number of bytes per object.
    */
   void *data;
-  unsigned long n, sz;
+  unsigned long n, sz, usz;
 
   /* @av: array of available zone positions.
    * @nav: size of the availability array.

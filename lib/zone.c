@@ -22,6 +22,10 @@
  *  integer indicating success (1) or failure (0).
  */
 static int resize (Zone z, unsigned long n) {
+  /* never decrease the size of the zone. */
+  if (n < z->n)
+    return 1;
+
   /* reallocate the zone data chunk. */
   z->data = realloc(z->data, n * ZONE_UNIT);
   if (!z->data)
@@ -31,6 +35,9 @@ static int resize (Zone z, unsigned long n) {
   z->av = (unsigned long*) malloc(n * sizeof(unsigned long));
   if (!z->av)
     return 0;
+
+  /* initialize the contents of the data chunk. */
+  memset(((char*) z->data) + z->n, 0, n - z->n);
 
   /* initialize the contents of the availability array. */
   for (unsigned long i = z->n; i < n; i++)
@@ -65,6 +72,7 @@ int zone_init (Zone z, unsigned long n) {
 
   /* initialize the zone size information. */
   z->n = z->sz = z->nav = 0;
+  z->usz = ZONE_UNIT;
 
   /* resize the zone structure. */
   return resize(z, n);
@@ -98,7 +106,7 @@ void *zone_alloc (Zone z) {
   if (!z->nav) {
     /* slightly over-reserve to achieve amortized O(1) "appends". */
     n = z->n + 1;
-    n = (n >> 3) + (n < 9 ? 3 : 6);
+    n += (n >> 3) + (n < 9 ? 3 : 6);
 
     /* resize the chunk. */
     if (!resize(z, n))
@@ -141,6 +149,9 @@ void zone_free (Zone z, void *ptr) {
 
   /* place the offset back into the availability array. */
   z->av[z->nav++] = i;
+
+  /* re-initialize the released memory. */
+  memset(ptr, 0, ZONE_UNIT);
 }
 
 /* zone_destroy(): release all allocated memory associated with a zone

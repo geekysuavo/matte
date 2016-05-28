@@ -69,6 +69,37 @@ void object_free (Zone z, void *ptr) {
   zone_free(z, obj);
 }
 
+/* object_free_all(): destruct and free all objects maintained by
+ * a specified zone allocator.
+ *
+ * arguments:
+ *  @z: zone allocator to release.
+ */
+void object_free_all (Zone z) {
+  /* return if the zone pointer is null. */
+  if (!z)
+    return;
+
+  /* compute the unit stride over the zone data, and initialize
+   * a pointer into the zone data.
+   */
+  const unsigned long stride = z->usz;
+  char *ptr = z->data;
+
+  /* loop over all units of the zone. */
+  for (unsigned long i = 0; i < z->n; i++, ptr += stride) {
+    /* get the type of the current unit. */
+    ObjectType type = MATTE_TYPE(ptr);
+
+    /* if the type is valid and contains a destructor, execute it. */
+    if (type && type->fn_delete)
+      type->fn_delete(z, (Object) ptr);
+  }
+
+  /* destroy the zone. */
+  zone_destroy(z);
+}
+
 /* object_disp(): display dispatch function.
  */
 int object_disp (Zone z, Object obj, const char *var) {

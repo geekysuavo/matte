@@ -22,8 +22,9 @@
 #include <cblas.h>
 #include <clapack.h>
 
-/* include the matte errors header. */
+/* include the require matte headers. */
 #include <matte/errors.h>
+#include <matte/zone.h>
 
 /* MatteTranspose: type definition of blas/lapack transpose options.
  */

@@ -34,24 +34,26 @@ struct _Matrix {
 
   /* @tr: transposition status of the matrix.
    */
-  int tr;
+  MatteTranspose tr;
 };
 
 /* function declarations (matrix.c): */
 
 ObjectType matrix_type (void);
 
-Matrix matrix_new (Object args);
+Matrix matrix_new (Zone z, Object args);
 
-Matrix matrix_new_with_size (long m, long n);
+Matrix matrix_new_with_size (Zone z, long m, long n);
 
-Matrix matrix_copy (Matrix A);
+Matrix matrix_copy (Zone z, Matrix A);
 
-void matrix_free (Matrix A);
+void matrix_delete (Zone z, Matrix A);
 
 long matrix_get_rows (Matrix A);
 
 long matrix_get_cols (Matrix A);
+
+long matrix_get_length (Matrix A);
 
 int matrix_set_rows (Matrix A, long m);
 

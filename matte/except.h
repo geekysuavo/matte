@@ -14,9 +14,9 @@
 #include <matte/string.h>
 #include <matte/int.h>
 
-/* IS_EXCEPT: macro to check that an object is a matte exception.
+/* IS_EXCEPTION: macro to check that an object is a matte exception.
  */
-#define IS_EXCEPT(obj) \
+#define IS_EXCEPTION(obj) \
   MATTE_TYPE_CHECK(obj, except_type())
 
 /* Exception: pointer to a struct _Exception. */
@@ -69,6 +69,14 @@ ObjectType except_type (void);
 Exception except_new (Zone z, Object args);
 
 void except_delete (Zone z, Exception e);
+
+int except_set_strings (Zone z, Exception e, const char *id,
+                        const char *format, ...);
+
+int except_add_call (Zone z, Exception e, const char *fname,
+                     const char *func, long line);
+
+int except_add_cause (Zone z, Exception e, Exception esub);
 
 #endif /* !__MATTE_EXCEPT_H__ */
 

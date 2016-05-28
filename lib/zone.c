@@ -37,7 +37,7 @@ static int resize (Zone z, unsigned long n) {
     return 0;
 
   /* initialize the contents of the data chunk. */
-  memset(((char*) z->data) + z->n, 0, n - z->n);
+  memset(((char*) z->data) + z->n, 0, (n - z->n) * ZONE_UNIT);
 
   /* initialize the contents of the availability array. */
   for (unsigned long i = z->n; i < n; i++)

@@ -34,24 +34,26 @@ struct _ComplexMatrix {
 
   /* @tr: transposition status of the matrix.
    */
-  int tr;
+  MatteTranspose tr;
 };
 
 /* function declarations (complex-matrix.c): */
 
 ObjectType complex_matrix_type (void);
 
-ComplexMatrix complex_matrix_new (Object args);
+ComplexMatrix complex_matrix_new (Zone z, Object args);
 
-ComplexMatrix complex_matrix_new_with_size (long m, long n);
+ComplexMatrix complex_matrix_new_with_size (Zone z, long m, long n);
 
-ComplexMatrix complex_matrix_copy (ComplexMatrix A);
+ComplexMatrix complex_matrix_copy (Zone z, ComplexMatrix A);
 
-void complex_matrix_free (ComplexMatrix A);
+void complex_matrix_delete (Zone z, ComplexMatrix A);
 
 long complex_matrix_get_rows (ComplexMatrix A);
 
 long complex_matrix_get_cols (ComplexMatrix A);
+
+long complex_matrix_get_length (ComplexMatrix A);
 
 int complex_matrix_set_rows (ComplexMatrix A, long m);
 

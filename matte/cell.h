@@ -41,11 +41,13 @@ struct _Cell {
 
 ObjectType cell_type (void);
 
-Cell cell_new (Object args);
+Cell cell_new (Zone z, Object args);
 
-Cell cell_new_with_size (long m, long n);
+Cell cell_new_with_size (Zone z, long m, long n);
 
-void cell_free (Cell arr);
+Cell cell_copy (Zone z, Cell arr);
+
+void cell_delete (Zone z, Cell arr);
 
 long cell_get_rows (Cell arr);
 

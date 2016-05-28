@@ -81,6 +81,44 @@ Exception except_new (Zone z, Object args) {
   return e;
 }
 
+/* except_copy(): allocate a new matte exception from another
+ * matte exception.
+ *
+ * arguments:
+ *  @z: zone allocator to utilize.
+ *  @e: matte exception to duplicate.
+ *
+ * returns:
+ *  duplicated matte exception.
+ */
+Exception except_copy (Zone z, Exception e) {
+  /* return null if the input argument is null. */
+  if (!e)
+    return NULL;
+
+  /* allocate a new exception. */
+  Exception enew = except_new(z, NULL);
+  if (!enew)
+    return NULL;
+
+  /* copy the exception strings. */
+  except_set_strings(z, enew, string_get_value(e->id),
+                              string_get_value(e->msg));
+
+  /* copy the call stack entries. */
+  for (long i = 0; i < enew->n_stack; i++)
+    except_add_call(z, enew, string_get_value(e->stack[i].fname),
+                             string_get_value(e->stack[i].func),
+                             int_get_value(e->stack[i].line));
+
+  /* copy the secondary exceptions. */
+  for (long i = 0; i < e->n_cause; i++)
+    except_add_cause(z, enew, e->cause[i]);
+
+  /* return the new exception. */
+  return enew;
+}
+
 /* except_delete(): free all memory associated with a matte exception.
  *
  * arguments:
@@ -112,20 +150,167 @@ void except_delete (Zone z, Exception e) {
   free(e->cause);
 }
 
-/* except_disp(): display function for exceptions.
+/* except_set_strings(): set the identifier and message string values
+ * of a matte exception.
+ *
+ * arguments:
+ *  @z: zone allocator to utilize.
+ *  @e: matte exception to modify.
+ *  @id: identifier string value.
+ *  @format: message/format string value.
+ *  @...: optional arguments for the format.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
  */
-int except_disp (Zone z, Exception e, const char *var) {
-  /* FIXME: implement except_disp() */
+int except_set_strings (Zone z, Exception e, const char *id,
+                        const char *format, ...) {
+  /* declare required variables:
+   *  @vl: variable-length argument list.
+   */
+  va_list vl;
+
+  /* return if the exception is null. */
+  if (!e)
+    return 0;
+
+  /* set the identifier string. */
+  string_set_value(e->id, id);
+
+  /* check if the message string contains format specifiers. */
+  if (strchr(format, '%')) {
+    /* yes. initialize the destination string. */
+    if (!string_set_length(e->msg, 1024))
+      return 0;
+
+    /* write the data into the destination string. */
+    va_start(vl, format);
+    vsnprintf(e->msg->data, e->msg->n, format, vl);
+    va_end(vl);
+
+    /* if possible, shrink the message string. */
+    if (!string_set_length(e->msg, strlen(e->msg->data)))
+      return 0;
+  }
+  else {
+    /* no. copy the string contents outright. */
+    string_set_value(e->msg, format);
+  }
 
   /* return success. */
   return 1;
 }
 
+/* except_add_call(): add an entry of call information into the call stack
+ * of a matte exception.
+ *
+ * arguments:
+ *  @z: zone allocator to utilize.
+ *  @e: matte exception to modify.
+ *  @fname: filename string to add.
+ *  @func: function string to add.
+ *  @line: line number to add.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+int except_add_call (Zone z, Exception e, const char *fname,
+                     const char *func, long line) {
+  /* return if the exception is null. */
+  if (!e)
+    return 0;
+
+  /* resize the call stack. */
+  e->n_stack++;
+  e->stack = (ExceptionStack)
+    realloc(e->stack, e->n_stack * sizeof(struct _ExceptionStack));
+
+  /* check if reallocation failed. */
+  if (!e->stack)
+    return 0;
+
+  /* copy the call information into the call stack. */
+  e->stack[e->n_stack - 1].fname = string_new_with_value(z, fname);
+  e->stack[e->n_stack - 1].func  = string_new_with_value(z, func);
+  e->stack[e->n_stack - 1].line  = int_new_with_value(z, line);
+
+  /* return success. */
+  return 1;
+}
+
+/* except_add_cause(): add an exception object into the cause array
+ * of a matte exception.
+ *
+ * arguments:
+ *  @z: zone allocator to utilize.
+ *  @e: matte exception to modify.
+ *  @esub: cause exception to add.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+int except_add_cause (Zone z, Exception e, Exception esub) {
+  /* return if either exception is null. */
+  if (!e || !esub)
+    return 0;
+
+  /* resize the cause array. */
+  e->n_cause++;
+  e->cause = (Exception*)
+    realloc(e->cause, e->n_cause * sizeof(Exception));
+
+  /* check if reallocation failed. */
+  if (!e->cause)
+    return 0;
+
+  /* copy the new secondary exception into the cause array. */
+  e->cause[e->n_cause - 1] = except_copy(z, esub);
+
+  /* return success. */
+  return 1;
+}
+
+/* Exception.addCause(): add a secondary cause to an exception.
+ */
 Object except_addCause (Zone z, Exception e, ObjectList args) {
-  /* FIXME: implement except_addCause() */
+  /* get the number of input arguments. */
+  const int nargin = object_list_get_length(args);
+
+  /* only accept a single input argument. */
+  if (nargin == 1) {
+    /* get the input arguments. */
+    Object obj = object_list_get(args, 0);
+
+    /* add the exception object to the cause array. */
+    if (IS_EXCEPTION(obj) && except_add_cause(z, e, (Exception) obj))
+      return (Object) e;
+  }
 
   /* return nothing. */
   return NULL;
+}
+
+/* except_disp(): display function for exceptions.
+ */
+int except_disp (Zone z, Exception e, const char *var) {
+  /* print the main error message. */
+  printf(ANSI_RED "error:" ANSI_NORM " "
+         ANSI_BOLD "%s:" ANSI_NORM "\n %s\n\n",
+         string_get_value(e->id), string_get_value(e->msg));
+
+  /* print the call stack. */
+  printf("call stack:\n");
+  for (long i = 0; i < e->n_stack; i++) {
+    printf(" [%ld] " ANSI_BOLD "%s:%ld" ANSI_NORM
+           " within function '" ANSI_BOLD "%s" ANSI_NORM "'\n", i,
+           string_get_value(e->stack[i].fname),
+           int_get_value(e->stack[i].line),
+           string_get_value(e->stack[i].func));
+  }
+
+  /* return success. */
+  printf("\n");
+  return 1;
 }
 
 /* except_methods: method table structure for matte exceptions.
@@ -143,7 +328,7 @@ struct _ObjectType Exception_type = {
   0,                                             /* precedence */
 
   (obj_constructor) except_new,                  /* fn_new    */
-  NULL,                                          /* fn_copy   */
+  (obj_constructor) except_copy,                 /* fn_copy   */
   (obj_destructor)  except_delete,               /* fn_delete */
   (obj_display)     except_disp,                 /* fn_disp   */
 

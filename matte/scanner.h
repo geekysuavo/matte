@@ -72,13 +72,13 @@ struct _Scanner {
 
 ObjectType scanner_type (void);
 
-Scanner scanner_new (Object args);
+Scanner scanner_new (Zone z, Object args);
 
 Scanner scanner_new_with_file (const char *fname);
 
 Scanner scanner_new_with_string (const char *str);
 
-void scanner_free (Scanner s);
+void scanner_delete (Zone z, Scanner s);
 
 int scanner_set_file (Scanner s, const char *fname);
 

@@ -19,9 +19,9 @@ int matte_builtins_init (Symbols gs);
 
 /* built-in function declarations (builtins.c): */
 
-Object matte_sum (Object argin);
+Object matte_sum (Zone z, Object argin);
 
-Object matte_sprintf (Object argin);
+Object matte_sprintf (Zone z, Object argin);
 
 #endif /* !__MATTE_BUILTINS_H__ */
 

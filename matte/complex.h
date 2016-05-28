@@ -34,13 +34,13 @@ struct _ComplexFloat {
 
 ObjectType complex_type (void);
 
-Complex complex_new (Object args);
+Complex complex_new (Zone z, Object args);
 
-Complex complex_new_with_value (complex double value);
+Complex complex_new_with_value (Zone z, complex double value);
 
-Complex complex_copy (Complex f);
+Complex complex_copy (Zone z, Complex f);
 
-Complex complex_copyconj (Complex f);
+Complex complex_copyconj (Zone z, Complex f);
 
 complex double complex_get_value (Complex f);
 

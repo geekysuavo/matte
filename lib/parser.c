@@ -41,14 +41,14 @@
 #define PARSE_ERR_EXISTS(tok) \
   { errorfn(p, "class %s have already been defined", \
             scanner_token_get_name(tok)); \
-    object_free((Object) node); \
+    object_free(NULL, node); \
     return NULL; }
 
 /* PARSE_ERR_MISSING: macro to report a missing rule during parsing.
  */
 #define PARSE_ERR_MISSING(s) \
   { errorfn(p, "missing %s in %s", s, rname); \
-    object_free((Object) node); \
+    object_free(NULL, node); \
     return NULL; }
 
 /* PARSE_ERR_MISSING_TOKEN: macro to report a missing token during parsing.
@@ -57,7 +57,7 @@
   { errorfn(p, "expected %s, got %s in %s", \
             scanner_token_get_name(tk), \
             scanner_token_get_name(p->tok), rname); \
-    object_free((Object) node); \
+    object_free(NULL, node); \
     return NULL; }
 
 /* PARSE_REQUIRE: macro to assert that a given token exists at the
@@ -1568,7 +1568,7 @@ static int parse (Parser p) {
             scanner_get_filename(p->scan));
 
     /* free the abstract syntax tree. */
-    object_free((Object) subtree);
+    object_free(NULL, subtree);
 
     /* return failure. */
     return 0;
@@ -1592,17 +1592,21 @@ ObjectType parser_type (void) {
 
 /* parser_new(): allocate a new matte parser.
  *
+ * arguments:
+ *  @z: zone allocator to completely ignore.
+ *  @args: constructor arguments.
+ *
  * returns:
  *  newly allocated and initialized matte parser.
  */
-Parser parser_new (Object args) {
+Parser parser_new (Zone z, Object args) {
   /* allocate a new parser. */
-  Parser p = (Parser) Parser_type.fn_alloc(&Parser_type);
+  Parser p = (Parser) object_alloc(NULL, &Parser_type);
   if (!p)
     return NULL;
 
   /* allocate the scanner. */
-  p->scan = scanner_new(NULL);
+  p->scan = scanner_new(NULL, NULL);
   p->tok = T_ERR;
 
   /* check if scanner allocation failed. */
@@ -1630,15 +1634,10 @@ Parser parser_new (Object args) {
  *  newly allocated and initialized parser.
  */
 Parser parser_new_with_file (const char *fname) {
-  /* declare required variables:
-   *  @p: new parser to allocate.
-   */
-  Parser p;
-
   /* allocate a new parser and set the filename string. */
-  p = parser_new(NULL);
+  Parser p = parser_new(NULL, NULL);
   if (!p || !parser_set_file(p, fname)) {
-    object_free((Object) p);
+    object_free(NULL, p);
     return NULL;
   }
 
@@ -1656,15 +1655,10 @@ Parser parser_new_with_file (const char *fname) {
  *  newly allocated and initialized parser.
  */
 Parser parser_new_with_string (const char *str) {
-  /* declare required variables:
-   *  @p: new parser to allocate.
-   */
-  Parser p;
-
   /* allocate a new parser and set the string buffer. */
-  p = parser_new(NULL);
+  Parser p = parser_new(NULL, NULL);
   if (!p || !parser_set_string(p, str)) {
-    object_free((Object) p);
+    object_free(NULL, p);
     return NULL;
   }
 
@@ -1672,21 +1666,22 @@ Parser parser_new_with_string (const char *str) {
   return p;
 }
 
-/* parser_free(): free all memory associated with a matte parser.
+/* parser_delete(): free all memory associated with a matte parser.
  *
  * arguments:
+ *  @z: zone allocator to completely ignore.
  *  @p: matte parser to free.
  */
-void parser_free (Parser p) {
+void parser_delete (Zone z, Parser p) {
   /* return if the parser is null. */
   if (!p)
     return;
 
   /* free the associated scanner. */
-  object_free((Object) p->scan);
+  object_free(NULL, p->scan);
 
   /* free the abstract syntax tree. */
-  object_free((Object) p->tree);
+  object_free(NULL, p->tree);
 }
 
 /* parser_set_file(): set the filename string of a matte parser.
@@ -1815,11 +1810,10 @@ struct _ObjectType Parser_type = {
   sizeof(struct _Parser),                        /* size       */
   0,                                             /* precedence */
 
-  (obj_constructor) parser_new,                  /* fn_new     */
-  NULL,                                          /* fn_copy    */
-  (obj_allocator)   object_alloc,                /* fn_alloc   */
-  (obj_destructor)  parser_free,                 /* fn_dealloc */
-  NULL,                                          /* fn_disp    */
+  (obj_constructor) parser_new,                  /* fn_new    */
+  NULL,                                          /* fn_copy   */
+  (obj_destructor)  parser_delete,               /* fn_delete */
+  NULL,                                          /* fn_disp   */
 
   NULL,                                          /* fn_plus       */
   NULL,                                          /* fn_minus      */

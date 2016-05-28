@@ -23,12 +23,16 @@ ObjectType float_type (void) {
 
 /* float_new(): allocate a new matte float.
  *
+ * arguments:
+ *  @z: zone allocator to utilize.
+ *  @args: constructor arguments.
+ *
  * returns:
  *  newly allocated float.
  */
-Float float_new (Object args) {
+Float float_new (Zone z, Object args) {
   /* allocate a new float. */
-  Float f = (Float) Float_type.fn_alloc(&Float_type);
+  Float f = (Float) object_alloc(z, &Float_type);
   if (!f)
     return NULL;
 
@@ -42,14 +46,15 @@ Float float_new (Object args) {
 /* float_new_with_value(): allocate a new matte float with a set value.
  *
  * arguments:
+ *  @z: zone allocator to utilize.
  *  @value: initial value of the float.
  *
  * returns:
  *  newly allocated and initialized float.
  */
-Float float_new_with_value (double value) {
+Float float_new_with_value (Zone z, double value) {
   /* allocate a new float. */
-  Float f = float_new(NULL);
+  Float f = float_new(z, NULL);
   if (!f)
     return NULL;
 
@@ -61,23 +66,19 @@ Float float_new_with_value (double value) {
 /* float_copy(): allocate a new matte float from another matte float.
  *
  * arguments:
+ *  @z: zone allocator to utilize.
  *  @f: matte float to duplicate.
  *
  * returns:
  *  duplicated matte float.
  */
-Float float_copy (Float f) {
+Float float_copy (Zone z, Float f) {
   /* return null if the input argument is null. */
   if (!f)
     return NULL;
 
   /* allocate a new float with the value of the input object. */
-  Float fnew = float_new_with_value(float_get_value(f));
-  if (!fnew)
-    return NULL;
-
-  /* return the new float. */
-  return fnew;
+  return float_new_with_value(z, f->value);
 }
 
 /* float_get_value(): get the raw value of a matte float.
@@ -109,34 +110,32 @@ inline void float_set_value (Float f, double value) {
 }
 
 /* float_disp(): display operation for floats.
- * see Float_type for more detailed information.
  */
-int float_disp (Float f, const char *var) {
+int float_disp (Zone z, Float f, const char *var) {
   printf("%s = %lg\n", var, f->value);
   return 1;
 }
 
 /* float_plus(): addition operation for floats.
- * see Float_type for more detailed information.
  */
-Object float_plus (Object a, Object b) {
+Object float_plus (Zone z, Object a, Object b) {
   if (IS_FLOAT(a)) {
     if (IS_FLOAT(b)) {
       /* float + float => float */
       return (Object)
-        float_new_with_value(float_get_value((Float) a) +
-                             float_get_value((Float) b));
+        float_new_with_value(z, float_get_value((Float) a) +
+                                float_get_value((Float) b));
     }
     else if (IS_INT(b)) {
       /* float + int => float */
       return (Object)
-        float_new_with_value(float_get_value((Float) a) +
+        float_new_with_value(z, float_get_value((Float) a) +
                              (double) int_get_value((Int) b));
     }
     else if (IS_RANGE(b)) {
       /* float + range => vector */
       double fval = float_get_value((Float) a);
-      Vector x = vector_new_from_range((Range) b);
+      Vector x = vector_new_from_range(z, (Range) b);
       if (!x)
         return NULL;
 
@@ -150,13 +149,13 @@ Object float_plus (Object a, Object b) {
     if (IS_INT(a)) {
       /* int + float => float */
       return (Object)
-        float_new_with_value(float_get_value((Float) b) +
+        float_new_with_value(z, float_get_value((Float) b) +
                              (double) int_get_value((Int) a));
     }
     else if (IS_RANGE(a)) {
       /* range + float => vector */
       double fval = float_get_value((Float) b);
-      Vector x = vector_new_from_range((Range) a);
+      Vector x = vector_new_from_range(z, (Range) a);
       if (!x)
         return NULL;
 
@@ -171,26 +170,25 @@ Object float_plus (Object a, Object b) {
 }
 
 /* float_minus(): subtraction operation for floats.
- * see Float_type for more detailed information.
  */
-Object float_minus (Object a, Object b) {
+Object float_minus (Zone z, Object a, Object b) {
   if (IS_FLOAT(a)) {
     if (IS_FLOAT(b)) {
       /* float - float => float */
       return (Object)
-        float_new_with_value(float_get_value((Float) a) -
-                             float_get_value((Float) b));
+        float_new_with_value(z, float_get_value((Float) a) -
+                                float_get_value((Float) b));
     }
     else if (IS_INT(b)) {
       /* float - int => float */
       return (Object)
-        float_new_with_value(float_get_value((Float) a) -
+        float_new_with_value(z, float_get_value((Float) a) -
                              (double) int_get_value((Int) b));
     }
     else if (IS_RANGE(b)) {
       /* float - range => vector */
       double fval = float_get_value((Float) a);
-      Vector x = vector_new_from_range((Range) b);
+      Vector x = vector_new_from_range(z, (Range) b);
       if (!x)
         return NULL;
 
@@ -204,13 +202,13 @@ Object float_minus (Object a, Object b) {
     if (IS_INT(a)) {
       /* int - float => float */
       return (Object)
-        float_new_with_value((double) int_get_value((Int) a) -
+        float_new_with_value(z, (double) int_get_value((Int) a) -
                              float_get_value((Float) b));
     }
     else if (IS_RANGE(a)) {
       /* range - float => vector */
       double fval = float_get_value((Float) b);
-      Vector x = vector_new_from_range((Range) a);
+      Vector x = vector_new_from_range(z, (Range) a);
       if (!x)
         return NULL;
 
@@ -226,25 +224,25 @@ Object float_minus (Object a, Object b) {
 
 /* float_uminus(): unary negation operation for floats.
  */
-Float float_uminus (Float a) {
+Float float_uminus (Zone z, Float a) {
   /* compute and return the negation. */
-  return float_new_with_value(-float_get_value(a));
+  return float_new_with_value(z, -(a->value));
 }
 
 /* float_mtimes(): matrix multiplication operation for floats.
  */
-Object float_mtimes (Object a, Object b) {
+Object float_mtimes (Zone z, Object a, Object b) {
   if (IS_FLOAT(a)) {
     if (IS_FLOAT(b)) {
       /* float * float => float */
       return (Object)
-        float_new_with_value(float_get_value((Float) a) *
-                             float_get_value((Float) b));
+        float_new_with_value(z, float_get_value((Float) a) *
+                                float_get_value((Float) b));
     }
     else if (IS_INT(b)) {
       /* float * int => float */
       return (Object)
-        float_new_with_value(float_get_value((Float) a) *
+        float_new_with_value(z, float_get_value((Float) a) *
                              (double) int_get_value((Int) b));
     }
   }
@@ -252,7 +250,7 @@ Object float_mtimes (Object a, Object b) {
     if (IS_INT(a)) {
       /* int * float => float */
       return (Object)
-        float_new_with_value(float_get_value((Float) b) *
+        float_new_with_value(z, float_get_value((Float) b) *
                              (double) int_get_value((Int) a));
     }
   }
@@ -262,12 +260,12 @@ Object float_mtimes (Object a, Object b) {
 
 /* float_times(): element-wise multiplication operation for floats.
  */
-Object float_times (Object a, Object b) {
+Object float_times (Zone z, Object a, Object b) {
   if (IS_FLOAT(a)) {
     if (IS_RANGE(b)) {
       /* float .* range => vector */
       double fval = float_get_value((Float) a);
-      Vector x = vector_new_from_range((Range) b);
+      Vector x = vector_new_from_range(z, (Range) b);
       if (!x)
         return NULL;
 
@@ -281,7 +279,7 @@ Object float_times (Object a, Object b) {
     if (IS_RANGE(a)) {
       /* range .* float => vector */
       double fval = float_get_value((Float) b);
-      Vector x = vector_new_from_range((Range) a);
+      Vector x = vector_new_from_range(z, (Range) a);
       if (!x)
         return NULL;
 
@@ -292,23 +290,23 @@ Object float_times (Object a, Object b) {
     }
   }
 
-  return float_mtimes(a, b);
+  return float_mtimes(z, a, b);
 }
 
 /* float_mrdivide(): matrix right-division operation for floats.
  */
-Object float_mrdivide (Object a, Object b) {
+Object float_mrdivide (Zone z, Object a, Object b) {
   if (IS_FLOAT(a)) {
     if (IS_FLOAT(b)) {
       /* float / float => float */
       return (Object)
-        float_new_with_value(float_get_value((Float) a) /
-                             float_get_value((Float) b));
+        float_new_with_value(z, float_get_value((Float) a) /
+                                float_get_value((Float) b));
     }
     else if (IS_INT(b)) {
       /* float / int => float */
       return (Object)
-        float_new_with_value(float_get_value((Float) a) /
+        float_new_with_value(z, float_get_value((Float) a) /
                              (double) int_get_value((Int) b));
     }
   }
@@ -316,7 +314,7 @@ Object float_mrdivide (Object a, Object b) {
     if (IS_INT(a)) {
       /* int / float => float */
       return (Object)
-        float_new_with_value((double) int_get_value((Int) a) /
+        float_new_with_value(z, (double) int_get_value((Int) a) /
                              float_get_value((Float) b));
     }
   }
@@ -326,12 +324,12 @@ Object float_mrdivide (Object a, Object b) {
 
 /* float_rdivide(): element-wise right-division operation for floats.
  */
-Object float_rdivide (Object a, Object b) {
+Object float_rdivide (Zone z, Object a, Object b) {
   if (IS_FLOAT(a)) {
     if (IS_RANGE(b)) {
       /* float ./ range => vector */
       double fval = float_get_value((Float) a);
-      Vector x = vector_new_from_range((Range) b);
+      Vector x = vector_new_from_range(z, (Range) b);
       if (!x)
         return NULL;
 
@@ -345,7 +343,7 @@ Object float_rdivide (Object a, Object b) {
     if (IS_RANGE(a)) {
       /* range ./ float => vector */
       double fval = float_get_value((Float) b);
-      Vector x = vector_new_from_range((Range) a);
+      Vector x = vector_new_from_range(z, (Range) a);
       if (!x)
         return NULL;
 
@@ -356,23 +354,23 @@ Object float_rdivide (Object a, Object b) {
     }
   }
 
-  return float_mrdivide(a, b);
+  return float_mrdivide(z, a, b);
 }
 
 /* float_mldivide(): matrix left-division for floats.
  */
-Object float_mldivide (Object a, Object b) {
+Object float_mldivide (Zone z, Object a, Object b) {
   if (IS_FLOAT(a)) {
     if (IS_FLOAT(b)) {
       /* float \ float => float */
       return (Object)
-        float_new_with_value(float_get_value((Float) b) /
-                             float_get_value((Float) a));
+        float_new_with_value(z, float_get_value((Float) b) /
+                                float_get_value((Float) a));
     }
     else if (IS_INT(b)) {
       /* float \ int => float */
       return (Object)
-        float_new_with_value((double) int_get_value((Int) b) /
+        float_new_with_value(z, (double) int_get_value((Int) b) /
                              float_get_value((Float) a));
     }
   }
@@ -380,7 +378,7 @@ Object float_mldivide (Object a, Object b) {
     if (IS_INT(a)) {
       /* int \ float => float */
       return (Object)
-        float_new_with_value(float_get_value((Float) b) /
+        float_new_with_value(z, float_get_value((Float) b) /
                              (double) int_get_value((Int) a));
     }
   }
@@ -390,12 +388,12 @@ Object float_mldivide (Object a, Object b) {
 
 /* float_ldivide(): element-wise left-division for floats.
  */
-Object float_ldivide (Object a, Object b) {
+Object float_ldivide (Zone z, Object a, Object b) {
   if (IS_FLOAT(a)) {
     if (IS_RANGE(b)) {
       /* float .\ range => vector */
       double fval = float_get_value((Float) a);
-      Vector x = vector_new_from_range((Range) b);
+      Vector x = vector_new_from_range(z, (Range) b);
       if (!x)
         return NULL;
 
@@ -409,7 +407,7 @@ Object float_ldivide (Object a, Object b) {
     if (IS_RANGE(b)) {
       /* range .\ float => vector */
       double fval = float_get_value((Float) b);
-      Vector x = vector_new_from_range((Range) a);
+      Vector x = vector_new_from_range(z, (Range) a);
       if (!x)
         return NULL;
 
@@ -420,32 +418,32 @@ Object float_ldivide (Object a, Object b) {
     }
   }
 
-  return float_mldivide(a, b);
+  return float_mldivide(z, a, b);
 }
 
 /* float_mpower(): matrix exponentiation operation for floats.
  */
-Object float_mpower (Object a, Object b) {
+Object float_mpower (Zone z, Object a, Object b) {
   if (IS_FLOAT(a)) {
     if (IS_FLOAT(b)) {
       /* float ^ float => float */
       return (Object)
-        float_new_with_value(pow(float_get_value((Float) a),
-                                 float_get_value((Float) b)));
+        float_new_with_value(z, pow(float_get_value((Float) a),
+                                    float_get_value((Float) b)));
     }
     else if (IS_INT(b)) {
       /* float ^ int => float */
       return (Object)
-        float_new_with_value(pow(float_get_value((Float) a),
-                                 (double) int_get_value((Int) b)));
+        float_new_with_value(z, pow(float_get_value((Float) a),
+                                    (double) int_get_value((Int) b)));
     }
   }
   else if (IS_FLOAT(b)) {
     if (IS_INT(a)) {
       /* int ^ float => float */
       return (Object)
-        float_new_with_value(pow((double) int_get_value((Int) a),
-                                 float_get_value((Float) b)));
+        float_new_with_value(z, pow((double) int_get_value((Int) a),
+                                    float_get_value((Float) b)));
     }
   }
 
@@ -454,12 +452,12 @@ Object float_mpower (Object a, Object b) {
 
 /* float_power(): element-wise exponentiation operation for floats.
  */
-Object float_power (Object a, Object b) {
+Object float_power (Zone z, Object a, Object b) {
   if (IS_FLOAT(a)) {
     if (IS_RANGE(b)) {
       /* float .^ range => vector */
       double fval = float_get_value((Float) a);
-      Vector x = vector_new_from_range((Range) b);
+      Vector x = vector_new_from_range(z, (Range) b);
       if (!x)
         return NULL;
 
@@ -473,7 +471,7 @@ Object float_power (Object a, Object b) {
     if (IS_RANGE(a)) {
       /* range .^ float => vector */
       double fval = float_get_value((Float) b);
-      Vector x = vector_new_from_range((Range) a);
+      Vector x = vector_new_from_range(z, (Range) a);
       if (!x)
         return NULL;
 
@@ -484,7 +482,7 @@ Object float_power (Object a, Object b) {
     }
   }
 
-  return float_mpower(a, b);
+  return float_mpower(z, a, b);
 }
 
 /* float_lt(): less-than comparison operation for floats. */
@@ -529,38 +527,38 @@ Object float_power (Object a, Object b) {
 
 /* float_mand(): matrix logical-and operation for floats.
  */
-Int float_mand (Object a, Object b) {
+Int float_mand (Zone z, Object a, Object b) {
   if (IS_FLOAT(a)) {
     if (IS_FLOAT(b)) {
       /* float && float => int */
-      return int_new_with_value(
+      return int_new_with_value(z,
         float_get_value((Float) a) && float_get_value((Float) b));
     }
     else if (IS_INT(b)) {
       /* float && int => int */
-      return int_new_with_value(
+      return int_new_with_value(z,
         float_get_value((Float) a) && int_get_value((Int) b));
     }
     else if (IS_RANGE(b)) {
       /* float && range => int */
       if (float_get_value((Float) a) && range_all((Range) b))
-        return int_new_with_value(1L);
+        return int_new_with_value(z, 1L);
 
-      return int_new_with_value(0L);
+      return int_new_with_value(z, 0L);
     }
   }
   else if (IS_FLOAT(b)) {
     if (IS_INT(a)) {
       /* int && float => int */
-      return int_new_with_value(
+      return int_new_with_value(z,
         int_get_value((Int) a) && float_get_value((Float) b));
     }
     else if (IS_RANGE(a)) {
       /* range && float => int */
       if (range_all((Range) a) && float_get_value((Float) b))
-        return int_new_with_value(1L);
+        return int_new_with_value(z, 1L);
 
-      return int_new_with_value(0L);
+      return int_new_with_value(z, 0L);
     }
   }
 
@@ -569,38 +567,38 @@ Int float_mand (Object a, Object b) {
 
 /* float_mor(): matrix logical-or operation for floats.
  */
-Int float_mor (Object a, Object b) {
+Int float_mor (Zone z, Object a, Object b) {
   if (IS_FLOAT(a)) {
     if (IS_FLOAT(b)) {
       /* float || float => int */
-      return int_new_with_value(
+      return int_new_with_value(z,
         float_get_value((Float) a) || float_get_value((Float) b));
     }
     else if (IS_INT(b)) {
       /* float || int => int */
-      return int_new_with_value(
+      return int_new_with_value(z,
         float_get_value((Float) a) || int_get_value((Int) b));
     }
     else if (IS_RANGE(b)) {
       /* float || range => int */
       if (float_get_value((Float) a) || range_all((Range) b))
-        return int_new_with_value(1L);
+        return int_new_with_value(z, 1L);
 
-      return int_new_with_value(0L);
+      return int_new_with_value(z, 0L);
     }
   }
   else if (IS_FLOAT(b)) {
     if (IS_INT(a)) {
       /* int || float => int */
-      return int_new_with_value(
+      return int_new_with_value(z,
         int_get_value((Int) a) || float_get_value((Float) b));
     }
     else if (IS_RANGE(a)) {
       /* range || float => int */
       if (range_all((Range) a) || float_get_value((Float) b))
-        return int_new_with_value(1L);
+        return int_new_with_value(z, 1L);
 
-      return int_new_with_value(0L);
+      return int_new_with_value(z, 0L);
     }
   }
 
@@ -609,13 +607,13 @@ Int float_mor (Object a, Object b) {
 
 /* float_not(): logical negation operation for floats.
  */
-Int float_not (Float a) {
-  return int_new_with_value(float_get_value(a) ? 0L : 1L);
+Int float_not (Zone z, Float a) {
+  return int_new_with_value(z, a->value ? 0L : 1L);
 }
 
 /* float_colon(): colon operation for floats.
  */
-Vector float_colon (Object a, Object b, Object c) {
+Vector float_colon (Zone z, Object a, Object b, Object c) {
   double begin, step, end;
 
   if (IS_FLOAT(a))
@@ -643,7 +641,7 @@ Vector float_colon (Object a, Object b, Object c) {
   if (n < 0)
     n = 0;
 
-  Vector x = vector_new_with_length(n);
+  Vector x = vector_new_with_length(z, n);
   if (!x)
     return NULL;
 
@@ -655,8 +653,8 @@ Vector float_colon (Object a, Object b, Object c) {
 
 /* float_horzcat(): horizontal concatenation function for floats
  */
-Vector float_horzcat (int n, va_list vl) {
-  Vector x = vector_new(NULL);
+Vector float_horzcat (Zone z, int n, va_list vl) {
+  Vector x = vector_new(z, NULL);
   if (!x)
     return NULL;
 
@@ -665,7 +663,7 @@ Vector float_horzcat (int n, va_list vl) {
 
     if (IS_FLOAT(obj)) {
       if (!vector_set_length(x, x->n + 1)) {
-        object_free((Object) x);
+        object_free(z, x);
         return NULL;
       }
 
@@ -673,7 +671,7 @@ Vector float_horzcat (int n, va_list vl) {
     }
     else if (IS_INT(obj)) {
       if (!vector_set_length(x, x->n + 1)) {
-        object_free((Object) x);
+        object_free(z, x);
         return NULL;
       }
 
@@ -684,7 +682,7 @@ Vector float_horzcat (int n, va_list vl) {
       long nr = range_get_length(r);
 
       if (!vector_set_length(x, x->n + nr)) {
-        object_free((Object) x);
+        object_free(z, x);
         return NULL;
       }
 
@@ -692,7 +690,7 @@ Vector float_horzcat (int n, va_list vl) {
         x->data[ix++] = (double) elem;
     }
     else {
-      object_free((Object) x);
+      object_free(z, x);
       return NULL;
     }
   }
@@ -702,8 +700,8 @@ Vector float_horzcat (int n, va_list vl) {
 
 /* float_vertcat(): vertical concatenation function for floats.
  */
-Vector float_vertcat (int n, va_list vl) {
-  Vector x = vector_new_with_length(n);
+Vector float_vertcat (Zone z, int n, va_list vl) {
+  Vector x = vector_new_with_length(z, n);
   if (!x)
     return NULL;
 
@@ -717,7 +715,7 @@ Vector float_vertcat (int n, va_list vl) {
       x->data[i] = (double) int_get_value((Int) obj);
     }
     else {
-      object_free((Object) x);
+      object_free(z, x);
       return NULL;
     }
   }
@@ -733,11 +731,10 @@ struct _ObjectType Float_type = {
   sizeof(struct _Float),                         /* size       */
   3,                                             /* precedence */
 
-  (obj_constructor) float_new,                   /* fn_new     */
-  (obj_constructor) float_copy,                  /* fn_copy    */
-  (obj_allocator)   object_alloc,                /* fn_alloc   */
-  NULL,                                          /* fn_dealloc */
-  (obj_display)     float_disp,                  /* fn_disp    */
+  (obj_constructor) float_new,                   /* fn_new    */
+  (obj_constructor) float_copy,                  /* fn_copy   */
+  NULL,                                          /* fn_delete */
+  (obj_display)     float_disp,                  /* fn_disp   */
 
   (obj_binary)   float_plus,                     /* fn_plus       */
   (obj_binary)   float_minus,                    /* fn_minus      */

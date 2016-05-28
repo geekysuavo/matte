@@ -36,9 +36,9 @@ struct _Range {
 
 ObjectType range_type (void);
 
-Range range_new (Object args);
+Range range_new (Zone z, Object args);
 
-Range range_copy (Range r);
+Range range_copy (Zone z, Range r);
 
 long range_get_begin (Range r);
 

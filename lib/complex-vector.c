@@ -26,15 +26,16 @@ ObjectType complex_vector_type (void) {
 
 /* complex_vector_new(): allocate a new empty matte complex vector.
  *
+ * arguments:
+ *  @z: zone allocator to utilize.
+ *  @args: constructor arguments.
+ *
  * returns:
  *  newly allocated empty complex vector.
  */
-ComplexVector complex_vector_new (Object args) {
+ComplexVector complex_vector_new (Zone z, Object args) {
   /* allocate a new complex vector. */
-  ComplexVector x = (ComplexVector)
-    ComplexVector_type.fn_alloc(&ComplexVector_type);
-
-  /* check if allocation failed. */
+  ComplexVector x = (ComplexVector) object_alloc(z, &ComplexVector_type);
   if (!x)
     return NULL;
 
@@ -52,14 +53,15 @@ ComplexVector complex_vector_new (Object args) {
  * with a set number of zero elements.
  *
  * arguments:
+ *  @z: zone allocator to utilize.
  *  @n: number of elements in the new vector.
  *
  * returns:
  *  newly allocated zero vector.
  */
-ComplexVector complex_vector_new_with_length (long n) {
+ComplexVector complex_vector_new_with_length (Zone z, long n) {
   /* allocate a new complex vector. */
-  ComplexVector x = complex_vector_new(NULL);
+  ComplexVector x = complex_vector_new(z, NULL);
   if (!x || !complex_vector_set_length(x, n))
     return NULL;
 
@@ -71,12 +73,13 @@ ComplexVector complex_vector_new_with_length (long n) {
  * from a matte range.
  *
  * arguments:
+ *  @z: zone allocator to utilize.
  *  @r: matte range to access.
  *
  * returns:
  *  newly allocated and initialized matte complex vector.
  */
-ComplexVector complex_vector_new_from_range (Range r) {
+ComplexVector complex_vector_new_from_range (Zone z, Range r) {
   /* return null if the input range is null. */
   if (!r)
     return NULL;
@@ -85,7 +88,7 @@ ComplexVector complex_vector_new_from_range (Range r) {
   long n = range_get_length(r);
 
   /* allocate a new complex vector. */
-  ComplexVector x = complex_vector_new_with_length(n);
+  ComplexVector x = complex_vector_new_with_length(z, n);
   if (!x)
     return NULL;
 
@@ -101,18 +104,19 @@ ComplexVector complex_vector_new_from_range (Range r) {
  * from a matte vector.
  *
  * arguments:
+ *  @z: zone allocator to utilize.
  *  @x: matte vector to access.
  *
  * returns:
  *  newly allocated and initialized complex vector.
  */
-ComplexVector complex_vector_new_from_vector (Vector x) {
+ComplexVector complex_vector_new_from_vector (Zone z, Vector x) {
   /* return null if the input vector is null. */
   if (!x)
     return NULL;
 
   /* allocate a new complex vector. */
-  ComplexVector y = complex_vector_new_with_length(x->n);
+  ComplexVector y = complex_vector_new_with_length(z, x->n);
   if (!y)
     return NULL;
 
@@ -128,18 +132,19 @@ ComplexVector complex_vector_new_from_vector (Vector x) {
  * another matte complex vector.
  *
  * arguments:
+ *  @z: zone allocator to utilize.
  *  @x: matte complex vector to duplicate.
  *
  * returns:
  *  duplicated matte complex vector.
  */
-ComplexVector complex_vector_copy (ComplexVector x) {
+ComplexVector complex_vector_copy (Zone z, ComplexVector x) {
   /* return null if the input argument is null. */
   if (!x)
     return NULL;
 
   /* allocate a new vector. */
-  ComplexVector xnew = complex_vector_new(NULL);
+  ComplexVector xnew = complex_vector_new(z, NULL);
   if (!xnew || !complex_vector_set_length(xnew, x->n))
     return NULL;
 
@@ -154,20 +159,20 @@ ComplexVector complex_vector_copy (ComplexVector x) {
   return xnew;
 }
 
-/* complex_vector_free(): free all memory associated with a matte
+/* complex_vector_delete(): free all memory associated with a matte
  * complex vector.
  *
  * arguments:
+ *  @z: zone allocator to utilize.
  *  @x: matte complex vector to free.
  */
-void complex_vector_free (ComplexVector x) {
+void complex_vector_delete (Zone z, ComplexVector x) {
   /* return if the vector is null. */
   if (!x)
     return;
 
   /* free the vector data. */
-  if (x->data)
-    free(x->data);
+  free(x->data);
 }
 
 /* complex_vector_get_length(): get the length of a matte complex vector.
@@ -222,7 +227,7 @@ int complex_vector_set_length (ComplexVector x, long n) {
 
 /* complex_vector_disp(): display function for matte complex vectors.
  */
-int complex_vector_disp (ComplexVector x, const char *var) {
+int complex_vector_disp (Zone z, ComplexVector x, const char *var) {
   printf("%s =\n", var);
 
   for (long i = 0; i < x->n; i++) {
@@ -240,8 +245,8 @@ int complex_vector_disp (ComplexVector x, const char *var) {
 /* complex_vector_ctranspose(): conjugate transposition function for
  * matte complex vectors.
  */
-ComplexVector complex_vector_ctranspose (ComplexVector a) {
-  ComplexVector atr = complex_vector_copy(a);
+ComplexVector complex_vector_ctranspose (Zone z, ComplexVector a) {
+  ComplexVector atr = complex_vector_copy(z, a);
   if (!atr)
     return NULL;
 
@@ -258,8 +263,8 @@ ComplexVector complex_vector_ctranspose (ComplexVector a) {
 /* complex_vector_transpose(): matrix transposition function for
  * matte complex vectors.
  */
-ComplexVector complex_vector_transpose (ComplexVector a) {
-  ComplexVector atr = complex_vector_copy(a);
+ComplexVector complex_vector_transpose (Zone z, ComplexVector a) {
+  ComplexVector atr = complex_vector_copy(z, a);
   if (!atr)
     return NULL;
 
@@ -280,11 +285,10 @@ struct _ObjectType ComplexVector_type = {
   sizeof(struct _ComplexVector),                 /* size       */
   6,                                             /* precedence */
 
-  (obj_constructor) complex_vector_new,          /* fn_new     */
-  (obj_constructor) complex_vector_copy,         /* fn_copy    */
-  (obj_allocator)   object_alloc,                /* fn_alloc   */
-  (obj_destructor)  complex_vector_free,         /* fn_dealloc */
-  (obj_display)     complex_vector_disp,         /* fn_disp    */
+  (obj_constructor) complex_vector_new,          /* fn_new    */
+  (obj_constructor) complex_vector_copy,         /* fn_copy   */
+  (obj_destructor)  complex_vector_delete,       /* fn_delete */
+  (obj_display)     complex_vector_disp,         /* fn_disp   */
 
   NULL,                                          /* fn_plus       */
   NULL,                                          /* fn_minus      */

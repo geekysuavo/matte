@@ -99,9 +99,9 @@ struct _Symbols {
 
 ObjectType symbols_type (void);
 
-Symbols symbols_new (Object args);
+Symbols symbols_new (Zone z, Object args);
 
-void symbols_free (Symbols syms);
+void symbols_delete (Zone z, Symbols syms);
 
 long symbols_find (Symbols syms, SymbolType stype, const char *sname, ...);
 

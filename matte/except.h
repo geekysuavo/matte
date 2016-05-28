@@ -66,9 +66,9 @@ struct _Exception {
 
 ObjectType except_type (void);
 
-Exception except_new (Object args);
+Exception except_new (Zone z, Object args);
 
-void except_free (Exception e);
+void except_delete (Zone z, Exception e);
 
 #endif /* !__MATTE_EXCEPT_H__ */
 

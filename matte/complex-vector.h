@@ -41,17 +41,17 @@ struct _ComplexVector {
 
 ObjectType complex_vector_type (void);
 
-ComplexVector complex_vector_new (Object args);
+ComplexVector complex_vector_new (Zone z, Object args);
 
-ComplexVector complex_vector_new_with_length (long n);
+ComplexVector complex_vector_new_with_length (Zone z, long n);
 
-ComplexVector complex_vector_new_from_range (Range r);
+ComplexVector complex_vector_new_from_range (Zone z, Range r);
 
-ComplexVector complex_vector_new_from_vector (Vector x);
+ComplexVector complex_vector_new_from_vector (Zone z, Vector x);
 
-ComplexVector complex_vector_copy (ComplexVector x);
+ComplexVector complex_vector_copy (Zone z, ComplexVector x);
 
-void complex_vector_free (ComplexVector x);
+void complex_vector_free (Zone z, ComplexVector x);
 
 long complex_vector_get_length (ComplexVector x);
 

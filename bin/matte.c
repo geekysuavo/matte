@@ -26,7 +26,7 @@ int main (int argc, char **argv) {
   char *arg;
 
   /* allocate a new compiler object. */
-  Compiler compiler = compiler_new(NULL);
+  Compiler compiler = compiler_new(NULL, NULL);
 
   /* loop over the arguments. */
   argi = 1;
@@ -93,7 +93,7 @@ int main (int argc, char **argv) {
     die("failed to perform compilation");
 
   /* free the compiler object. */
-  object_free((Object) compiler);
+  object_free(NULL, compiler);
 
   /* return success. */
   return 0;

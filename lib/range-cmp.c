@@ -4,12 +4,12 @@
 #define CONCAT(a,b) a ## b
 #define FUNCTION(name) CONCAT(range_, name)
 
-Vector FUNCTION(F) (Object a, Object b) {
+Vector FUNCTION(F) (Zone z, Object a, Object b) {
   if (IS_RANGE(a)) {
     if (IS_INT(b)) {
       /* range <op> int => vector */
       double fval = (double) int_get_value((Int) b);
-      Vector v = vector_new_from_range((Range) a);
+      Vector v = vector_new_from_range(z, (Range) a);
       if (!v)
         return NULL;
 
@@ -23,7 +23,7 @@ Vector FUNCTION(F) (Object a, Object b) {
       if (range_get_length((Range) a) != range_get_length((Range) b))
         return NULL;
 
-      Vector v = vector_new_from_range((Range) a);
+      Vector v = vector_new_from_range(z, (Range) a);
       Range r = (Range) b;
       if (!v)
         return NULL;
@@ -38,7 +38,7 @@ Vector FUNCTION(F) (Object a, Object b) {
     if (IS_INT(a)) {
       /* int <op> range => vector */
       double fval = (double) int_get_value((Int) a);
-      Vector v = vector_new_from_range((Range) b);
+      Vector v = vector_new_from_range(z, (Range) b);
       if (!v)
         return NULL;
 

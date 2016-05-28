@@ -41,15 +41,15 @@ struct _Vector {
 
 ObjectType vector_type (void);
 
-Vector vector_new (Object args);
+Vector vector_new (Zone z, Object args);
 
-Vector vector_new_with_length (long n);
+Vector vector_new_with_length (Zone z, long n);
 
-Vector vector_new_from_range (Range r);
+Vector vector_new_from_range (Zone z, Range r);
 
-Vector vector_copy (Vector x);
+Vector vector_copy (Zone z, Vector x);
 
-void vector_free (Vector x);
+void vector_free (Zone z, Vector x);
 
 long vector_get_length (Vector x);
 

@@ -24,12 +24,16 @@ ObjectType complex_type (void) {
 
 /* complex_new(): allocate a new matte complex float.
  *
+ * arguments:
+ *  @z: zone allocator to utilize.
+ *  @args: constructor arguments.
+ *
  * returns:
  *  newly allocated complex float.
  */
-Complex complex_new (Object args) {
+Complex complex_new (Zone z, Object args) {
   /* allocate a new complex float. */
-  Complex f = (Complex) Complex_type.fn_alloc(&Complex_type);
+  Complex f = (Complex) object_alloc(z, &Complex_type);
   if (!f)
     return NULL;
 
@@ -44,14 +48,15 @@ Complex complex_new (Object args) {
  * set value.
  *
  * arguments:
+ *  @z: zone allocator to utilize.
  *  @value: initial value of the float.
  *
  * returns:
  *  newly allocated and initialized complex float.
  */
-Complex complex_new_with_value (complex double value) {
+Complex complex_new_with_value (Zone z, complex double value) {
   /* allocate a new complex float. */
-  Complex f = complex_new(NULL);
+  Complex f = complex_new(z, NULL);
   if (!f)
     return NULL;
 
@@ -64,42 +69,39 @@ Complex complex_new_with_value (complex double value) {
  * matte complex float.
  *
  * arguments:
+ *  @z: zone allocator to utilize.
  *  @f: matte complex float to duplicate.
  *
  * returns:
  *  duplicated matte complex float.
  */
-Complex complex_copy (Complex f) {
+Complex complex_copy (Zone z, Complex f) {
   /* return null if the input argument is null. */
   if (!f)
     return NULL;
 
   /* allocate a new complex float with the value of the input object. */
-  Complex fnew = complex_new_with_value(complex_get_value(f));
-  if (!fnew)
-    return NULL;
-
-  /* return the new complex float. */
-  return fnew;
+  return complex_new_with_value(z, f->value);
 }
 
 /* complex_copyconj(): allocate a new matte complex float that is the
  * complex conjugate of another matte complex float.
  *
  * arguments:
+ *  @z: zone allocator to utilize.
  *  @f: matte complex float to conjugate.
  *
  * returns:
  *  conjugated duplicate matte complex float.
  */
-Complex complex_copyconj (Complex f) {
-  /* copy the input value. */
-  Complex fnew = complex_copy(f);
+Complex complex_copyconj (Zone z, Complex f) {
+  /* allocate a new complex float. */
+  Complex fnew = complex_new(z, NULL);
   if (!fnew)
     return NULL;
 
-  /* conjugate the value and return it. */
-  fnew->value = conj(fnew->value);
+  /* store and return the conjugated input value. */
+  fnew->value = conj(f->value);
   return fnew;
 }
 
@@ -132,9 +134,8 @@ inline void complex_set_value (Complex f, complex double value) {
 }
 
 /* complex_disp(): display function for complex floats.
- * see Complex_type for more detailed information.
  */
-int complex_disp (Complex f, const char *var) {
+int complex_disp (Zone z, Complex f, const char *var) {
   const double re = creal(f->value);
   const double im = cimag(f->value);
 
@@ -146,32 +147,31 @@ int complex_disp (Complex f, const char *var) {
 }
 
 /* complex_plus(): addition function for complex floats.
- * see Complex_type for more detailed information.
  */
-Object complex_plus (Object a, Object b) {
+Object complex_plus (Zone z, Object a, Object b) {
   if (IS_COMPLEX(a)) {
     if (IS_COMPLEX(b)) {
       /* complex + complex => complex */
       return (Object)
-        complex_new_with_value(complex_get_value((Complex) a) +
-                               complex_get_value((Complex) b));
+        complex_new_with_value(z, complex_get_value((Complex) a) +
+                                  complex_get_value((Complex) b));
     }
     else if (IS_FLOAT(b)) {
       /* complex + float => complex */
       return (Object)
-        complex_new_with_value(complex_get_value((Complex) a) +
+        complex_new_with_value(z, complex_get_value((Complex) a) +
                                (complex double) float_get_value((Float) b));
     }
     else if (IS_INT(b)) {
       /* complex + int => complex */
       return (Object)
-        complex_new_with_value(complex_get_value((Complex) a) +
+        complex_new_with_value(z, complex_get_value((Complex) a) +
                                (complex double) int_get_value((Int) b));
     }
     else if (IS_RANGE(b)) {
       /* complex + range => complex vector */
       complex double fval = complex_get_value((Complex) a);
-      ComplexVector v = complex_vector_new_from_range((Range) b);
+      ComplexVector v = complex_vector_new_from_range(z, (Range) b);
       if (!v)
         return NULL;
 
@@ -185,19 +185,21 @@ Object complex_plus (Object a, Object b) {
     if (IS_FLOAT(a)) {
       /* float + complex => complex */
       return (Object)
-        complex_new_with_value((complex double) float_get_value((Float) a) +
-                               complex_get_value((Complex) b));
+        complex_new_with_value(z,
+          (complex double) float_get_value((Float) a) +
+          complex_get_value((Complex) b));
     }
     else if (IS_INT(a)) {
       /* int + complex => complex */
       return (Object)
-        complex_new_with_value((complex double) int_get_value((Int) a) +
-                               complex_get_value((Complex) b));
+        complex_new_with_value(z,
+          (complex double) int_get_value((Int) a) +
+          complex_get_value((Complex) b));
     }
     else if (IS_RANGE(a)) {
       /* range + complex => complex vector */
       complex double fval = complex_get_value((Complex) b);
-      ComplexVector v = complex_vector_new_from_range((Range) a);
+      ComplexVector v = complex_vector_new_from_range(z, (Range) a);
       if (!v)
         return NULL;
 
@@ -212,32 +214,31 @@ Object complex_plus (Object a, Object b) {
 }
 
 /* complex_minus(): subtraction function for complex floats.
- * see Complex_type for more detailed information.
  */
-Object complex_minus (Object a, Object b) {
+Object complex_minus (Zone z, Object a, Object b) {
   if (IS_COMPLEX(a)) {
     if (IS_COMPLEX(b)) {
       /* complex - complex => complex */
       return (Object)
-        complex_new_with_value(complex_get_value((Complex) a) -
-                               complex_get_value((Complex) b));
+        complex_new_with_value(z, complex_get_value((Complex) a) -
+                                  complex_get_value((Complex) b));
     }
     else if (IS_FLOAT(b)) {
       /* complex - float => complex */
       return (Object)
-        complex_new_with_value(complex_get_value((Complex) a) -
+        complex_new_with_value(z, complex_get_value((Complex) a) -
                                (complex double) float_get_value((Float) b));
     }
     else if (IS_INT(b)) {
       /* complex - int => complex */
       return (Object)
-        complex_new_with_value(complex_get_value((Complex) a) -
+        complex_new_with_value(z, complex_get_value((Complex) a) -
                                (complex double) int_get_value((Int) b));
     }
     else if (IS_RANGE(b)) {
       /* complex - range => complex vector */
       complex double fval = complex_get_value((Complex) a);
-      ComplexVector v = complex_vector_new_from_range((Range) b);
+      ComplexVector v = complex_vector_new_from_range(z, (Range) b);
       if (!v)
         return NULL;
 
@@ -251,19 +252,21 @@ Object complex_minus (Object a, Object b) {
     if (IS_FLOAT(a)) {
       /* float - complex => complex */
       return (Object)
-        complex_new_with_value((complex double) float_get_value((Float) a) -
-                               complex_get_value((Complex) b));
+        complex_new_with_value(z,
+          (complex double) float_get_value((Float) a) -
+          complex_get_value((Complex) b));
     }
     else if (IS_INT(a)) {
       /* int - complex => complex */
       return (Object)
-        complex_new_with_value((complex double) int_get_value((Int) a) -
-                               complex_get_value((Complex) b));
+        complex_new_with_value(z,
+          (complex double) int_get_value((Int) a) -
+          complex_get_value((Complex) b));
     }
     else if (IS_RANGE(a)) {
       /* range - complex => complex vector */
       complex double fval = complex_get_value((Complex) b);
-      ComplexVector v = complex_vector_new_from_range((Range) a);
+      ComplexVector v = complex_vector_new_from_range(z, (Range) a);
       if (!v)
         return NULL;
 
@@ -278,40 +281,38 @@ Object complex_minus (Object a, Object b) {
 }
 
 /* complex_uminus(): unary negation function for complex floats.
- * see Complex_type for more detailed information.
  */
-Complex complex_uminus (Complex a) {
+Complex complex_uminus (Zone z, Complex a) {
   /* compute and return the negation. */
-  return complex_new_with_value(-complex_get_value(a));
+  return complex_new_with_value(z, -(a->value));
 }
 
 /* complex_times(): element-wise multiplication function for complex floats.
- * see Complex_type for more detailed information.
  */
-Object complex_times (Object a, Object b) {
+Object complex_times (Zone z, Object a, Object b) {
   if (IS_COMPLEX(a)) {
     if (IS_COMPLEX(b)) {
       /* complex .* complex => complex */
       return (Object)
-        complex_new_with_value(complex_get_value((Complex) a) *
-                               complex_get_value((Complex) b));
+        complex_new_with_value(z, complex_get_value((Complex) a) *
+                                  complex_get_value((Complex) b));
     }
     else if (IS_FLOAT(b)) {
       /* complex .* float => complex */
       return (Object)
-        complex_new_with_value(complex_get_value((Complex) a) *
+        complex_new_with_value(z, complex_get_value((Complex) a) *
                                (complex double) float_get_value((Float) b));
     }
     else if (IS_INT(b)) {
       /* complex .* int => complex */
       return (Object)
-        complex_new_with_value(complex_get_value((Complex) a) *
+        complex_new_with_value(z, complex_get_value((Complex) a) *
                                (complex double) int_get_value((Int) b));
     }
     else if (IS_RANGE(b)) {
       /* complex .* range => complex vector */
       complex double fval = complex_get_value((Complex) a);
-      ComplexVector v = complex_vector_new_from_range((Range) b);
+      ComplexVector v = complex_vector_new_from_range(z, (Range) b);
       if (!v)
         return NULL;
 
@@ -325,19 +326,21 @@ Object complex_times (Object a, Object b) {
     if (IS_FLOAT(a)) {
       /* float .* complex => complex */
       return (Object)
-        complex_new_with_value((complex double) float_get_value((Float) a) *
-                               complex_get_value((Complex) b));
+        complex_new_with_value(z,
+          (complex double) float_get_value((Float) a) *
+          complex_get_value((Complex) b));
     }
     else if (IS_INT(a)) {
       /* int .* complex => complex */
       return (Object)
-        complex_new_with_value((complex double) int_get_value((Int) a) *
-                               complex_get_value((Complex) b));
+        complex_new_with_value(z,
+          (complex double) int_get_value((Int) a) *
+          complex_get_value((Complex) b));
     }
     else if (IS_RANGE(a)) {
       /* range .* complex => complex vector */
       complex double fval = complex_get_value((Complex) b);
-      ComplexVector v = complex_vector_new_from_range((Range) a);
+      ComplexVector v = complex_vector_new_from_range(z, (Range) a);
       if (!v)
         return NULL;
 
@@ -352,32 +355,31 @@ Object complex_times (Object a, Object b) {
 }
 
 /* complex_rdivide(): element-wise right-division function for complex floats.
- * see Complex_type for more detailed information.
  */
-Object complex_rdivide (Object a, Object b) {
+Object complex_rdivide (Zone z, Object a, Object b) {
   if (IS_COMPLEX(a)) {
     if (IS_COMPLEX(b)) {
       /* complex ./ complex => complex */
       return (Object)
-        complex_new_with_value(complex_get_value((Complex) a) /
-                               complex_get_value((Complex) b));
+        complex_new_with_value(z, complex_get_value((Complex) a) /
+                                  complex_get_value((Complex) b));
     }
     else if (IS_FLOAT(b)) {
       /* complex ./ float => complex */
       return (Object)
-        complex_new_with_value(complex_get_value((Complex) a) /
+        complex_new_with_value(z, complex_get_value((Complex) a) /
                                (complex double) float_get_value((Float) b));
     }
     else if (IS_INT(b)) {
       /* complex ./ int => complex */
       return (Object)
-        complex_new_with_value(complex_get_value((Complex) a) /
+        complex_new_with_value(z, complex_get_value((Complex) a) /
                                (complex double) int_get_value((Int) b));
     }
     else if (IS_RANGE(b)) {
       /* complex ./ range => complex vector */
       complex double fval = complex_get_value((Complex) a);
-      ComplexVector v = complex_vector_new_from_range((Range) b);
+      ComplexVector v = complex_vector_new_from_range(z, (Range) b);
       if (!v)
         return NULL;
 
@@ -391,19 +393,21 @@ Object complex_rdivide (Object a, Object b) {
     if (IS_FLOAT(a)) {
       /* float ./ complex => complex */
       return (Object)
-        complex_new_with_value((complex double) float_get_value((Float) a) /
-                               complex_get_value((Complex) b));
+        complex_new_with_value(z,
+          (complex double) float_get_value((Float) a) /
+          complex_get_value((Complex) b));
     }
     else if (IS_INT(a)) {
       /* int ./ complex => complex */
       return (Object)
-        complex_new_with_value((complex double) int_get_value((Int) a) /
-                               complex_get_value((Complex) b));
+        complex_new_with_value(z,
+          (complex double) int_get_value((Int) a) /
+          complex_get_value((Complex) b));
     }
     else if (IS_RANGE(a)) {
       /* range ./ complex => complex vector */
       complex double fval = complex_get_value((Complex) b);
-      ComplexVector v = complex_vector_new_from_range((Range) a);
+      ComplexVector v = complex_vector_new_from_range(z, (Range) a);
       if (!v)
         return NULL;
 
@@ -418,34 +422,33 @@ Object complex_rdivide (Object a, Object b) {
 }
 
 /* complex_ldivide(): element-wise left-division function for complex floats.
- * see Complex_type for more detailed information.
  */
-Object complex_ldivide (Object a, Object b) {
+Object complex_ldivide (Zone z, Object a, Object b) {
   if (IS_COMPLEX(a)) {
     if (IS_COMPLEX(b)) {
       /* complex .\ complex => complex */
       return (Object)
-        complex_new_with_value(complex_get_value((Complex) b) /
-                               complex_get_value((Complex) a));
+        complex_new_with_value(z, complex_get_value((Complex) b) /
+                                  complex_get_value((Complex) a));
     }
     else if (IS_FLOAT(b)) {
       /* complex .\ float => complex */
       return (Object)
-        complex_new_with_value(
+        complex_new_with_value(z,
           (complex double) float_get_value((Float) b) /
           complex_get_value((Complex) a));
     }
     else if (IS_INT(b)) {
       /* complex .\ int => complex */
       return (Object)
-        complex_new_with_value(
+        complex_new_with_value(z,
           (complex double) int_get_value((Int) b) /
           complex_get_value((Complex) a));
     }
     else if (IS_RANGE(b)) {
       /* complex .\ range => complex vector */
       complex double fval = complex_get_value((Complex) a);
-      ComplexVector v = complex_vector_new_from_range((Range) b);
+      ComplexVector v = complex_vector_new_from_range(z, (Range) b);
       if (!v)
         return NULL;
 
@@ -459,21 +462,21 @@ Object complex_ldivide (Object a, Object b) {
     if (IS_FLOAT(a)) {
       /* float .\ complex => complex */
       return (Object)
-        complex_new_with_value(
+        complex_new_with_value(z,
           complex_get_value((Complex) b) /
           (complex double) float_get_value((Float) a));
     }
     else if (IS_INT(a)) {
       /* int .\ complex => complex */
       return (Object)
-        complex_new_with_value(
+        complex_new_with_value(z,
           complex_get_value((Complex) b) /
           (complex double) int_get_value((Int) a));
     }
     else if (IS_RANGE(a)) {
       /* range .\ complex => complex vector */
       complex double fval = complex_get_value((Complex) b);
-      ComplexVector v = complex_vector_new_from_range((Range) a);
+      ComplexVector v = complex_vector_new_from_range(z, (Range) a);
       if (!v)
         return NULL;
 
@@ -488,35 +491,34 @@ Object complex_ldivide (Object a, Object b) {
 }
 
 /* complex_power(): element-wise exponentiation function for complex floats.
- * see Complex_type for more detailed information.
  */
-Object complex_power (Object a, Object b) {
+Object complex_power (Zone z, Object a, Object b) {
   if (IS_COMPLEX(a)) {
     if (IS_COMPLEX(b)) {
       /* complex .^ complex => complex */
       return (Object)
-        complex_new_with_value(cpow(
+        complex_new_with_value(z, cpow(
           complex_get_value((Complex) a),
           complex_get_value((Complex) b)));
     }
     else if (IS_FLOAT(b)) {
       /* complex .^ float => complex */
       return (Object)
-        complex_new_with_value(cpow(
+        complex_new_with_value(z, cpow(
           complex_get_value((Complex) a),
           (complex double) float_get_value((Float) b)));
     }
     else if (IS_INT(b)) {
       /* complex .^ int => complex */
       return (Object)
-        complex_new_with_value(cpow(
+        complex_new_with_value(z, cpow(
           complex_get_value((Complex) a),
           (complex double) int_get_value((Int) b)));
     }
     else if (IS_RANGE(b)) {
       /* complex .^ range => complex vector */
       complex double fval = complex_get_value((Complex) a);
-      ComplexVector v = complex_vector_new_from_range((Range) b);
+      ComplexVector v = complex_vector_new_from_range(z, (Range) b);
       if (!v)
         return NULL;
 
@@ -530,21 +532,21 @@ Object complex_power (Object a, Object b) {
     if (IS_FLOAT(a)) {
       /* float .^ complex => complex */
       return (Object)
-        complex_new_with_value(cpow(
+        complex_new_with_value(z, cpow(
           (complex double) float_get_value((Float) a),
           complex_get_value((Complex) b)));
     }
     else if (IS_INT(a)) {
       /* int .^ complex => complex */
       return (Object)
-        complex_new_with_value(cpow(
+        complex_new_with_value(z, cpow(
           (complex double) int_get_value((Int) a),
           complex_get_value((Complex) b)));
     }
     else if (IS_RANGE(a)) {
       /* range .^ complex => complex vector */
       complex double fval = complex_get_value((Complex) b);
-      ComplexVector v = complex_vector_new_from_range((Range) a);
+      ComplexVector v = complex_vector_new_from_range(z, (Range) a);
       if (!v)
         return NULL;
 
@@ -565,11 +567,10 @@ struct _ObjectType Complex_type = {
   sizeof(struct _ComplexFloat),                  /* size       */
   4,                                             /* precedence */
 
-  (obj_constructor) complex_new,                 /* fn_new     */
-  (obj_constructor) complex_copy,                /* fn_copy    */
-  (obj_allocator)   object_alloc,                /* fn_alloc   */
-  NULL,                                          /* fn_dealloc */
-  (obj_display) complex_disp,                    /* fn_disp    */
+  (obj_constructor) complex_new,                 /* fn_new    */
+  (obj_constructor) complex_copy,                /* fn_copy   */
+  NULL,                                          /* fn_delete */
+  (obj_display)     complex_disp,                /* fn_disp   */
 
   (obj_binary)  complex_plus,                    /* fn_plus       */
   (obj_binary)  complex_minus,                   /* fn_minus      */

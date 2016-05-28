@@ -26,12 +26,16 @@ ObjectType vector_type (void) {
 
 /* vector_new(): allocate a new empty matte vector.
  *
+ * arguments:
+ *  @z: zone allocator to utilize.
+ *  @args: constructor arguments.
+ *
  * returns:
  *  newly allocated empty vector.
  */
-Vector vector_new (Object args) {
+Vector vector_new (Zone z, Object args) {
   /* allocate a new vector. */
-  Vector x = (Vector) Vector_type.fn_alloc(&Vector_type);
+  Vector x = (Vector) object_alloc(z, &Vector_type);
   if (!x)
     return NULL;
 
@@ -49,14 +53,15 @@ Vector vector_new (Object args) {
  * number of zero elements.
  *
  * arguments:
+ *  @z: zone allocator to utilize.
  *  @n: number of elements in the new vector.
  *
  * returns:
  *  newly allocated zero vector.
  */
-Vector vector_new_with_length (long n) {
+Vector vector_new_with_length (Zone z, long n) {
   /* allocate a new vector. */
-  Vector x = vector_new(NULL);
+  Vector x = vector_new(z, NULL);
   if (!x || !vector_set_length(x, n))
     return NULL;
 
@@ -68,12 +73,13 @@ Vector vector_new_with_length (long n) {
  * of a matte range.
  *
  * arguments:
+ *  @z: zone allocator to utilize.
  *  @r: matte range to access.
  *
  * returns:
  *  newly allocated and initialized matte vector.
  */
-Vector vector_new_from_range (Range r) {
+Vector vector_new_from_range (Zone z, Range r) {
   /* return null if the input range is null. */
   if (!r)
     return NULL;
@@ -82,7 +88,7 @@ Vector vector_new_from_range (Range r) {
   long n = range_get_length(r);
 
   /* allocate the vector. */
-  Vector x = vector_new_with_length(n);
+  Vector x = vector_new_with_length(z, n);
   if (!x)
     return NULL;
 
@@ -97,18 +103,19 @@ Vector vector_new_from_range (Range r) {
 /* vector_copy(): allocate a new matte vector from another matte vector.
  *
  * arguments:
+ *  @z: zone allocator to utilize.
  *  @x: matte vector to duplicate.
  *
  * returns:
  *  duplicated matte vector.
  */
-Vector vector_copy (Vector x) {
+Vector vector_copy (Zone z, Vector x) {
   /* return null if the input argument is null. */
   if (!x)
     return NULL;
 
   /* allocate a new vector. */
-  Vector xnew = vector_new(NULL);
+  Vector xnew = vector_new(z, NULL);
   if (!xnew || !vector_set_length(xnew, x->n))
     return NULL;
 
@@ -123,19 +130,19 @@ Vector vector_copy (Vector x) {
   return xnew;
 }
 
-/* vector_free(): free all memory associated with a matte vector.
+/* vector_delete(): free all memory associated with a matte vector.
  *
  * arguments:
+ *  @z: zone allocator to utilize.
  *  @x: matte vector to free.
  */
-void vector_free (Vector x) {
+void vector_delete (Zone z, Vector x) {
   /* return if the vector is null. */
   if (!x)
     return;
 
   /* free the vector data. */
-  if (x->data)
-    free(x->data);
+  free(x->data);
 }
 
 /* vector_get_length(): get the length of a matte vector.
@@ -187,7 +194,7 @@ int vector_set_length (Vector x, long n) {
 
 /* vector_disp(): display function for matte vectors.
  */
-int vector_disp (Vector x, const char *var) {
+int vector_disp (Zone z, Vector x, const char *var) {
   printf("%s =\n", var);
   for (long i = 0; i < x->n; i++)
     printf("\n  %lg", x->data[i]);
@@ -198,7 +205,7 @@ int vector_disp (Vector x, const char *var) {
 
 /* vector_plus(): addition function for matte vectors.
  */
-Object vector_plus (Object a, Object b) {
+Object vector_plus (Zone z, Object a, Object b) {
   if (IS_VECTOR(a)) {
     if (IS_VECTOR(b)) {
       /* vector + vector => vector */
@@ -208,7 +215,7 @@ Object vector_plus (Object a, Object b) {
       if (va->n != vb->n || va->tr != vb->tr)
         return NULL;
 
-      Vector vc = vector_copy(va);
+      Vector vc = vector_copy(z, va);
       if (!vc)
         return NULL;
 
@@ -218,7 +225,7 @@ Object vector_plus (Object a, Object b) {
     else if (IS_COMPLEX(b)) {
       /* vector + complex => complex vector */
       complex double fval = complex_get_value((Complex) b);
-      ComplexVector v = complex_vector_new_from_vector((Vector) a);
+      ComplexVector v = complex_vector_new_from_vector(z, (Vector) a);
       if (!v)
         return NULL;
 
@@ -230,7 +237,7 @@ Object vector_plus (Object a, Object b) {
     else if (IS_FLOAT(b)) {
       /* vector + float => vector */
       double fval = float_get_value((Float) b);
-      Vector v = vector_copy((Vector) a);
+      Vector v = vector_copy(z, (Vector) a);
       if (!v)
         return NULL;
 
@@ -242,7 +249,7 @@ Object vector_plus (Object a, Object b) {
     else if (IS_INT(b)) {
       /* vector + int => vector */
       double fval = (double) int_get_value((Int) b);
-      Vector v = vector_copy((Vector) a);
+      Vector v = vector_copy(z, (Vector) a);
       if (!v)
         return NULL;
 
@@ -256,7 +263,7 @@ Object vector_plus (Object a, Object b) {
     if (IS_COMPLEX(a)) {
       /* complex + vector => complex vector */
       complex double fval = complex_get_value((Complex) a);
-      ComplexVector v = complex_vector_new_from_vector((Vector) b);
+      ComplexVector v = complex_vector_new_from_vector(z, (Vector) b);
       if (!v)
         return NULL;
 
@@ -268,7 +275,7 @@ Object vector_plus (Object a, Object b) {
     else if (IS_FLOAT(a)) {
       /* float + vector => vector */
       double fval = float_get_value((Float) a);
-      Vector v = vector_copy((Vector) b);
+      Vector v = vector_copy(z, (Vector) b);
       if (!v)
         return NULL;
 
@@ -280,7 +287,7 @@ Object vector_plus (Object a, Object b) {
     else if (IS_INT(a)) {
       /* int + vector => vector */
       double fval = (double) int_get_value((Int) a);
-      Vector v = vector_copy((Vector) b);
+      Vector v = vector_copy(z, (Vector) b);
       if (!v)
         return NULL;
 
@@ -296,7 +303,7 @@ Object vector_plus (Object a, Object b) {
 
 /* vector_minus(): subtraction function for matte vectors.
  */
-Object vector_minus (Object a, Object b) {
+Object vector_minus (Zone z, Object a, Object b) {
   if (IS_VECTOR(a)) {
     if (IS_VECTOR(b)) {
       /* vector - vector => vector */
@@ -306,7 +313,7 @@ Object vector_minus (Object a, Object b) {
       if (va->n != vb->n || va->tr != vb->tr)
         return NULL;
 
-      Vector vc = vector_copy(va);
+      Vector vc = vector_copy(z, va);
       if (!vc)
         return NULL;
 
@@ -316,7 +323,7 @@ Object vector_minus (Object a, Object b) {
     else if (IS_COMPLEX(b)) {
       /* vector - complex => complex vector */
       complex double fval = complex_get_value((Complex) b);
-      ComplexVector v = complex_vector_new_from_vector((Vector) a);
+      ComplexVector v = complex_vector_new_from_vector(z, (Vector) a);
       if (!v)
         return NULL;
 
@@ -328,7 +335,7 @@ Object vector_minus (Object a, Object b) {
     else if (IS_FLOAT(b)) {
       /* vector - float => vector */
       double fval = float_get_value((Float) b);
-      Vector v = vector_copy((Vector) a);
+      Vector v = vector_copy(z, (Vector) a);
       if (!v)
         return NULL;
 
@@ -340,7 +347,7 @@ Object vector_minus (Object a, Object b) {
     else if (IS_INT(b)) {
       /* vector - int => vector */
       double fval = (double) int_get_value((Int) b);
-      Vector v = vector_copy((Vector) a);
+      Vector v = vector_copy(z, (Vector) a);
       if (!v)
         return NULL;
 
@@ -354,7 +361,7 @@ Object vector_minus (Object a, Object b) {
     if (IS_COMPLEX(a)) {
       /* complex - vector => complex vector */
       complex double fval = complex_get_value((Complex) a);
-      ComplexVector v = complex_vector_new_from_vector((Vector) b);
+      ComplexVector v = complex_vector_new_from_vector(z, (Vector) b);
       if (!v)
         return NULL;
 
@@ -366,7 +373,7 @@ Object vector_minus (Object a, Object b) {
     else if (IS_FLOAT(a)) {
       /* float - vector => vector */
       double fval = float_get_value((Float) a);
-      Vector v = vector_copy((Vector) b);
+      Vector v = vector_copy(z, (Vector) b);
       if (!v)
         return NULL;
 
@@ -378,7 +385,7 @@ Object vector_minus (Object a, Object b) {
     else if (IS_INT(a)) {
       /* int - vector => vector */
       double fval = (double) int_get_value((Int) a);
-      Vector v = vector_copy((Vector) b);
+      Vector v = vector_copy(z, (Vector) b);
       if (!v)
         return NULL;
 
@@ -394,8 +401,8 @@ Object vector_minus (Object a, Object b) {
 
 /* vector_uminus(): unary negation function for matte vectors.
  */
-Vector vector_uminus (Vector a) {
-  Vector aneg = vector_new_with_length(a->n);
+Vector vector_uminus (Zone z, Vector a) {
+  Vector aneg = vector_new_with_length(z, a->n);
   if (!aneg)
     return NULL;
 
@@ -407,8 +414,8 @@ Vector vector_uminus (Vector a) {
 
 /* vector_transpose(): transposition function for matte vectors.
  */
-Vector vector_transpose (Vector a) {
-  Vector atr = vector_copy(a);
+Vector vector_transpose (Zone z, Vector a) {
+  Vector atr = vector_copy(z, a);
   if (!atr)
     return NULL;
 
@@ -429,11 +436,10 @@ struct _ObjectType Vector_type = {
   sizeof(struct _Vector),                        /* size       */
   5,                                             /* precedence */
 
-  (obj_constructor) vector_new,                  /* fn_new     */
-  (obj_constructor) vector_copy,                 /* fn_copy    */
-  (obj_allocator)   object_alloc,                /* fn_alloc   */
-  (obj_destructor)  vector_free,                 /* fn_dealloc */
-  (obj_display)     vector_disp,                 /* fn_disp    */
+  (obj_constructor) vector_new,                  /* fn_new    */
+  (obj_constructor) vector_copy,                 /* fn_copy   */
+  (obj_destructor)  vector_delete,               /* fn_delete */
+  (obj_display)     vector_disp,                 /* fn_disp   */
 
   (obj_binary)   vector_plus,                    /* fn_plus       */
   (obj_binary)   vector_minus,                   /* fn_minus      */

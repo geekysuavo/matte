@@ -5,7 +5,7 @@
 #define FUNCTION(name)    CONCAT(object_, name)
 #define METHOD(type,name) CONCAT(type->fn_, name)
 
-Object FUNCTION(F) (int n, ...) {
+Object FUNCTION(F) (Zone z, int n, ...) {
   ObjectType t, tmax;
   obj_variadic fn;
   Object obj;
@@ -28,7 +28,7 @@ Object FUNCTION(F) (int n, ...) {
   fn = METHOD(tmax,F);
   if (fn) {
     va_start(vl, n);
-    obj = fn(n, vl);
+    obj = fn(z, n, vl);
     va_end(vl);
 
     return obj;

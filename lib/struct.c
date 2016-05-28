@@ -15,12 +15,16 @@ ObjectType struct_type (void) {
 
 /* struct_new(): allocate a new matte struct.
  *
+ * arguments:
+ *  @z: zone allocator to utilize.
+ *  @args: constructor arguments.
+ *
  * returns:
  *  newly allocated empty struct.
  */
-Struct struct_new (Object args) {
+Struct struct_new (Zone z, Object args) {
   /* allocate a new struct. */
-  Struct st = (Struct) Struct_type.fn_alloc(&Struct_type);
+  Struct st = (Struct) object_alloc(z, &Struct_type);
   if (!st)
     return NULL;
 
@@ -33,15 +37,20 @@ Struct struct_new (Object args) {
   return st;
 }
 
-/* struct_free(): free all memory associated with a matte struct.
+/* struct_delete(): free all memory associated with a matte struct.
  *
  * arguments:
+ *  @z: zone allocator to utilize.
  *  @st: matte struct to free.
  */
-void struct_free (Struct st) {
+void struct_delete (Zone z, Struct st) {
   /* return if the struct is null. */
   if (!st)
     return;
+
+  /* free the key strings. */
+  for (int i = 0; i < st->n; i++)
+    free(st->keys[i]);
 
   /* free the key and object arrays. */
   free(st->keys);
@@ -149,7 +158,7 @@ int struct_set (Struct st, const char *key, Object obj) {
 
   /* return failure if any argument is null. */
   if (!st || !key)
-    fail("invalid input arguments");
+    return 0;
 
   /* lookup any existing object by its key string. */
   i = struct_find(st, key);
@@ -178,7 +187,7 @@ int struct_set (Struct st, const char *key, Object obj) {
 
   /* check if reallocation failed. */
   if (!st->keys || !st->objs)
-    fail("unable to reallocate arrays");
+    return 0;
 
   /* shift the larger key/value pairs down in the array. */
   for (j = st->n - 1; j > i; j--) {
@@ -235,7 +244,7 @@ const char *struct_get_key (Struct st, int i) {
   return (st && i >= 0 && i < st->n ? st->keys[i] : NULL);
 }
 
-/* struct_delete(): delete an object from a matte struct. the object
+/* struct_remove(): remove an object from a matte struct. the object
  * will not be freed.
  *
  * arguments:
@@ -245,7 +254,7 @@ const char *struct_get_key (Struct st, int i) {
  * returns:
  *  integer indicating success (1) or failure (0).
  */
-int struct_delete (Struct st, const char *key) {
+int struct_remove (Struct st, const char *key) {
   /* declare required variables:
    *  @i, @j: object array indices.
    */
@@ -295,11 +304,10 @@ struct _ObjectType Struct_type = {
   sizeof(struct _Struct),                        /* size       */
   0,                                             /* precedence */
 
-  (obj_constructor) struct_new,                  /* fn_new     */
-  NULL,                                          /* fn_copy    */
-  (obj_allocator)   object_alloc,                /* fn_alloc   */
-  (obj_destructor)  struct_free,                 /* fn_dealloc */
-  NULL,                                          /* fn_disp    */
+  (obj_constructor) struct_new,                  /* fn_new    */
+  NULL,                                          /* fn_copy   */
+  (obj_destructor)  struct_delete,               /* fn_delete */
+  NULL,                                          /* fn_disp   */
 
   NULL,                                          /* fn_plus       */
   NULL,                                          /* fn_minus      */

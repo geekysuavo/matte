@@ -7,9 +7,9 @@
 #define FUNCTION(name)    CONCAT(object_, name)
 #define METHOD(type,name) CONCAT(type->fn_, name)
 
-Object FUNCTION(F) (Object a, Object b) {
-  if (!a) throw("first operand to '%s' is undefined", STRING(F));
-  if (!b) throw("second operand to '%s' is undefined", STRING(F));
+Object FUNCTION(F) (Zone z, Object a, Object b) {
+  if (!a || !b)
+    return NULL;
 
   const ObjectType ta = MATTE_TYPE(a);
   const ObjectType tb = MATTE_TYPE(b);
@@ -18,15 +18,15 @@ Object FUNCTION(F) (Object a, Object b) {
   if (ta->precedence >= tb->precedence) {
     fn = METHOD(ta,F);
     if (fn)
-      return fn(a, b);
+      return fn(z, a, b);
   }
   else {
     fn = METHOD(tb,F);
     if (fn)
-      return fn(a, b);
+      return fn(z, a, b);
   }
 
-  throw("%s(%s, %s) is undefined", STRING(F), ta->name, tb->name);
+  return NULL;
 }
 
 /* undefine the method handler generation macros.

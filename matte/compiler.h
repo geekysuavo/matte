@@ -84,9 +84,9 @@ struct _Compiler {
 
 ObjectType compiler_type (void);
 
-Compiler compiler_new (Object args);
+Compiler compiler_new (Zone z, Object args);
 
-void compiler_free (Compiler c);
+void compiler_delete (Zone z, Compiler c);
 
 int compiler_set_mode (Compiler c, CompilerMode mode);
 

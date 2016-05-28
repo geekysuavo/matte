@@ -58,19 +58,18 @@ typedef struct _ObjectMethod *ObjectMethods;
 
 /* general-purpose function pointer type definition:
  */
-typedef Object (*matte_func) (Object);
+typedef Object (*matte_func) (Zone, Object);
 
 /* function pointer type definitions for matte objects:
  */
-typedef Object (*obj_allocator)   (ObjectType);
-typedef Object (*obj_constructor) (Object);
-typedef void   (*obj_destructor)  (Object);
-typedef int    (*obj_display)     (Object, const char *);
-typedef Object (*obj_unary)       (Object);
-typedef Object (*obj_binary)      (Object, Object);
-typedef Object (*obj_ternary)     (Object, Object, Object);
-typedef Object (*obj_variadic)    (int, va_list);
-typedef Object (*obj_method)      (Object, Object);
+typedef Object (*obj_constructor) (Zone, Object);
+typedef void   (*obj_destructor)  (Zone, Object);
+typedef int    (*obj_display)     (Zone, Object, const char *);
+typedef Object (*obj_unary)       (Zone, Object);
+typedef Object (*obj_binary)      (Zone, Object, Object);
+typedef Object (*obj_ternary)     (Zone, Object, Object, Object);
+typedef Object (*obj_variadic)    (Zone, int, va_list);
+typedef Object (*obj_method)      (Zone, Object, Object);
 
 /* _ObjectMethod: structure that holds information about a matte object
  * method.
@@ -100,8 +99,7 @@ struct _ObjectType {
    */
   obj_constructor fn_new;
   obj_constructor fn_copy;
-  obj_allocator   fn_alloc;
-  obj_destructor  fn_dealloc;
+  obj_destructor  fn_delete;
   obj_display     fn_disp;
 
   /* numeric method table:
@@ -156,46 +154,44 @@ struct _Object {
 
 /* function declarations (object.c): */
 
-Object object_alloc (ObjectType type);
+Object object_alloc (Zone z, ObjectType type);
 
-Object object_new (ObjectType type, Object args);
+void object_free (Zone z, void *ptr);
 
-void object_free (Object obj);
-
-int object_disp (Object obj, const char *var);
+int object_disp (Zone z, Object obj, const char *var);
 
 /* object method declarations (object.c): */
 
-Object object_plus       (Object a, Object b);
-Object object_minus      (Object a, Object b);
-Object object_uminus     (Object a);
-Object object_times      (Object a, Object b);
-Object object_mtimes     (Object a, Object b);
-Object object_rdivide    (Object a, Object b);
-Object object_ldivide    (Object a, Object b);
-Object object_mrdivide   (Object a, Object b);
-Object object_mldivide   (Object a, Object b);
-Object object_power      (Object a, Object b);
-Object object_mpower     (Object a, Object b);
-Object object_lt         (Object a, Object b);
-Object object_gt         (Object a, Object b);
-Object object_le         (Object a, Object b);
-Object object_ge         (Object a, Object b);
-Object object_ne         (Object a, Object b);
-Object object_eq         (Object a, Object b);
-Object object_and        (Object a, Object b);
-Object object_or         (Object a, Object b);
-Object object_mand       (Object a, Object b);
-Object object_mor        (Object a, Object b);
-Object object_not        (Object a);
-Object object_colon      (Object a, Object b, Object c);
-Object object_ctranspose (Object a);
-Object object_transpose  (Object a);
-Object object_horzcat    (int n, ...);
-Object object_vertcat    (int n, ...);
-Object object_subsref    (Object a, Object b);
-Object object_subsasgn   (Object a, Object b, Object c);
-Object object_subsindex  (Object a);
+Object object_plus       (Zone z, Object a, Object b);
+Object object_minus      (Zone z, Object a, Object b);
+Object object_uminus     (Zone z, Object a);
+Object object_times      (Zone z, Object a, Object b);
+Object object_mtimes     (Zone z, Object a, Object b);
+Object object_rdivide    (Zone z, Object a, Object b);
+Object object_ldivide    (Zone z, Object a, Object b);
+Object object_mrdivide   (Zone z, Object a, Object b);
+Object object_mldivide   (Zone z, Object a, Object b);
+Object object_power      (Zone z, Object a, Object b);
+Object object_mpower     (Zone z, Object a, Object b);
+Object object_lt         (Zone z, Object a, Object b);
+Object object_gt         (Zone z, Object a, Object b);
+Object object_le         (Zone z, Object a, Object b);
+Object object_ge         (Zone z, Object a, Object b);
+Object object_ne         (Zone z, Object a, Object b);
+Object object_eq         (Zone z, Object a, Object b);
+Object object_and        (Zone z, Object a, Object b);
+Object object_or         (Zone z, Object a, Object b);
+Object object_mand       (Zone z, Object a, Object b);
+Object object_mor        (Zone z, Object a, Object b);
+Object object_not        (Zone z, Object a);
+Object object_colon      (Zone z, Object a, Object b, Object c);
+Object object_ctranspose (Zone z, Object a);
+Object object_transpose  (Zone z, Object a);
+Object object_horzcat    (Zone z, int n, ...);
+Object object_vertcat    (Zone z, int n, ...);
+Object object_subsref    (Zone z, Object a, Object b);
+Object object_subsasgn   (Zone z, Object a, Object b, Object c);
+Object object_subsindex  (Zone z, Object a);
 
 /* utility function declarations: */
 

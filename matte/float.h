@@ -34,11 +34,11 @@ struct _Float {
 
 ObjectType float_type (void);
 
-Float float_new (Object args);
+Float float_new (Zone z, Object args);
 
-Float float_new_with_value (double value);
+Float float_new_with_value (Zone z, double value);
 
-Float float_copy (Float f);
+Float float_copy (Zone z, Float f);
 
 double float_get_value (Float f);
 

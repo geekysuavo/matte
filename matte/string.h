@@ -40,15 +40,15 @@ struct _String {
 
 ObjectType string_type (void);
 
-String string_new (Object args);
+String string_new (Zone z, Object args);
 
-String string_new_with_length (int n);
+String string_new_with_length (Zone z, int n);
 
-String string_new_with_value (const char *str);
+String string_new_with_value (Zone z, const char *str);
 
-String string_copy (String s);
+String string_copy (Zone z, String s);
 
-void string_free (String s);
+void string_free (Zone z, String s);
 
 int string_get_length (String s);
 
@@ -76,7 +76,7 @@ int string_toupper (String s);
 
 int string_cmp (String s1, String s2);
 
-ObjectList string_split (String s, String pat);
+ObjectList string_split (Zone z, String s, String pat);
 
 /* function declarations (builtins.c): */
 

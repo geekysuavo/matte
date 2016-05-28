@@ -7,18 +7,18 @@
 #define FUNCTION(name)    CONCAT(object_, name)
 #define METHOD(type,name) CONCAT(type->fn_, name)
 
-Object FUNCTION(F) (Object a) {
+Object FUNCTION(F) (Zone z, Object a) {
   if (!a)
-    throw("operand to '%s' is undefined", STRING(F));
+    return NULL;
 
   const ObjectType ta = MATTE_TYPE(a);
   obj_unary fn;
 
   fn = METHOD(ta,F);
   if (fn)
-    return fn(a);
+    return fn(z, a);
 
-  throw("%s(%s) is undefined", STRING(F), ta->name);
+  return NULL;
 }
 
 /* undefine the method handler generation macros.

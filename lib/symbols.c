@@ -15,12 +15,16 @@ ObjectType symbols_type (void) {
 
 /* symbols_new(): allocate a new matte symbol table.
  *
+ * arguments:
+ *  @z: zone allocator to completely ignore.
+ *  @args: constructor arguments.
+ *
  * returns:
  *  newly allocated and initialized matte symbol table.
  */
-Symbols symbols_new (Object args) {
+Symbols symbols_new (Zone z, Object args) {
   /* allocate a new table. */
-  Symbols syms = (Symbols) Symbols_type.fn_alloc(&Symbols_type);
+  Symbols syms = (Symbols) object_alloc(NULL, &Symbols_type);
   if (!syms)
     return NULL;
 
@@ -36,12 +40,13 @@ Symbols symbols_new (Object args) {
   return syms;
 }
 
-/* symbols_free(): free all memory associated with a matte symbol table.
+/* symbols_delete(): free all memory associated with a matte symbol table.
  *
  * arguments:
+ *  @z: zone allocator to completely ignore.
  *  @syms: matte symbol table to free.
  */
-void symbols_free (Symbols syms) {
+void symbols_delete (Zone z, Symbols syms) {
   /* return if the table is null. */
   if (!syms)
     return;
@@ -320,11 +325,10 @@ struct _ObjectType Symbols_type = {
   sizeof(struct _Symbols),                       /* size       */
   0,                                             /* precedence */
 
-  (obj_constructor) symbols_new,                 /* fn_new     */
-  NULL,                                          /* fn_copy    */
-  (obj_allocator)   object_alloc,                /* fn_alloc   */
-  (obj_destructor)  symbols_free,                /* fn_dealloc */
-  NULL,                                          /* fn_disp    */
+  (obj_constructor) symbols_new,                 /* fn_new    */
+  NULL,                                          /* fn_copy   */
+  (obj_destructor)  symbols_delete,              /* fn_delete */
+  NULL,                                          /* fn_disp   */
 
   NULL,                                          /* fn_plus       */
   NULL,                                          /* fn_minus      */

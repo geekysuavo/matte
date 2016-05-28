@@ -19,18 +19,22 @@ ObjectType except_type (void) {
 
 /* except_new(): allocate a new matte exception.
  *
+ * arguments:
+ *  @z: zone allocator to utilize.
+ *  @args: constructor arguments.
+ *
  * returns:
  *  newly allocated exception.
  */
-Exception except_new (Object args) {
+Exception except_new (Zone z, Object args) {
   /* allocate a new exception. */
-  Exception e = (Exception) Exception_type.fn_alloc(&Exception_type);
+  Exception e = (Exception) object_alloc(z, &Exception_type);
   if (!e)
     return NULL;
 
   /* initialize the identifier and message strings. */
-  e->id = string_new(NULL);
-  e->msg = string_new(NULL);
+  e->id = string_new(z, NULL);
+  e->msg = string_new(z, NULL);
 
   /* initialize the call stack. */
   e->stack = NULL;
@@ -64,11 +68,11 @@ Exception except_new (Object args) {
     /* check if extra variables were provided. */
     if (nargs >= 3) {
       /* construct a formatted message. */
-      String emsg = string_new(NULL);
+      String emsg = string_new(z, NULL);
       string_append_objs(emsg, e->msg->data, 2, (ObjectList) args);
 
       /* set the formatted message. */
-      object_free((Object) e->msg);
+      object_free(z, e->msg);
       e->msg = emsg;
     }
   }
@@ -77,30 +81,31 @@ Exception except_new (Object args) {
   return e;
 }
 
-/* except_free(): free all memory associated with a matte exception.
+/* except_delete(): free all memory associated with a matte exception.
  *
  * arguments:
+ *  @z: zone allocator to utilize.
  *  @e: matte exception to free.
  */
-void except_free (Exception e) {
+void except_delete (Zone z, Exception e) {
   /* return if the exception is null. */
   if (!e)
     return;
 
   /* free the identifier and message strings. */
-  object_free((Object) e->id);
-  object_free((Object) e->msg);
+  object_free(z, e->id);
+  object_free(z, e->msg);
 
   /* free the elements in the call stack. */
   for (long i = 0; i < e->n_stack; i++) {
     /* free the string data. */
-    object_free((Object) e->stack[i].fname);
-    object_free((Object) e->stack[i].func);
+    object_free(z, e->stack[i].fname);
+    object_free(z, e->stack[i].func);
   }
 
   /* free the elements in the cause array. */
   for (long i = 0; i < e->n_cause; i++)
-    object_free((Object) e->cause[i]);
+    object_free(z, e->cause[i]);
 
   /* free the stack and cause arrays. */
   free(e->stack);
@@ -109,14 +114,14 @@ void except_free (Exception e) {
 
 /* except_disp(): display function for exceptions.
  */
-int except_disp (Exception e, const char *var) {
+int except_disp (Zone z, Exception e, const char *var) {
   /* FIXME: implement except_disp() */
 
   /* return success. */
   return 1;
 }
 
-Object except_addCause (Exception e, ObjectList args) {
+Object except_addCause (Zone z, Exception e, ObjectList args) {
   /* FIXME: implement except_addCause() */
 
   /* return nothing. */
@@ -137,11 +142,10 @@ struct _ObjectType Exception_type = {
   sizeof(struct _Exception),                     /* size       */
   0,                                             /* precedence */
 
-  (obj_constructor) except_new,                  /* fn_new     */
-  NULL,                                          /* fn_copy    */
-  (obj_allocator)   object_alloc,                /* fn_alloc   */
-  (obj_destructor)  except_free,                 /* fn_dealloc */
-  (obj_display)     except_disp,                 /* fn_disp    */
+  (obj_constructor) except_new,                  /* fn_new    */
+  NULL,                                          /* fn_copy   */
+  (obj_destructor)  except_delete,               /* fn_delete */
+  (obj_display)     except_disp,                 /* fn_disp   */
 
   NULL,                                          /* fn_plus       */
   NULL,                                          /* fn_minus      */

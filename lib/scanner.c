@@ -741,12 +741,16 @@ ObjectType scanner_type (void) {
 
 /* scanner_new(): allocate a new matte scanner.
  *
+ * arguments:
+ *  @z: zone allocator to completely ignore.
+ *  @args: constructor arguments.
+ *
  * returns:
  *  newly allocated and initialized matte scanner.
  */
-Scanner scanner_new (Object args) {
+Scanner scanner_new (Zone z, Object args) {
   /* allocate a new scanner. */
-  Scanner s = (Scanner) Scanner_type.fn_alloc(&Scanner_type);
+  Scanner s = (Scanner) object_alloc(NULL, &Scanner_type);
   if (!s)
     return NULL;
 
@@ -780,15 +784,10 @@ Scanner scanner_new (Object args) {
  *  newly allocated and initialized scanner.
  */
 Scanner scanner_new_with_file (const char *fname) {
-  /* declare required variables:
-   *  @s: new scanner to allocate.
-   */
-  Scanner s;
-
   /* allocate a new scanner and set the filename string. */
-  s = scanner_new(NULL);
+  Scanner s = scanner_new(NULL, NULL);
   if (!s || !scanner_set_file(s, fname)) {
-    object_free((Object) s);
+    object_free(NULL, s);
     return NULL;
   }
 
@@ -806,15 +805,10 @@ Scanner scanner_new_with_file (const char *fname) {
  *  newly allocated and initialized scanner.
  */
 Scanner scanner_new_with_string (const char *str) {
-  /* declare required variables:
-   *  @s: new scanner to allocate.
-   */
-  Scanner s;
-
   /* allocate a new scanner and set the string buffer. */
-  s = scanner_new(NULL);
+  Scanner s = scanner_new(NULL, NULL);
   if (!s || !scanner_set_string(s, str)) {
-    object_free((Object) s);
+    object_free(NULL, s);
     return NULL;
   }
 
@@ -828,9 +822,8 @@ Scanner scanner_new_with_string (const char *str) {
  *  @s: matte scanner to close.
  */
 static void scanner_close (Scanner s) {
-  /* check if the filename string is allocated. */
-  if (s->fname)
-    free(s->fname);
+  /* free the filename string. */
+  free(s->fname);
 
   /* check if the scanner contains an open file. */
   if (s->fd >= 0)
@@ -841,8 +834,7 @@ static void scanner_close (Scanner s) {
   s->fd = -1;
 
   /* free the scanner buffer. */
-  if (s->buf)
-    free(s->buf);
+  free(s->buf);
 
   /* reset the buffer string. */
   s->buf = s->buf_end = NULL;
@@ -857,12 +849,13 @@ static void scanner_close (Scanner s) {
   s->err = 0L;
 }
 
-/* scanner_free(): free all memory associated with a matte scanner.
+/* scanner_delete(): free all memory associated with a matte scanner.
  *
  * arguments:
+ *  @z: zone allocator to completely ignore.
  *  @s: matte scanner to free.
  */
-void scanner_free (Scanner s) {
+void scanner_delete (Zone z, Scanner s) {
   /* return if the scanner is null. */
   if (!s)
     return;
@@ -1296,11 +1289,10 @@ struct _ObjectType Scanner_type = {
   sizeof(struct _Scanner),                       /* size       */
   0,                                             /* precedence */
 
-  (obj_constructor) scanner_new,                 /* fn_new     */
-  NULL,                                          /* fn_copy    */
-  (obj_allocator)   object_alloc,                /* fn_alloc   */
-  (obj_destructor)  scanner_free,                /* fn_dealloc */
-  NULL,                                          /* fn_disp    */
+  (obj_constructor) scanner_new,                 /* fn_new    */
+  NULL,                                          /* fn_copy   */
+  (obj_destructor)  scanner_delete,              /* fn_delete */
+  NULL,                                          /* fn_disp   */
 
   NULL,                                          /* fn_plus       */
   NULL,                                          /* fn_minus      */

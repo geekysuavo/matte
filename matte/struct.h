@@ -34,9 +34,9 @@ struct _Struct {
 
 ObjectType struct_type (void);
 
-Struct struct_new (Object args);
+Struct struct_new (Zone z, Object args);
 
-void struct_free (Struct st);
+void struct_delete (Zone z, Struct st);
 
 int struct_get_length (Struct st);
 
@@ -48,7 +48,7 @@ Object struct_get (Struct st, const char *key);
 
 const char *struct_get_key (Struct st, int i);
 
-int struct_delete (Struct st, const char *key);
+int struct_remove (Struct st, const char *key);
 
 #endif /* !__MATTE_STRUCT_H__ */
 

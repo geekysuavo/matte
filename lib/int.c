@@ -19,12 +19,16 @@ ObjectType int_type (void) {
 
 /* int_new(): allocate a new matte integer.
  *
+ * arguments:
+ *  @z: zone allocator to utilize.
+ *  @args: constructor arguments.
+ *
  * returns:
  *  newly allocated integer.
  */
-Int int_new (Object args) {
+Int int_new (Zone z, Object args) {
   /* allocate a new integer. */
-  Int i = (Int) Int_type.fn_alloc(&Int_type);
+  Int i = (Int) object_alloc(z, &Int_type);
   if (!i)
     return NULL;
 
@@ -38,14 +42,15 @@ Int int_new (Object args) {
 /* int_new_with_value(): allocate a new matte integer with a set value.
  *
  * arguments:
+ *  @z: zone allocator to utilize.
  *  @value: initial value of the integer.
  *
  * returns:
  *  newly allocated and initialized integer.
  */
-Int int_new_with_value (long value) {
+Int int_new_with_value (Zone z, long value) {
   /* allocate a new integer. */
-  Int i = int_new(NULL);
+  Int i = int_new(z, NULL);
   if (!i)
     return NULL;
 
@@ -57,18 +62,19 @@ Int int_new_with_value (long value) {
 /* int_copy(): allocate a new matte integer from another matte integer.
  *
  * arguments:
+ *  @z: zone allocator to utilize.
  *  @i: matte integer to duplicate.
  *
  * returns:
  *  duplicated matte integer.
  */
-Int int_copy (Int i) {
+Int int_copy (Zone z, Int i) {
   /* return null if the input argument is null. */
   if (!i)
     return NULL;
 
   /* allocate a new integer with the value of the input object. */
-  Int inew = int_new_with_value(int_get_value(i));
+  Int inew = int_new_with_value(z, int_get_value(i));
   if (!inew)
     return NULL;
 
@@ -106,65 +112,65 @@ inline void int_set_value (Int i, long value) {
 
 /* int_disp(): display function for integers.
  */
-int int_disp (Int i, const char *var) {
+int int_disp (Zone z, Int i, const char *var) {
   printf("%s = %ld\n", var, i->value);
   return 1;
 }
 
 /* int_plus(): addition function for integers.
  */
-Int int_plus (Int a, Int b) {
+Int int_plus (Zone z, Int a, Int b) {
   /* compute and return the sum. */
-  return int_new_with_value(int_get_value(a) + int_get_value(b));
+  return int_new_with_value(z, a->value + b->value);
 }
 
 /* int_minus(): subtraction function for integers.
  */
-Int int_minus (Int a, Int b) {
+Int int_minus (Zone z, Int a, Int b) {
   /* compute and return the difference. */
-  return int_new_with_value(int_get_value(a) - int_get_value(b));
+  return int_new_with_value(z, a->value - b->value);
 }
 
 /* int_uminus(): unary negation function for integers.
  */
-Int int_uminus (Int a) {
+Int int_uminus (Zone z, Int a) {
   /* compute and return the negation. */
-  return int_new_with_value(-int_get_value(a));
+  return int_new_with_value(z, -(a->value));
 }
 
 /* int_times(): multiplication function for integers.
  */
-Int int_times (Int a, Int b) {
+Int int_times (Zone z, Int a, Int b) {
   /* compute and return the product. */
-  return int_new_with_value(int_get_value(a) * int_get_value(b));
+  return int_new_with_value(z, a->value * b->value);
 }
 
 /* int_rdivide(): right-division function for integers.
  */
-Int int_rdivide (Int a, Int b) {
+Int int_rdivide (Zone z, Int a, Int b) {
   /* compute and return the right-quotient. */
-  return int_new_with_value(int_get_value(a) / int_get_value(b));
+  return int_new_with_value(z, a->value / b->value);
 }
 
 /* int_ldivide(): left-division function for integers.
  */
-Int int_ldivide (Int a, Int b) {
+Int int_ldivide (Zone z, Int a, Int b) {
   /* compute and return the left-quotient. */
-  return int_new_with_value(int_get_value(b) / int_get_value(a));
+  return int_new_with_value(z, b->value / a->value);
 }
 
 /* int_power(): exponentiation function for integers.
  */
-Int int_power (Int a, Int b) {
+Int int_power (Zone z, Int a, Int b) {
   /* obtain the values of the base and exponent. */
-  long base = int_get_value(a);
-  long exp =  int_get_value(b);
+  long base = a->value;
+  long exp =  b->value;
 
   /* check for trivial cases. */
   if (exp == 0L)
-    return int_new_with_value(1L);
+    return int_new_with_value(z, 1L);
   else if (exp < 0L || base == 0L)
-    return int_new_with_value(0L);
+    return int_new_with_value(z, 0L);
 
   /* loop until the exponent bits are exhausted. */
   long val = 1L;
@@ -179,82 +185,80 @@ Int int_power (Int a, Int b) {
   }
 
   /* return the newly computed value. */
-  return int_new_with_value(val);
+  return int_new_with_value(z, val);
 }
 
 /* int_lt(): less-than comparison function for integers.
  */
-Int int_lt (Int a, Int b) {
+Int int_lt (Zone z, Int a, Int b) {
   /* return the comparison result. */
-  return int_new_with_value(int_get_value(a) < int_get_value(b));
+  return int_new_with_value(z, a->value < b->value);
 }
 
 /* int_gt(): greater-than comparison function for integers.
  */
-Int int_gt (Int a, Int b) {
+Int int_gt (Zone z, Int a, Int b) {
   /* return the comparison result. */
-  return int_new_with_value(int_get_value(a) > int_get_value(b));
+  return int_new_with_value(z, a->value > b->value);
 }
 
 /* int_le(): less-than-or-equal-to comparison function for integers.
  */
-Int int_le (Int a, Int b) {
+Int int_le (Zone z, Int a, Int b) {
   /* return the comparison result. */
-  return int_new_with_value(int_get_value(a) <= int_get_value(b));
+  return int_new_with_value(z, a->value <= b->value);
 }
 
 /* int_ge(): greater-than-or-equal-to comparison function for integers.
  */
-Int int_ge (Int a, Int b) {
+Int int_ge (Zone z, Int a, Int b) {
   /* return the comparison result. */
-  return int_new_with_value(int_get_value(a) >= int_get_value(b));
+  return int_new_with_value(z, a->value >= b->value);
 }
 
 /* int_ne(): inequality comparison function for integers.
  */
-Int int_ne (Int a, Int b) {
+Int int_ne (Zone z, Int a, Int b) {
   /* return the comparison result. */
-  return int_new_with_value(int_get_value(a) != int_get_value(b));
+  return int_new_with_value(z, a->value != b->value);
 }
 
 /* int_eq(): equality comparison function for integers.
  */
-Int int_eq (Int a, Int b) {
+Int int_eq (Zone z, Int a, Int b) {
   /* return the comparison result. */
-  return int_new_with_value(int_get_value(a) == int_get_value(b));
+  return int_new_with_value(z, a->value == b->value);
 }
 
 /* int_and(): logical-and operation for integers.
  */
-Int int_and (Int a, Int b) {
+Int int_and (Zone z, Int a, Int b) {
   /* return the logical result. */
-  return int_new_with_value(int_get_value(a) && int_get_value(b));
+  return int_new_with_value(z, a->value && b->value);
 }
 
 /* int_or(): logical-or operation for integers.
  */
-Int int_or (Int a, Int b) {
+Int int_or (Zone z, Int a, Int b) {
   /* return the logical result. */
-  return int_new_with_value(int_get_value(a) || int_get_value(b));
+  return int_new_with_value(z, a->value || b->value);
 }
 
 /* int_not(): logical negation operation for integers.
  */
-Int int_not (Int a) {
+Int int_not (Zone z, Int a) {
   /* return the logical result. */
-  return int_new_with_value(int_get_value(a) ? 0L : 1L);
+  return int_new_with_value(z, a->value ? 0L : 1L);
 }
 
 /* int_colon(): colon operation for integers.
  */
-Range int_colon (Int a, Int b, Int c) {
+Range int_colon (Zone z, Int a, Int b, Int c) {
   /* allocate a new range object. */
-  Range r = range_new(NULL);
+  Range r = range_new(z, NULL);
 
   /* set the values of the range. */
-  range_set(r, int_get_value(a),
-               int_get_value(b),
-               int_get_value(c));
+  range_set(r, a->value, b->value, c->value);
 
   /* return the new range. */
   return r;
@@ -262,8 +266,8 @@ Range int_colon (Int a, Int b, Int c) {
 
 /* int_horzcat(): horizontal concatenation function for integers.
  */
-Vector int_horzcat (int n, va_list vl) {
-  Vector x = vector_new_with_length(n);
+Vector int_horzcat (Zone z, int n, va_list vl) {
+  Vector x = vector_new_with_length(z, n);
   if (!x)
     return NULL;
 
@@ -271,7 +275,7 @@ Vector int_horzcat (int n, va_list vl) {
     Int iobj = (Int) va_arg(vl, Int);
 
     if (!IS_INT(iobj)) {
-      object_free((Object) x);
+      object_free(z, x);
       return NULL;
     }
 
@@ -283,8 +287,8 @@ Vector int_horzcat (int n, va_list vl) {
 
 /* int_vertcat(): vertical concatenation function for integers.
  */
-Vector int_vertcat (int n, va_list vl) {
-  Vector x = vector_new_with_length(n);
+Vector int_vertcat (Zone z, int n, va_list vl) {
+  Vector x = vector_new_with_length(z, n);
   if (!x)
     return NULL;
 
@@ -292,7 +296,7 @@ Vector int_vertcat (int n, va_list vl) {
     Int iobj = (Int) va_arg(vl, Int);
 
     if (!IS_INT(iobj)) {
-      object_free((Object) x);
+      object_free(z, x);
       return NULL;
     }
 
@@ -310,11 +314,10 @@ struct _ObjectType Int_type = {
   sizeof(struct _Int),                           /* size       */
   1,                                             /* precedence */
 
-  (obj_constructor) int_new,                     /* fn_new     */
-  (obj_constructor) int_copy,                    /* fn_copy    */
-  (obj_allocator)   object_alloc,                /* fn_alloc   */
-  NULL,                                          /* fn_dealloc */
-  (obj_display)     int_disp,                    /* fn_disp    */
+  (obj_constructor) int_new,                     /* fn_new    */
+  (obj_constructor) int_copy,                    /* fn_copy   */
+  NULL,                                          /* fn_delete */
+  (obj_display)     int_disp,                    /* fn_disp   */
 
   (obj_binary)   int_plus,                       /* fn_plus       */
   (obj_binary)   int_minus,                      /* fn_minus      */

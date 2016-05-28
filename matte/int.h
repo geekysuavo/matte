@@ -34,11 +34,11 @@ struct _Int {
 
 ObjectType int_type (void);
 
-Int int_new (Object args);
+Int int_new (Zone z, Object args);
 
-Int int_new_with_value (long value);
+Int int_new_with_value (Zone z, long value);
 
-Int int_copy (Int i);
+Int int_copy (Zone z, Int i);
 
 long int_get_value (Int i);
 

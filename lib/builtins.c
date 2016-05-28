@@ -163,7 +163,7 @@ int string_append_objs (String s, char *format, int begin, ObjectList lst) {
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-Object matte_sum (Object argin) {
+Object matte_sum (Zone z, Object argin) {
   const int nargin = object_list_get_length((ObjectList) argin);
   Object x = object_list_get((ObjectList) argin, 0);
   Object dim = object_list_get((ObjectList) argin, 1);
@@ -172,11 +172,11 @@ Object matte_sum (Object argin) {
 
   if (nargin == 1) {
     if (IS_INT(x))
-      y = (Object) int_copy((Int) x);
+      y = (Object) int_copy(z, (Int) x);
     else if (IS_FLOAT(x))
-      y = (Object) float_copy((Float) x);
+      y = (Object) float_copy(z, (Float) x);
     else if (IS_COMPLEX(x))
-      y = (Object) complex_copy((Complex) x);
+      y = (Object) complex_copy(z, (Complex) x);
     else if (IS_RANGE(x)) {
       Range r = (Range) x;
       long sum = 0;
@@ -184,7 +184,7 @@ Object matte_sum (Object argin) {
       for (long elem = r->begin; elem <= r->end; elem += r->step)
         sum += elem;
 
-      y = (Object) int_new_with_value(sum);
+      y = (Object) int_new_with_value(z, sum);
     }
     else if (IS_VECTOR(x)) {
       Vector v = (Vector) x;
@@ -193,26 +193,26 @@ Object matte_sum (Object argin) {
       for (long i = 0; i < v->n; i++)
         sum += v->data[i];
 
-      y = (Object) float_new_with_value(sum);
+      y = (Object) float_new_with_value(z, sum);
     }
   }
   else if (nargin == 2) {
   }
 
-  return object_list_argout(1, y);
+  return object_list_argout(z, 1, y);
 }
 
-Object matte_sprintf (Object argin) {
+Object matte_sprintf (Zone z, Object argin) {
   const int nargin = object_list_get_length((ObjectList) argin);
   Object format = object_list_get((ObjectList) argin, 0);
 
   String str = NULL;
 
   if (IS_STRING(format)) {
-    str = string_new(NULL);
+    str = string_new(z, NULL);
     string_append_objs(str, ((String) format)->data, 1, (ObjectList) argin);
   }
 
-  return object_list_argout(1, (Object) str);
+  return object_list_argout(z, 1, (Object) str);
 }
 

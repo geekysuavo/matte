@@ -37,16 +37,15 @@ struct _ObjectList {
 
 ObjectType object_list_type (void);
 
-ObjectList object_list_new (Object args);
+ObjectList object_list_new (Zone z, Object args);
 
-Object object_list_argout (int n, ...);
+Object object_list_argout (Zone z, int n, ...);
 
-void object_list_free (ObjectList lst);
+void object_list_delete (Zone z, ObjectList lst);
 
 int object_list_get_length (ObjectList lst);
 
-int object_list_set_length (ObjectList lst, int n,
-                            bool free_elements);
+int object_list_set_length (ObjectList lst, int n);
 
 int object_list_append (ObjectList lst, Object obj);
 

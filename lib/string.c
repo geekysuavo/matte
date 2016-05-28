@@ -15,12 +15,16 @@ ObjectType string_type (void) {
 
 /* string_new(): allocate a new empty matte string.
  *
+ * arguments:
+ *  @z: zone allocator to utilize.
+ *  @args: constructor arguments.
+ *
  * returns:
- *  newly allocated empty string.
+ *  newly allocated string.
  */
-String string_new (Object args) {
+String string_new (Zone z, Object args) {
   /* allocate a new string. */
-  String s = (String) String_type.fn_alloc(&String_type);
+  String s = (String) object_alloc(z, &String_type);
   if (!s)
     return NULL;
 
@@ -33,8 +37,8 @@ String string_new (Object args) {
   /* check if allocation failed. */
   if (!s->data) {
     /* return failure. */
-    object_free((Object) s);
-    throw("unable to allocate array");
+    object_free(z, s);
+    return NULL;
   }
 
   /* null-terminate the string data. */
@@ -48,26 +52,27 @@ String string_new (Object args) {
  * number of blank characters.
  *
  * arguments:
+ *  @z: zone allocator to utilize.
  *  @n: number of characters in the new string.
  *
  * returns:
  *  newly allocated blank string.
  */
-String string_new_with_length (int n) {
+String string_new_with_length (Zone z, int n) {
   /* declare required variables:
    *  @s: new string to allocate.
    */
   String s;
 
   /* allocate a new empty string. */
-  s = string_new(NULL);
+  s = string_new(z, NULL);
   if (!s)
-    throw("unable to allocate string");
+    return NULL;
 
   /* set the string length. */
   if (!string_set_length(s, n)) {
-    object_free((Object) s);
-    throw("unable to set string length");
+    object_free(z, s);
+    return NULL;
   }
 
   /* fill the string with blanks. */
@@ -80,26 +85,27 @@ String string_new_with_length (int n) {
 /* string_new_with_value(): allocate a new matte string with a set value.
  *
  * arguments:
+ *  @z: zone allocator to utilize.
  *  @str: initial value of the new string.
  *
  * returns:
  *  newly allocated string.
  */
-String string_new_with_value (const char *str) {
+String string_new_with_value (Zone z, const char *str) {
   /* declare required variables:
    *  @s: new string to allocate.
    */
   String s;
 
   /* allocate a new empty string. */
-  s = string_new(NULL);
+  s = string_new(z, NULL);
   if (!s)
-    throw("unable to allocate string");
+    return NULL;
 
   /* set the string value. */
   if (!string_set_value(s, str)) {
-    object_free((Object) s);
-    throw("unable to set string value");
+    object_free(z, s);
+    return NULL;
   }
 
   /* return the new string. */
@@ -109,41 +115,34 @@ String string_new_with_value (const char *str) {
 /* string_copy(): allocate a new matte string from another matte string.
  *
  * arguments:
+ *  @z: zone allocator to utilize.
  *  @s: matte string to duplicate.
  *
  * returns:
  *  newly allocated duplicate string.
  */
-String string_copy (String s) {
-  /* declare required variables:
-   *  @s: new string to allocate.
-   */
-  String snew;
-
+String string_copy (Zone z, String s) {
   /* validate the input arguments. */
   if (!s)
-    throw("invalid input arguments");
-
-  /* allocate a new valued string. */
-  snew = string_new_with_value(s->data);
+    return NULL;
 
   /* return the new string. */
-  return snew;
+  return string_new_with_value(z, s->data);
 }
 
-/* string_free(): free all memory associated with a matte string.
+/* string_delete(): free all memory associated with a matte string.
  *
  * arguments:
+ *  @z: zone allocator to utilize.
  *  @s: matte string to free.
  */
-void string_free (String s) {
+void string_delete (Zone z, String s) {
   /* return if the string is null. */
   if (!s)
     return;
 
   /* free the string data. */
-  if (s->data)
-    free(s->data);
+  free(s->data);
 }
 
 /* string_get_length(): get the length of a matte string.
@@ -592,14 +591,15 @@ int string_cmp (String s1, String s2) {
  * delimiter string.
  *
  * arguments:
- *  @s: matte string to split.
+ *  @z: zone allocator to utilize.
+ *  @s: matte string to split into parts.
  *  @pat: matte string to use as a delimiter.
  *
  * returns:
  *  matte object list containing each individual string produced
  *  by the split operation, or NULL on failure.
  */
-ObjectList string_split (String s, String pat) {
+ObjectList string_split (Zone z, String s, String pat) {
   /* declare required variables:
    *  @pa: token string start pointer.
    *  @pb: token string end pointer.
@@ -611,7 +611,7 @@ ObjectList string_split (String s, String pat) {
   int n, done;
 
   /* allocate a new object list. */
-  ObjectList lst = object_list_new(NULL);
+  ObjectList lst = object_list_new(z, NULL);
   if (!lst)
     return NULL;
 
@@ -621,8 +621,8 @@ ObjectList string_split (String s, String pat) {
   /* check if allocation failed. */
   if (!buf) {
     /* free the object list and return failure. */
-    object_free((Object) lst);
-    throw("unable to allocate array");
+    object_free(z, lst);
+    return NULL;
   }
 
   /* initialize the first token start pointer. */
@@ -651,13 +651,14 @@ ObjectList string_split (String s, String pat) {
     buf[n] = '\0';
 
     /* append a new matte [token] string into the object list. */
-    if (!object_list_append(lst, (Object) string_new_with_value(buf))) {
+    Object token = (Object) string_new_with_value(z, buf);
+    if (!object_list_append(lst, token)) {
       /* free the object list and buffer string. */
-      object_free((Object) lst);
+      object_free(z, lst);
       free(buf);
 
       /* return failure. */
-      throw("unable to append string to object array");
+      return NULL;
     }
 
     /* move the token start pointer past the last delimiter. */
@@ -671,17 +672,15 @@ ObjectList string_split (String s, String pat) {
 }
 
 /* string_disp(): display function for strings.
- * see String_type for more detailed information.
  */
-int string_disp (String s, const char *var) {
+int string_disp (Zone z, String s, const char *var) {
   printf("%s = '%s'\n", var, s->data);
   return 1;
 }
 
 /* string_horzcat(): horizontal concatenation function for strings.
- * see String_type for more detailed information.
  */
-String string_horzcat (int n, va_list vl) {
+String string_horzcat (Zone z, int n, va_list vl) {
   /* declare required variables:
    *  @scat: output concatenation result.
    *  @si: current input string.
@@ -691,7 +690,7 @@ String string_horzcat (int n, va_list vl) {
   int i;
 
   /* allocate an output string. */
-  scat = string_new(NULL);
+  scat = string_new(z, NULL);
   if (!scat)
     return NULL;
 
@@ -701,7 +700,7 @@ String string_horzcat (int n, va_list vl) {
 
     /* append the input string to the output string. */
     if (!IS_STRING(si) || !string_append(scat, si)) {
-      object_free((Object) scat);
+      object_free(z, scat);
       return NULL;
     }
   }
@@ -711,9 +710,8 @@ String string_horzcat (int n, va_list vl) {
 }
 
 /* string_vertcat(): vertical concatenation function for strings.
- * see String_type for more detailed information.
  */
-String string_vertcat (int n, va_list vl) {
+String string_vertcat (Zone z, int n, va_list vl) {
   /* declare required variables:
    *  @scat: output concatenation result.
    *  @si: current input string.
@@ -723,7 +721,7 @@ String string_vertcat (int n, va_list vl) {
   int i;
 
   /* allocate an output string. */
-  scat = string_new(NULL);
+  scat = string_new(z, NULL);
   if (!scat)
     return NULL;
 
@@ -734,15 +732,15 @@ String string_vertcat (int n, va_list vl) {
 
     /* append the input string to the output string. */
     if (!IS_STRING(si) || !string_append(scat, si)) {
-      object_free((Object) scat);
+      object_free(z, scat);
       return NULL;
     }
 
     /* insert a newline between input strings. */
     if (i < n - 1) {
-      si = string_new_with_value("\n");
+      si = string_new_with_value(z, "\n");
       string_append(scat, si);
-      object_free((Object) si);
+      object_free(z, si);
     }
   }
 
@@ -757,11 +755,10 @@ struct _ObjectType String_type = {
   sizeof(struct _String),                        /* size       */
   0,                                             /* precedence */
 
-  (obj_constructor) string_new,                  /* fn_new     */
-  (obj_constructor) string_copy,                 /* fn_copy    */
-  (obj_allocator)   object_alloc,                /* fn_alloc   */
-  (obj_destructor)  string_free,                 /* fn_dealloc */
-  (obj_display)     string_disp,                 /* fn_disp    */
+  (obj_constructor) string_new,                  /* fn_new    */
+  (obj_constructor) string_copy,                 /* fn_copy   */
+  (obj_destructor)  string_delete,               /* fn_delete */
+  (obj_display)     string_disp,                 /* fn_disp   */
 
   NULL,                                          /* fn_plus       */
   NULL,                                          /* fn_minus      */

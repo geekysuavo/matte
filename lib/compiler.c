@@ -260,7 +260,7 @@ static int init_symbols (Compiler c, AST node, AST root) {
       ntype == AST_TYPE_CLASS ||
       ntype == AST_TYPE_FUNCTION) {
     /* allocate a symbol table. */
-    node->syms = symbols_new(NULL);
+    node->syms = symbols_new(NULL, NULL);
     if (!node->syms)
       return 0;
   }
@@ -544,18 +544,18 @@ static void write_statements (Compiler c, AST node) {
 
   if (operators[i].fstr) {
     if (node->n_down == 1) {
-      W("  Object %s = %s(%s);\n",
+      W("  Object %s = %s(&_z1, %s);\n",
         S(node), operators[i].fstr,
         S(node->down[0]));
     }
     else if (node->n_down == 2) {
-      W("  Object %s = %s(%s, %s);\n",
+      W("  Object %s = %s(&_z1, %s, %s);\n",
         S(node), operators[i].fstr,
         S(node->down[0]),
         S(node->down[1]));
     }
     else if (node->n_down == 3) {
-      W("  Object %s = %s(%s, %s, %s);\n",
+      W("  Object %s = %s(&_z1, %s, %s, %s);\n",
         S(node), operators[i].fstr,
         S(node->down[0]),
         S(node->down[1]),
@@ -568,7 +568,7 @@ static void write_statements (Compiler c, AST node) {
       "  }\n", S(node), E(node, "operation failed"));
   }
   else if (ntype == AST_TYPE_ROW) {
-    W("  Object %s = object_horzcat(%d", S(node), node->n_down);
+    W("  Object %s = object_horzcat(&_z1, %d", S(node), node->n_down);
     for (i = 0; i < node->n_down; i++)
       W(", %s", S(node->down[i]));
     W(");\n");
@@ -579,7 +579,7 @@ static void write_statements (Compiler c, AST node) {
       "  }\n", S(node), E(node, "row concatenation failed"));
   }
   else if (ntype == AST_TYPE_COLUMN) {
-    W("  Object %s = object_vertcat(%d", S(node), node->n_down);
+    W("  Object %s = object_vertcat(&_z1, %d", S(node), node->n_down);
     for (i = 0; i < node->n_down; i++)
       W(", %s", S(node->down[i]));
     W(");\n");
@@ -597,17 +597,17 @@ static void write_statements (Compiler c, AST node) {
     if (down->n_down == 1 &&
         ast_get_type(down->down[0]) == (ASTNodeType) T_PAREN_OPEN) {
       down = down->down[0];
-      W("  args = object_list_argout(%d", down->n_down);
+      W("  args = object_list_argout(&_z1, %d", down->n_down);
       for (i = 0; i < down->n_down; i++)
         W(", %s", S(down->down[i]));
       W(");\n");
     }
     else {
-      W("  args = (Object) object_list_new(NULL);\n");
+      W("  args = (Object) object_list_new(&_z1, NULL);\n");
     }
 
     down = node->down[1];
-    W("  rets = matte_%s(args);\n"
+    W("  rets = matte_%s(&_z1, args);\n"
       "  if (!rets) {\n"
       "    fprintf(stderr, \"%%s\", \"%s\");\n"
       "    return NULL;\n"
@@ -625,12 +625,12 @@ static void write_statements (Compiler c, AST node) {
           S(down->down[i]), i);
     }
 
-    W("  object_free(args);\n");
-    W("  object_free(rets);\n");
+    W("  object_free(&_z1, args);\n");
+    W("  object_free(&_z1, rets);\n");
   }
 
   if (node->node_disp)
-    W("  object_disp(%s, \"%s\");\n", S(node), S(node));
+    W("  object_disp(&_z1, %s, \"%s\");\n", S(node), S(node));
 }
 
 /* write_symbols(): write variable and literal symbol initializers from
@@ -672,26 +672,27 @@ static void write_symbols (Compiler c, Symbols syms) {
     /* write based on type. */
     if (symbol_has_type(syms, i, SYMBOL_INT)) {
       /* integer literal. */
-      W("  Object %s = (Object) int_new_with_value(%ldL);\n",
+      W("  Object %s = (Object) int_new_with_value(&_z1, %ldL);\n",
         symbol_name(syms, i),
         symbol_int(syms, i));
     }
     else if (symbol_has_type(syms, i, SYMBOL_FLOAT)) {
       /* float literal. */
-      W("  Object %s = (Object) float_new_with_value(%le);\n",
+      W("  Object %s = (Object) float_new_with_value(&_z1, %le);\n",
         symbol_name(syms, i),
         symbol_float(syms, i));
     }
     else if (symbol_has_type(syms, i, SYMBOL_COMPLEX)) {
       /* complex literal. */
-      W("  Object %s = (Object) complex_new_with_value(%le + %le * I);\n",
+      W("  Object %s = (Object) \n"
+        "    complex_new_with_value(&_z1, %le + %le * I);\n",
         symbol_name(syms, i),
         creal(symbol_complex(syms, i)),
         cimag(symbol_complex(syms, i)));
     }
     else if (symbol_has_type(syms, i, SYMBOL_STRING)) {
       /* string literal. */
-      W("  Object %s = (Object) string_new_with_value(%s);\n",
+      W("  Object %s = (Object) string_new_with_value(&_z1, %s);\n",
         symbol_name(syms, i),
         symbol_string(syms, i));
     }
@@ -721,7 +722,7 @@ static void write_globals (Compiler c) {
   W("\n");
   for (i = 0; i < gs->n; i++) {
     if (!(gs->sym_type[i] & SYMBOL_FUNC)) continue;
-    W("Object matte_%s (Object argin);\n", gs->sym_name[i]);
+    W("Object matte_%s (Zone z, Object argin);\n", gs->sym_name[i]);
   }
 
   /* write the variable declarations. */
@@ -755,8 +756,11 @@ static void write_functions (Compiler c) {
     if (ast_get_type(node) != AST_TYPE_FUNCTION) continue;
 
     W("\n");
-    W("Object matte_%s (Object argin) {\n",
-      ast_get_string(node->down[1]));
+    W("Object matte_%s (Zone _z0, Object argin) {\n"
+      "  ZoneData _z1;\n"
+      "  zone_init(&_z1, %ld);\n",
+      ast_get_string(node->down[1]),
+      node->syms->n);
 
     write_symbols(c, node->syms);
 
@@ -766,16 +770,16 @@ static void write_functions (Compiler c) {
     W("\n");
     down = node->down[0];
     if (!down) {
-      W("  return (Object) object_list_new(NULL);\n");
+      W("  return (Object) object_list_new(_z0, NULL);\n");
     }
     else if (down->n_down) {
-      W("  return object_list_argout(%d", down->n_down);
+      W("  return object_list_argout(_z0, %d", down->n_down);
       for (j = 0; j < down->n_down; j++)
         W(", %s", ast_get_string(down->down[j]));
       W(");\n");
     }
     else {
-      W("  return object_list_argout(1, %s);\n", S(down));
+      W("  return object_list_argout(_z0, 1, %s);\n", S(down));
     }
 
     W("}\n");
@@ -798,12 +802,17 @@ static void write_main (Compiler c) {
   /* check if compile-to-memory mode is enabled. */
   if (c->mode == COMPILE_TO_MEM) {
     /* write a general-purpose main function. */
-    W("\nObject matte_main (Object argin) {\n");
+    W("\nObject matte_main (Zone _z0, Object argin) {\n");
   }
   else {
     /* write an application entry point. */
     W("\nint main (int argc, char **argv) {\n");
   }
+
+  /* write the zone allocator initialization. */
+  W("  ZoneData _z1;\n"
+    "  zone_init(&_z1, %ld);\n",
+    c->tree->syms->n);
 
   /* write all global variables and literals. */
   write_symbols(c, c->tree->syms);
@@ -895,7 +904,7 @@ static int compile_to_exe (Compiler c) {
    *  @ftmp: temporary filename.
    *  @fd: output file descriptor.
    */
-  String cc = string_new(NULL);
+  String cc = string_new(NULL, NULL);
   char ftmp[64];
   int fd, ret;
 
@@ -941,7 +950,7 @@ static int compile_to_exe (Compiler c) {
 
   /* execute the system command. */
   ret = system(string_get_value(cc));
-  object_free((Object) cc);
+  object_free(NULL, cc);
 
   /* remove the temporary file. */
   remove(ftmp);
@@ -966,7 +975,7 @@ static int compile_to_mem (Compiler c) {
    *  @ftmp?: temporary filenames.
    *  @fd?: output file descriptors.
    */
-  String cc = string_new(NULL);
+  String cc = string_new(NULL, NULL);
   char ftmpc[64], ftmpx[64];
   int fdc, fdx, ret;
 
@@ -976,7 +985,7 @@ static int compile_to_mem (Compiler c) {
    *  @results: return values.
    */
   void *lib, *sym;
-  Object (*fn) (Object);
+  Object (*fn) (Zone, Object);
   Object results;
 
   /* obtain two temporary file descriptors. */
@@ -998,7 +1007,7 @@ static int compile_to_mem (Compiler c) {
   /* execute the system command. */
   close(fdx);
   ret = system(string_get_value(cc));
-  object_free((Object) cc);
+  object_free(NULL, cc);
 
   /* check if the command was successful. */
   if (ret == 0) {
@@ -1020,8 +1029,8 @@ static int compile_to_mem (Compiler c) {
 
     /* run the main function. */
     fn = sym;
-    results = fn(NULL);
-    object_free(results);
+    results = fn(NULL, NULL);
+    object_free(NULL, results);
 
     /* return the result. */
     return 1;
@@ -1046,12 +1055,16 @@ ObjectType compiler_type (void) {
 
 /* compiler_new(): allocate a new matte compiler.
  *
+ * arguments:
+ *  @z: zone allocator to completely ignore.
+ *  @args: constructor arguments.
+ *
  * returns:
  *  newly allocated and initialized matte compiler.
  */
-Compiler compiler_new (Object args) {
+Compiler compiler_new (Zone z, Object args) {
   /* allocate a new compiler. */
-  Compiler c = (Compiler) Compiler_type.fn_alloc(&Compiler_type);
+  Compiler c = (Compiler) object_alloc(NULL, &Compiler_type);
   if (!c)
     return NULL;
 
@@ -1061,26 +1074,26 @@ Compiler compiler_new (Object args) {
   /* check if the path contains directories. */
   if (pathdata) {
     /* allocate temporary strings. */
-    String pathstr = string_new_with_value(pathdata);
-    String pathsep = string_new_with_value(":");
+    String pathstr = string_new_with_value(NULL, pathdata);
+    String pathsep = string_new_with_value(NULL, ":");
 
     /* split the path string by delimiters and free the path string. */
-    c->path = string_split(pathstr, pathsep);
+    c->path = string_split(NULL, pathstr, pathsep);
 
     /* free the temporary strings. */
-    object_free((Object) pathstr);
-    object_free((Object) pathsep);
+    object_free(NULL, pathstr);
+    object_free(NULL, pathsep);
   }
   else {
     /* allocate an empty path list. */
-    c->path = object_list_new(NULL);
+    c->path = object_list_new(NULL, NULL);
   }
 
   /* allocate an empty source list. */
-  c->src = object_list_new(NULL);
+  c->src = object_list_new(NULL, NULL);
 
   /* allocate the associated parser. */
-  c->par = parser_new(NULL);
+  c->par = parser_new(NULL, NULL);
   if (!c->par)
     return NULL;
 
@@ -1089,11 +1102,11 @@ Compiler compiler_new (Object args) {
 
   /* initialize the mode and filename. */
   c->mode = COMPILE_TO_MEM;
-  c->fout = string_new(NULL);
-  c->cflags = string_new(NULL);
+  c->fout = string_new(NULL, NULL);
+  c->cflags = string_new(NULL, NULL);
 
   /* initialize the c code and error strings. */
-  c->ccode = string_new(NULL);
+  c->ccode = string_new(NULL, NULL);
   c->cerr = NULL;
 
   /* initialize the error count. */
@@ -1103,37 +1116,38 @@ Compiler compiler_new (Object args) {
   return c;
 }
 
-/* compiler_free(): free all memory associated with a matte compiler.
+/* compiler_delete(): free all memory associated with a matte compiler.
  *
  * arguments:
+ *  @z: zone allocator to completely ignore.
  *  @c: matte compiler to free.
  */
-void compiler_free (Compiler c) {
+void compiler_delete (Zone z, Compiler c) {
   /* return if the compiler is null. */
   if (!c)
     return;
 
   /* free the strings in the path list. */
   for (int i = 0; i < object_list_get_length(c->path); i++)
-    object_free(object_list_get(c->path, i));
+    object_free(NULL, object_list_get(c->path, i));
 
   /* free the strings in the source list. */
   for (int i = 0; i < object_list_get_length(c->src); i++)
-    object_free(object_list_get(c->src, i));
+    object_free(NULL, object_list_get(c->src, i));
 
   /* free the path and source lists. */
-  object_free((Object) c->path);
-  object_free((Object) c->src);
+  object_free(NULL, c->path);
+  object_free(NULL, c->src);
 
   /* free the parser. this also frees the tree. */
-  object_free((Object) c->par);
+  object_free(NULL, c->par);
 
   /* free the output filename and flags strings. */
-  object_free((Object) c->fout);
-  object_free((Object) c->cflags);
+  object_free(NULL, c->fout);
+  object_free(NULL, c->cflags);
 
   /* free the c code and error strings. */
-  object_free((Object) c->ccode);
+  object_free(NULL, c->ccode);
   free(c->cerr);
 }
 
@@ -1218,7 +1232,8 @@ int compiler_add_path (Compiler c, const char *fname) {
     fail("invalid input arguments");
 
   /* append the path string into the list. */
-  return object_list_append(c->path, (Object) string_new_with_value(fname));
+  Object sobj = (Object) string_new_with_value(NULL, fname);
+  return object_list_append(c->path, sobj);
 }
 
 /* compiler_add_file(): read a file using a matte compiler.
@@ -1244,7 +1259,8 @@ int compiler_add_file (Compiler c, const char *fname) {
   }
 
   /* add the filename to the source list. */
-  object_list_append(c->src, (Object) string_new_with_value(fname));
+  Object sobj = (Object) string_new_with_value(NULL, fname);
+  object_list_append(c->src, sobj);
 
   /* get the current tree pointer and return success. */
   c->tree = c->par->tree;
@@ -1326,11 +1342,10 @@ struct _ObjectType Compiler_type = {
   sizeof(struct _Compiler),                      /* size       */
   0,                                             /* precedence */
 
-  (obj_constructor) compiler_new,                /* fn_new     */
-  NULL,                                          /* fn_copy    */
-  (obj_allocator)   object_alloc,                /* fn_alloc   */
-  (obj_destructor)  compiler_free,               /* fn_dealloc */
-  NULL,                                          /* fn_disp    */
+  (obj_constructor) compiler_new,                /* fn_new    */
+  NULL,                                          /* fn_copy   */
+  (obj_destructor)  compiler_delete,             /* fn_delete */
+  NULL,                                          /* fn_disp   */
 
   NULL,                                          /* fn_plus       */
   NULL,                                          /* fn_minus      */

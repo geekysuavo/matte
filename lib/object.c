@@ -14,98 +14,77 @@
 /* object_alloc(): allocate a new matte object from its type structure.
  *
  * arguments:
+ *  @z: zone allocator to request memory from, or NULL for malloc().
  *  @type: type structure to utilize for allocation.
  *
  * returns:
  *  newly allocated matte object.
  */
-Object object_alloc (ObjectType type) {
-  /* declare required variables:
-   *  @obj: object to allocate.
-   */
-  Object obj;
-
+Object object_alloc (Zone z, ObjectType type) {
   /* return null if the type is null. */
   if (!type)
-    throw("invalid object type");
-
-  /* return null if the type has no size. */
-  if (!type->size)
-    throw("invalid object size");
+    return NULL;
 
   /* allocate memory for the new object. */
-  obj = (Object) malloc(type->size);
+  Object obj;
+  if (z) {
+    /* use the zone allocator. */
+    obj = (Object) zone_alloc(z);
+  }
+  else {
+    /* use standard malloc(). */
+    obj = (Object) malloc(type->size);
+  }
 
   /* check if allocation failed. */
   if (!obj)
-    throw("unable to allocate memory for %s", type->name);
+    return NULL;
 
   /* store the object type and return the new object. */
   obj->type = type;
   return obj;
 }
 
-/* object_new(): construct a new matte object.
- *
- * arguments:
- *  @type: type structure to utilize for allocation.
- *  @args: arguments passed to the constructor.
- *
- * returns:
- *  newly allocated and initialized matte object.
- */
-Object object_new (ObjectType type, Object args) {
-  /* return null if the type is null. */
-  if (!type)
-    return NULL;
-
-  /* allocate a new matte object using the passed object type. */
-  Object obj = type->fn_new(args);
-  if (!obj)
-    return NULL;
-
-  /* return the allocated and initialized object. */
-  return obj;
-}
-
 /* object_free(): free all memory associated with a matte object.
  *
  * arguments:
- *  @p: matte object to free.
+ *  @z: zone allocator to release memory to, or NULL for free().
+ *  @ptr: matte object pointer to free.
  */
-void object_free (Object obj) {
-  /* return if the object is null. */
-  if (!obj)
+void object_free (Zone z, void *ptr) {
+  /* return if the pointer is null. */
+  if (!ptr)
     return;
 
   /* obtain the object type. */
+  Object obj = (Object) ptr;
   const ObjectType type = MATTE_TYPE(obj);
 
   /* return if the object is untyped or has no destructor. */
-  if (!type || !type->fn_dealloc)
+  if (!type || !type->fn_delete)
     return;
 
   /* call the destructor function and free the structure pointer. */
-  type->fn_dealloc(obj);
-  free(obj);
+  type->fn_delete(z, obj);
+  zone_free(z, obj);
 }
 
 /* object_disp(): display dispatch function.
  */
-int object_disp (Object obj, const char *var) {
+int object_disp (Zone z, Object obj, const char *var) {
   /* validate the input arguments. */
   if (!obj || !var)
-    fail("%s is undefined", var);
+    return 0;
 
   /* obtain the object type. */
   const ObjectType type = MATTE_TYPE(obj);
 
   /* return if the object is untyped or has no display function. */
   if (!type || !type->fn_disp)
-    fail("%s (type %s) has no disp method", var, obj->type->name);
+    return 0;
 
   /* return the result of the display function. */
-  return type->fn_disp(obj, var);
+  return type->fn_disp(z, obj, var);
 }
 
 /* object_plus(): addition dispatch function. */
@@ -218,7 +197,7 @@ int object_disp (Object obj, const char *var) {
 
 /* object_subsref(): subscripted reference dispatch function.
  */
-Object object_subsref (Object a, Object s) {
+Object object_subsref (Zone z, Object a, Object s) {
   if (!a || !s)
     return NULL;
 
@@ -226,14 +205,14 @@ Object object_subsref (Object a, Object s) {
   obj_binary fn = ta->fn_subsref;
 
   if (fn)
-    return fn(a, s);
+    return fn(z, a, s);
 
   return NULL;
 }
 
 /* object_subsasgn(): subscripted assignment dispatch function.
  */
-Object object_subsasgn (Object a, Object s, Object b) {
+Object object_subsasgn (Zone z, Object a, Object s, Object b) {
   if (!a || !s || !b)
     return NULL;
 
@@ -241,7 +220,7 @@ Object object_subsasgn (Object a, Object s, Object b) {
   obj_ternary fn = ta->fn_subsasgn;
 
   if (fn)
-    return fn(a, s, b);
+    return fn(z, a, s, b);
 
   return NULL;
 }

@@ -88,7 +88,7 @@ struct _AST {
 
 ObjectType ast_type (void);
 
-AST ast_new (Object args);
+AST ast_new (Zone z, Object args);
 
 AST ast_new_with_type (ASTNodeType type);
 
@@ -98,7 +98,7 @@ AST ast_new_with_parms (ASTNodeType type, bool disp, AST down);
 
 AST ast_copy (AST node);
 
-void ast_free (AST node);
+void ast_delete (Zone z, AST node);
 
 ASTNodeType ast_get_type (AST node);
 

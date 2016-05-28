@@ -15,12 +15,16 @@ ObjectType object_list_type (void) {
 
 /* object_list_new(): allocate a new matte object list.
  *
+ * arguments:
+ *  @z: zone allocator to utilize.
+ *  @args: constructor arguments.
+ *
  * returns:
  *  newly allocated empty object list.
  */
-ObjectList object_list_new (Object args) {
+ObjectList object_list_new (Zone z, Object args) {
   /* allocate a new object list. */
-  ObjectList lst = (ObjectList) ObjectList_type.fn_alloc(&ObjectList_type);
+  ObjectList lst = (ObjectList) object_alloc(z, &ObjectList_type);
   if (!lst)
     return NULL;
 
@@ -36,13 +40,14 @@ ObjectList object_list_new (Object args) {
  * a set number of objects.
  *
  * arguments:
+ *  @z: zone allocator to utilize.
  *  @n: number of objects to place in the list.
  *  @...: list of objects to place in the list.
  *
  * returns:
  *  newly allocated object list, cast to a base object.
  */
-Object object_list_argout (int n, ...) {
+Object object_list_argout (Zone z, int n, ...) {
   /* declare required variables:
    *  @lst: new object list.
    *  @vl: variable-length argument list.
@@ -53,13 +58,13 @@ Object object_list_argout (int n, ...) {
   int i;
   
   /* allocate a new object list. */
-  lst = object_list_new(NULL);
+  lst = object_list_new(z, NULL);
   if (!lst)
     return NULL;
 
   /* set the length of the list. */
-  if (!object_list_set_length(lst, n, false)) {
-    object_free((Object) lst);
+  if (!object_list_set_length(lst, n)) {
+    object_free(z, lst);
     return NULL;
   }
 
@@ -73,20 +78,19 @@ Object object_list_argout (int n, ...) {
   return (Object) lst;
 }
 
-/* object_list_free(): free all memory associated with a matte object list.
+/* object_list_delete(): free all memory associated with a matte object list.
  * elements contained by the list are not freed.
  *
  * arguments:
  *  @lst: matte object list to free.
  */
-void object_list_free (ObjectList lst) {
+void object_list_delete (Zone z, ObjectList lst) {
   /* return if the object list is null. */
   if (!lst)
     return;
 
-  /* free the object array, if it's allocated. */
-  if (lst->objs)
-    free(lst->objs);
+  /* free the object array. */
+  free(lst->objs);
 }
 
 /* object_list_get_length(): get the length of a matte object list.
@@ -108,13 +112,11 @@ int object_list_get_length (ObjectList lst) {
  * arguments:
  *  @lst: matte object list to modify.
  *  @n: new length of the object list.
- *  @free_elements: if lost elements should be freed if the list shrinks.
  *
  * returns:
  *  integer indicating success (1) or failure (0).
  */
-int object_list_set_length (ObjectList lst, int n,
-                            bool free_elements) {
+int object_list_set_length (ObjectList lst, int n) {
   /* declare required variables:
    *  @i: object array index.
    */
@@ -122,16 +124,7 @@ int object_list_set_length (ObjectList lst, int n,
 
   /* validate the input arguments. */
   if (!lst || n < 0)
-    fail("invalid input arguments");
-
-  /* check if the object list is shrinking. */
-  if (n < lst->n && free_elements) {
-    /* free the lost elements of the object list. */
-    for (i = n; i < lst->n; i++) {
-      object_free((Object) lst->objs[i]);
-      lst->objs[i] = NULL;
-    }
-  }
+    return 0;
 
   /* reallocate the object array. */
   lst->objs = (Object*)
@@ -143,7 +136,7 @@ int object_list_set_length (ObjectList lst, int n,
     lst->n = n;
 
     /* return failure. */
-    fail("unable to reallocate array");
+    return 0;
   }
 
   /* check if the object list expanded. */
@@ -172,7 +165,7 @@ int object_list_set_length (ObjectList lst, int n,
 int object_list_append (ObjectList lst, Object obj) {
   /* validate the input arguments. */
   if (!lst || !obj)
-    fail("invalid input arguments");
+    return 0;
 
   /* increment the object array size. */
   lst->n++;
@@ -183,7 +176,7 @@ int object_list_append (ObjectList lst, Object obj) {
 
   /* check if reallocation failed. */
   if (!lst->objs)
-    fail("unable to reallocate array");
+    return 0;
 
   /* store the object in the list. */
   lst->objs[lst->n - 1] = obj;
@@ -205,13 +198,13 @@ int object_list_append (ObjectList lst, Object obj) {
 int object_list_set (ObjectList lst, int i, Object obj) {
   /* validate the input arguments. */
   if (!lst || i < 0)
-    fail("invalid input arguments");
+    return 0;
 
   /* check if the index is out of bounds. */
   if (i >= lst->n) {
     /* resize the object array. */
-    if (!object_list_set_length(lst, i + 1, false))
-      fail("unable to resize object list");
+    if (!object_list_set_length(lst, i + 1))
+      return 0;
   }
 
   /* store the object in the list. */
@@ -237,7 +230,7 @@ Object object_list_get (ObjectList lst, int i) {
 
 /* object_list_disp(): display function for object lists.
  */
-int object_list_disp (ObjectList lst, const char *var) {
+int object_list_disp (Zone z, ObjectList lst, const char *var) {
   /* start the list. */
   printf("%s = {", var);
 
@@ -249,7 +242,7 @@ int object_list_disp (ObjectList lst, const char *var) {
     else if (lst->objs[i])
       printf("0x%lx", (unsigned long) lst->objs[i]);
     else
-      printf("Empty");
+      printf("[]");
 
     /* print a separator. */
     if (i < lst->n - 1)
@@ -268,11 +261,10 @@ struct _ObjectType ObjectList_type = {
   sizeof(struct _ObjectList),                    /* size       */
   0,                                             /* precedence */
 
-  (obj_constructor) object_list_new,             /* fn_new     */
-  NULL,                                          /* fn_copy    */
-  (obj_allocator)   object_alloc,                /* fn_alloc   */
-  (obj_destructor)  object_list_free,            /* fn_dealloc */
-  (obj_display)     object_list_disp,            /* fn_disp    */
+  (obj_constructor) object_list_new,             /* fn_new    */
+  NULL,                                          /* fn_copy   */
+  (obj_destructor)  object_list_delete,          /* fn_delete */
+  (obj_display)     object_list_disp,            /* fn_disp   */
 
   NULL,                                          /* fn_plus       */
   NULL,                                          /* fn_minus      */

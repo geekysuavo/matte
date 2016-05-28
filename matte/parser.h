@@ -53,13 +53,13 @@ struct _Parser {
 
 ObjectType parser_type (void);
 
-Parser parser_new (Object args);
+Parser parser_new (Zone z, Object args);
 
 Parser parser_new_with_file (const char *fname);
 
 Parser parser_new_with_string (const char *str);
 
-void parser_free (Parser p);
+void parser_delete (Zone z, Parser p);
 
 int parser_set_file (Parser p, const char *fname);
 

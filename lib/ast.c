@@ -15,12 +15,16 @@ ObjectType ast_type (void) {
 
 /* ast_new(): allocate a new matte abstract syntax tree node.
  *
+ * arguments:
+ *  @z: zone allocator to completely ignore.
+ *  @args: constructor arguments.
+ *
  * returns:
  *  newly allocated and initialized matte ast-node.
  */
-AST ast_new (Object args) {
+AST ast_new (Zone z, Object args) {
   /* allocate a new ast-node. */
-  AST node = (AST) AST_type.fn_alloc(&AST_type);
+  AST node = (AST) object_alloc(NULL, &AST_type);
   if (!node)
     return NULL;
 
@@ -63,7 +67,7 @@ AST ast_new (Object args) {
  */
 AST ast_new_with_type (ASTNodeType type) {
   /* allocate a new ast-node. */
-  AST node = ast_new(NULL);
+  AST node = ast_new(NULL, NULL);
   if (!node)
     return NULL;
 
@@ -85,18 +89,18 @@ AST ast_new_with_type (ASTNodeType type) {
  */
 AST ast_new_with_down (AST down) {
   /* allocate a new ast-node. */
-  AST node = ast_new(NULL);
+  AST node = ast_new(NULL, NULL);
 
   /* if allocation failed, free the downstream node as well. */
   if (!node) {
-    object_free((Object) down);
+    object_free(NULL, down);
     return NULL;
   }
 
   /* add the downstream node into the new node. */
   if (!ast_add_down(node, down)) {
-    object_free((Object) node);
-    object_free((Object) down);
+    object_free(NULL, node);
+    object_free(NULL, down);
     return NULL;
   }
 
@@ -115,11 +119,11 @@ AST ast_new_with_down (AST down) {
  */
 AST ast_new_with_parms (ASTNodeType type, bool disp, AST down) {
   /* allocate a new ast-node. */
-  AST node = ast_new(NULL);
+  AST node = ast_new(NULL, NULL);
 
   /* if allocation failed, free the downstream node as well. */
   if (!node) {
-    object_free((Object) down);
+    object_free(NULL, down);
     return NULL;
   }
 
@@ -129,8 +133,8 @@ AST ast_new_with_parms (ASTNodeType type, bool disp, AST down) {
 
   /* add the downstream node into the new node. */
   if (!ast_add_down(node, down)) {
-    object_free((Object) node);
-    object_free((Object) down);
+    object_free(NULL, node);
+    object_free(NULL, down);
     return NULL;
   }
 
@@ -153,7 +157,7 @@ AST ast_copy (AST node) {
     return NULL;
 
   /* allocate a new ast-node. */
-  AST ndup = ast_new(NULL);
+  AST ndup = ast_new(NULL, NULL);
   if (!ndup)
     return NULL;
 
@@ -183,19 +187,20 @@ AST ast_copy (AST node) {
   return ndup;
 }
 
-/* ast_free(): free all memory associated with a matte ast-node.
+/* ast_delete(): free all memory associated with a matte ast-node.
  *
  * arguments:
+ *  @z: zone allocator to completely ignore.
  *  @node: matte syntax tree node to free.
  */
-void ast_free (AST node) {
+void ast_delete (Zone z, AST node) {
   /* return if the node is null. */
   if (!node)
     return;
 
   /* free the child nodes. */
   for (int i = 0; i < node->n_down; i++)
-    object_free((Object) node->down[i]);
+    object_free(NULL, node->down[i]);
 
   /* free the array of child nodes. */
   free(node->down);
@@ -208,7 +213,7 @@ void ast_free (AST node) {
   free(node->fname);
 
   /* free the symbol table. */
-  object_free((Object) node->syms);
+  object_free(NULL, node->syms);
 }
 
 /* ast_get_type(): get the type of a matte ast-node.
@@ -477,7 +482,7 @@ inline void ast_shrink_down (AST node) {
 
   /* free the last downfield syntax tree node, if any. */
   if (node->down && node->n_down)
-    object_free((Object) node->down[node->n_down - 1]);
+    object_free(NULL, node->down[node->n_down - 1]);
 
   /* decrement and bound the number of downstream nodes. */
   node->n_down--;
@@ -528,7 +533,7 @@ AST ast_rip (AST node) {
   up->down[i] = down;
 
   /* free the ripped node and return its replacement. */
-  object_free((Object) node);
+  object_free(NULL, node);
   return down;
 }
 
@@ -616,7 +621,7 @@ AST ast_merge (AST a, AST b) {
     }
 
     /* free the extra root and return the combined tree. */
-    object_free((Object) b);
+    object_free(NULL, b);
     return a;
   }
   else if (a->node_type == AST_TYPE_ROOT) {
@@ -635,7 +640,7 @@ AST ast_merge (AST a, AST b) {
     }
 
     /* free the extra root and return the combined tree. */
-    object_free((Object) b);
+    object_free(NULL, b);
     return super;
   }
 
@@ -808,11 +813,10 @@ struct _ObjectType AST_type = {
   sizeof(struct _AST),                           /* size       */
   0,                                             /* precedence */
 
-  (obj_constructor) ast_new,                     /* fn_new     */
-  NULL,                                          /* fn_copy    */
-  (obj_allocator)   object_alloc,                /* fn_alloc   */
-  (obj_destructor)  ast_free,                    /* fn_dealloc */
-  NULL,                                          /* fn_disp    */
+  (obj_constructor) ast_new,                     /* fn_new    */
+  NULL,                                          /* fn_copy   */
+  (obj_destructor)  ast_delete,                  /* fn_delete */
+  NULL,                                          /* fn_disp   */
 
   NULL,                                          /* fn_plus       */
   NULL,                                          /* fn_minus      */

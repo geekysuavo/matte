@@ -21,12 +21,16 @@ ObjectType range_type (void) {
 
 /* range_new(): allocate a new matte range.
  *
+ * arguments:
+ *  @z: zone allocator to utilize.
+ *  @args: constructor arguments.
+ *
  * returns:
  *  newly allocated range.
  */
-Range range_new (Object args) {
+Range range_new (Zone z, Object args) {
   /* allocate a new range. */
-  Range r = (Range) Range_type.fn_alloc(&Range_type);
+  Range r = (Range) object_alloc(z, &Range_type);
   if (!r)
     return NULL;
 
@@ -45,13 +49,13 @@ Range range_new (Object args) {
  * returns:
  *  duplicated matte range.
  */
-Range range_copy (Range r) {
+Range range_copy (Zone z, Range r) {
   /* return null if the input argument is null. */
   if (!r)
     return NULL;
 
   /* allocate a new range. */
-  Range rnew = range_new(NULL);
+  Range rnew = range_new(z, NULL);
   if (!rnew)
     return NULL;
 
@@ -250,14 +254,14 @@ inline long range_all (Range r) {
 
 /* range_disp(): display function for ranges.
  */
-int range_disp (Range r, const char *var) {
+int range_disp (Zone z, Range r, const char *var) {
   printf("%s = %ld : %ld : %ld\n", var, r->begin, r->step, r->end);
   return 1;
 }
 
 /* range_plus(): addition function for ranges.
  */
-Range range_plus (Object a, Object b) {
+Range range_plus (Zone z, Object a, Object b) {
   if (IS_RANGE(a) && IS_RANGE(b)) {
     /* range + range => range */
     if (range_get_length((Range) a) != range_get_length((Range) b))
@@ -267,7 +271,7 @@ Range range_plus (Object a, Object b) {
     const long s = range_get_step((Range) a)  + range_get_step((Range) b);
     const long e = range_get_end((Range) a)   + range_get_end((Range) b);
 
-    Range r = range_new(NULL);
+    Range r = range_new(z, NULL);
     range_set(r, b, s, e);
 
     return r;
@@ -276,7 +280,7 @@ Range range_plus (Object a, Object b) {
     /* range + int => range */
     const long bval = int_get_value((Int) b);
 
-    Range r = range_new(NULL);
+    Range r = range_new(z, NULL);
     range_set(r, range_get_begin((Range) a) + bval,
                  range_get_step((Range) a) + bval,
                  range_get_end((Range) a) + bval);
@@ -287,7 +291,7 @@ Range range_plus (Object a, Object b) {
     /* int + range => range */
     const long aval = int_get_value((Int) a);
 
-    Range r = range_new(NULL);
+    Range r = range_new(z, NULL);
     range_set(r, range_get_begin((Range) b) + aval,
                  range_get_step((Range) b) + aval,
                  range_get_end((Range) b) + aval);
@@ -300,7 +304,7 @@ Range range_plus (Object a, Object b) {
 
 /* range_minus(): subtraction function for ranges.
  */
-Range range_minus (Object a, Object b) {
+Range range_minus (Zone z, Object a, Object b) {
   if (IS_RANGE(a) && IS_RANGE(b)) {
     /* range - range => range */
     if (range_get_length((Range) a) != range_get_length((Range) b))
@@ -310,7 +314,7 @@ Range range_minus (Object a, Object b) {
     const long s = range_get_step((Range) a)  - range_get_step((Range) b);
     const long e = range_get_end((Range) a)   - range_get_end((Range) b);
 
-    Range r = range_new(NULL);
+    Range r = range_new(z, NULL);
     range_set(r, b, s, e);
 
     return r;
@@ -319,7 +323,7 @@ Range range_minus (Object a, Object b) {
     /* range - int => range */
     const long bval = int_get_value((Int) b);
 
-    Range r = range_new(NULL);
+    Range r = range_new(z, NULL);
     range_set(r, range_get_begin((Range) a) - bval,
                  range_get_step((Range) a) - bval,
                  range_get_end((Range) a) - bval);
@@ -330,7 +334,7 @@ Range range_minus (Object a, Object b) {
     /* int - range => range */
     const long aval = int_get_value((Int) a);
 
-    Range r = range_new(NULL);
+    Range r = range_new(z, NULL);
     range_set(r, aval - range_get_begin((Range) b),
                  aval - range_get_step((Range) b),
                  aval - range_get_end((Range) b));
@@ -343,8 +347,8 @@ Range range_minus (Object a, Object b) {
 
 /* range_uminus(): unary negation function for ranges.
  */
-Range range_uminus (Range a) {
-  Range r = range_new(NULL);
+Range range_uminus (Zone z, Range a) {
+  Range r = range_new(z, NULL);
   range_set(r, -range_get_begin(a),
                -range_get_step(a),
                -range_get_end(a));
@@ -354,11 +358,11 @@ Range range_uminus (Range a) {
 
 /* range_times(): multiplication function for ranges.
  */
-Range range_times (Object a, Object b) {
+Range range_times (Zone z, Object a, Object b) {
   if (IS_RANGE(a) && IS_INT(b)) {
     /* range .* int => range */
     const long bval = int_get_value((Int) b);
-    Range r = range_new(NULL);
+    Range r = range_new(z, NULL);
 
     range_set(r, range_get_begin((Range) a) * bval,
                  range_get_step((Range) a)  * bval,
@@ -369,7 +373,7 @@ Range range_times (Object a, Object b) {
   else if (IS_RANGE(b) && IS_INT(a)) {
     /* int .* range => range */
     const long aval = int_get_value((Int) a);
-    Range r = range_new(NULL);
+    Range r = range_new(z, NULL);
 
     range_set(r, range_get_begin((Range) b) * aval,
                  range_get_step((Range) b)  * aval,
@@ -423,30 +427,30 @@ Range range_times (Object a, Object b) {
 
 /* range_mand(): matrix logical-and operation for ranges.
  */
-Int range_mand (Object a, Object b) {
+Int range_mand (Zone z, Object a, Object b) {
   if (IS_RANGE(a)) {
     if (IS_INT(b)) {
       /* range && int => int */
       if (range_all((Range) a) && int_get_value((Int) b))
-        return int_new_with_value(1L);
+        return int_new_with_value(z, 1L);
 
-      return int_new_with_value(0L);
+      return int_new_with_value(z, 0L);
     }
     else if (IS_RANGE(b)) {
       /* range && range => int */
       if (range_all((Range) a) && range_all((Range) b))
-        return int_new_with_value(1L);
+        return int_new_with_value(z, 1L);
 
-      return int_new_with_value(0L);
+      return int_new_with_value(z, 0L);
     }
   }
   else if (IS_RANGE(b)) {
     if (IS_INT(a)) {
       /* int && range => int */
       if (int_get_value((Int) a) && range_all((Range) b))
-        return int_new_with_value(1L);
+        return int_new_with_value(z, 1L);
 
-      return int_new_with_value(0L);
+      return int_new_with_value(z, 0L);
     }
   }
 
@@ -455,30 +459,30 @@ Int range_mand (Object a, Object b) {
 
 /* range_mor(): matrix logical-or operation for ranges.
  */
-Int range_mor (Object a, Object b) {
+Int range_mor (Zone z, Object a, Object b) {
   if (IS_RANGE(a)) {
     if (IS_INT(b)) {
       /* range || int => int */
       if (range_all((Range) a) || int_get_value((Int) b))
-        return int_new_with_value(1L);
+        return int_new_with_value(z, 1L);
 
-      return int_new_with_value(0L);
+      return int_new_with_value(z, 0L);
     }
     else if (IS_RANGE(b)) {
       /* range || range => int */
       if (range_all((Range) a) || range_all((Range) b))
-        return int_new_with_value(1L);
+        return int_new_with_value(z, 1L);
 
-      return int_new_with_value(0L);
+      return int_new_with_value(z, 0L);
     }
   }
   else if (IS_RANGE(b)) {
     if (IS_INT(a)) {
       /* int || range => int */
       if (int_get_value((Int) a) || range_all((Range) b))
-        return int_new_with_value(1L);
+        return int_new_with_value(z, 1L);
 
-      return int_new_with_value(0L);
+      return int_new_with_value(z, 0L);
     }
   }
 
@@ -487,8 +491,8 @@ Int range_mor (Object a, Object b) {
 
 /* range_not(): logical negation operation for ranges.
  */
-Vector range_not (Range a) {
-  Vector x = vector_new_from_range(a);
+Vector range_not (Zone z, Range a) {
+  Vector x = vector_new_from_range(z, a);
   if (!x)
     return NULL;
 
@@ -500,16 +504,16 @@ Vector range_not (Range a) {
 
 /* range_transpose(): transposition function for ranges.
  */
-Vector range_transpose (Range a) {
-  Vector x = vector_new_from_range(a);
+Vector range_transpose (Zone z, Range a) {
+  Vector x = vector_new_from_range(z, a);
   x->tr = CblasTrans;
   return x;
 }
 
 /* range_horzcat(): horizontal concatenation function for ranges.
  */
-Vector range_horzcat (int n, va_list vl) {
-  Vector x = vector_new(NULL);
+Vector range_horzcat (Zone z, int n, va_list vl) {
+  Vector x = vector_new(z, NULL);
   if (!x)
     return NULL;
 
@@ -518,7 +522,7 @@ Vector range_horzcat (int n, va_list vl) {
 
     if (IS_INT(obj)) {
       if (!vector_set_length(x, x->n + 1)) {
-        object_free((Object) x);
+        object_free(z, x);
         return NULL;
       }
 
@@ -529,7 +533,7 @@ Vector range_horzcat (int n, va_list vl) {
       long nr = range_get_length(r);
 
       if (!vector_set_length(x, x->n + nr)) {
-        object_free((Object) x);
+        object_free(z, x);
         return NULL;
       }
 
@@ -537,7 +541,7 @@ Vector range_horzcat (int n, va_list vl) {
         x->data[ix++] = (double) elem;
     }
     else {
-      object_free((Object) x);
+      object_free(z, x);
       return NULL;
     }
   }
@@ -547,11 +551,11 @@ Vector range_horzcat (int n, va_list vl) {
 
 /* range_vertcat(): vertical concatenation function for ranges.
  */
-Vector range_vertcat (int n, va_list vl) {
+Vector range_vertcat (Zone z, int n, va_list vl) {
   if (n != 1)
     return NULL;
 
-  Vector x = vector_new_from_range((Range) va_arg(vl, Range));
+  Vector x = vector_new_from_range(z, (Range) va_arg(vl, Range));
   if (!x)
     return NULL;
 
@@ -565,11 +569,10 @@ struct _ObjectType Range_type = {
   sizeof(struct _Range),                         /* size       */
   2,                                             /* precedence */
 
-  (obj_constructor) range_new,                   /* fn_new     */
-  (obj_constructor) range_copy,
-  (obj_allocator)   object_alloc,                /* fn_alloc   */
-  NULL,                                          /* fn_dealloc */
-  (obj_display)     range_disp,                  /* fn_disp    */
+  (obj_constructor) range_new,                   /* fn_new    */
+  (obj_constructor) range_copy,                  /* fn_copy   */
+  NULL,                                          /* fn_delete */
+  (obj_display)     range_disp,                  /* fn_disp   */
 
   (obj_binary) range_plus,                       /* fn_plus       */
   (obj_binary) range_minus,                      /* fn_minus      */

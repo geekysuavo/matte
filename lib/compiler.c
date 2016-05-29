@@ -498,13 +498,13 @@ static void write_statements (Compiler c, AST node, bool is_main) {
     if (down->n_down == 1 &&
         ast_get_type(down->down[0]) == (ASTNodeType) T_PAREN_OPEN) {
       down = down->down[0];
-      W("  args = object_list_argout(&_z1, %d", down->n_down);
+      W("  args = object_list_argin(&_z1, %d", down->n_down);
       for (i = 0; i < down->n_down; i++)
         W(", %s", S(down->down[i]));
       W(");\n");
     }
     else {
-      W("  args = (Object) object_list_new(&_z1, NULL);\n");
+      W("  args = object_list_argin(&_z1, 0);\n");
     }
 
     down = node->down[1];
@@ -683,19 +683,21 @@ static void write_functions (Compiler c) {
     W("\n");
     down = node->down[0];
     if (!down) {
-      W("  return (Object) object_list_new(_z0, NULL);\n");
+      W("  Object argout = object_list_argout(_z0, 0);\n");
     }
     else if (down->n_down) {
-      W("  return object_list_argout(_z0, %d", down->n_down);
+      W("  Object argout = object_list_argout(_z0, %d", down->n_down);
       for (j = 0; j < down->n_down; j++)
         W(", %s", ast_get_string(down->down[j]));
       W(");\n");
     }
     else {
-      W("  return object_list_argout(_z0, 1, %s);\n", S(down));
+      W("  Object argout = object_list_argout(_z0, 1, %s);\n", S(down));
     }
 
-    W("}\n");
+    W("  object_free_all(&_z1);\n"
+      "  return argout;\n"
+      "}\n");
   }
 }
 

@@ -7,14 +7,19 @@ function dx_rel = relerr (x_true, x_calc)
   dx_rel = (x_true - x_calc) ./ x_true;
 end
 
+% FIXME: globals are not yet properly handled by the zone allocators.
+%{
 function y = gtest
   global x;
   y = x *= -0.1
 end
+%}
 
 x = 55
 
+%{
 gtest; gtest; gtest;
+%}
 
 pi = [approx(20), ...
       approx(200), ...

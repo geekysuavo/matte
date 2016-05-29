@@ -37,24 +37,27 @@ ObjectList object_list_new (Zone z, Object args) {
   return lst;
 }
 
-/* object_list_argout(): allocate and fill a new matte object list with
- * a set number of objects.
+/* object_list_new_with_args(): allocate and fill a new matte object list
+ * with a set number of objects.
  *
  * arguments:
  *  @z: zone allocator to utilize.
+ *  @cp: whether or not to copy the objects into the list.
  *  @n: number of objects to place in the list.
  *  @...: list of objects to place in the list.
  *
  * returns:
  *  newly allocated object list, cast to a base object.
  */
-Object object_list_argout (Zone z, int n, ...) {
+Object object_list_new_with_args (Zone z, bool cp, int n, ...) {
   /* declare required variables:
    *  @lst: new object list.
    *  @vl: variable-length argument list.
    *  @i: argument loop counter.
    */
+  ObjectType type;
   ObjectList lst;
+  Object obj;
   va_list vl;
   int i;
   
@@ -71,8 +74,17 @@ Object object_list_argout (Zone z, int n, ...) {
 
   /* loop over the arguments. */
   va_start(vl, n);
-  for (i = 0; i < n; i++)
-    lst->objs[i] = (Object) va_arg(vl, Object);
+  for (i = 0; i < n; i++) {
+    /* get the object and its type. */
+    obj = (Object) va_arg(vl, Object);
+    type = MATTE_TYPE(obj);
+
+    /* copy or store the object into the list. */
+    if (cp && type->fn_copy)
+      lst->objs[i] = type->fn_copy(z, obj);
+    else
+      lst->objs[i] = obj;
+  }
 
   /* return the new object list as a base object. */
   va_end(vl);

@@ -39,7 +39,13 @@ ObjectType object_list_type (void);
 
 ObjectList object_list_new (Zone z, Object args);
 
-Object object_list_argout (Zone z, int n, ...);
+Object object_list_new_with_args (Zone z, bool cp, int n, ...);
+
+#define object_list_argin(z, ...) \
+  object_list_new_with_args(z, false, __VA_ARGS__)
+
+#define object_list_argout(z, ...) \
+  object_list_new_with_args(z, true, __VA_ARGS__)
 
 void object_list_delete (Zone z, ObjectList lst);
 

@@ -69,120 +69,6 @@ operators[] = {
   { T_ERR,           0, NULL                }
 };
 
-/* ast_error_string(): build a contextual error string from information
- * contained within a matte ast-node, and store it in the compiler for
- * later use.
- *
- * arguments:
- *  @c: matte compiler to store the string into.
- *  @node: matte ast-node to access for context data.
- *  @escape: whether or not to escape newlines.
- *  @format: printf-style error message format string.
- *  @...: arguments corresponding to the format string.
- *
- * returns:
- *  pointer to the error string maintained by the compiler object.
- */
-static char *ast_error_string (Compiler c, AST node, bool escape,
-                               const char *format, ...) {
-  /* declare required variables:
-   *  @str: object for manipulating output string data.
-   *  @vl: variable-length argument list for messages.
-   *  @buf: input buffer for each incoming line.
-   *  @fh: file handle for reading source data.
-   *  @i: general-purpose loop counter.
-   */
-  char buf[4096], *str;
-  int nstr, nout;
-  va_list vl;
-  long i, n;
-  FILE *fh;
-
-  /* free the compiler error string, if allocated. */
-  if (c->cerr) {
-    free(c->cerr);
-    c->cerr = NULL;
-  }
-
-  /* return null if the node is null or has invalid source info. */
-  if (!node || !node->fname || !node->line || node->pos < 0)
-    return NULL;
-
-  /* allocate the buffer. */
-  nstr = strlen(node->fname) + 32;
-  str = (char*) malloc(nstr * sizeof(char));
-  if (!str) return NULL;
-
-  /* initialize the output string. */
-  snprintf(str, nstr, "%s:%ld: error: ", node->fname, node->line);
-  i = strlen(str);
-
-  /* loop until the buffer contains the complete result. */
-  nstr += strlen(format);
-  do {
-    /* double the string size and reallocate. */
-    nstr *= 2;
-    str = (char*) realloc(str, nstr * sizeof(char));
-    if (!str) return NULL;
-
-    /* print the error message. */
-    va_start(vl, format);
-    nout = vsnprintf(str + i, nstr, format, vl);
-    va_end(vl);
-  }
-  while (nout >= nstr);
-
-  /* append a newline to the output string. */
-  if (escape)
-    strcat(str, "\\n\"\n\"");
-  else
-    strcat(str, "\n");
-
-  /* attempt to open the source file. */
-  fh = fopen(node->fname, "r");
-  if (fh) {
-    /* loop over the lines of the source file. */
-    for (i = n = 0; i < node->line; i++, n += strlen(buf)) {
-      fgets(buf, 4096, fh);
-      buf[4095] = '\0';
-    }
-
-    /* close the source file. */
-    fclose(fh);
-
-    /* strip the newline from the buffer string. */
-    buf[strlen(buf) - 1] = '\0';
-
-    /* reallocate the output string to contain the context. */
-    nstr += 2 * strlen(buf);
-    str = (char*) realloc(str, nstr * sizeof(char));
-    if (!str) return NULL;
-
-    /* append the source line to the output string. */
-    strcat(str, buf);
-    if (escape)
-      strcat(str, "\\n\"\n\" ");
-    else
-      strcat(str, "\n");
-
-    /* add spaces to place the cursor into the output string. */
-    n -= strlen(buf);
-    for (i = n; i < node->pos; i++)
-      strcat(str, " ");
-
-    /* append the cursor onto the output string. */
-    strcat(str, "^");
-    if (escape)
-      strcat(str, "\\n");
-    else
-      strcat(str, "\n");
-  }
-
-  /* store and return the output string. */
-  c->cerr = str;
-  return str;
-}
-
 /* simplify_concats(): simplify concatenation operations by compressing
  * trivial operation groups.
  *
@@ -501,13 +387,38 @@ static int resolve_symbols (Compiler c, AST node, AST root) {
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+/* write_except_handler(): write exception handler code based on the
+ * location of a node within the syntax tree.
+ *
+ * arguments:
+ *  @c: matte compiler to utilize.
+ *  @node: ast-node to write code for.
+ *  @sym: symbol name to check for exceptions.
+ *  @is_main: whether the handler is within main().
+ */
+static void write_except_handler (Compiler c, AST node,
+                                  const char *sym, bool is_main) {
+  /* determine which kind of exception handler to write. */
+  if (is_main) {
+    /* write an exception propagator for functions an matte_main(). */
+    W("  EXCEPT_HANDLE_MAIN(%s, \"%s\", \"%s\", %ld);\n",
+      sym, node->fname, ast_get_func(node), node->line);
+  }
+  else {
+    /* write an exception terminator for main(). */
+    W("  EXCEPT_HANDLE(%s, \"%s\", \"%s\", %ld);\n",
+      sym, node->fname, ast_get_func(node), node->line);
+  }
+}
+
 /* write_statements(): write a statement or statement list.
  *
  * arguments:
  *  @c: matte compiler to utilize.
  *  @node: matte ast-node to process.
+ *  @is_main: whether the statements are within main().
  */
-static void write_statements (Compiler c, AST node) {
+static void write_statements (Compiler c, AST node, bool is_main) {
   /* FIXME: comment and refactor. */
   const char *sname;
   AST down;
@@ -520,19 +431,19 @@ static void write_statements (Compiler c, AST node) {
 
   if (ntype == AST_TYPE_STATEMENTS) {
     for (i = 0; i < node->n_down; i++)
-      write_statements(c, node->down[i]);
+      write_statements(c, node->down[i], is_main);
 
     return;
   }
   else if (ntype == AST_TYPE_FN_CALL) {
-    write_statements(c, node->down[1]);
+    write_statements(c, node->down[1], is_main);
   }
   else if (ntype == AST_TYPE_FUNCTION) {
     return;
   }
   else {
     for (i = 0; i < node->n_down; i++)
-      write_statements(c, node->down[i]);
+      write_statements(c, node->down[i], is_main);
   }
 
   for (i = 0; operators[i].fstr; i++) {
@@ -561,10 +472,7 @@ static void write_statements (Compiler c, AST node) {
         S(node->down[2]));
     }
 
-    W("  if (!%s) {\n"
-      "    fprintf(stderr, \"%%s\", \"%s\");\n"
-      "    return NULL;\n"
-      "  }\n", S(node), E(node, "operation failed"));
+    write_except_handler(c, node, S(node), is_main);
   }
   else if (ntype == AST_TYPE_ROW) {
     W("  Object %s = object_horzcat(&_z1, %d", S(node), node->n_down);
@@ -572,10 +480,7 @@ static void write_statements (Compiler c, AST node) {
       W(", %s", S(node->down[i]));
     W(");\n");
 
-    W("  if (!%s) {\n"
-      "    fprintf(stderr, \"%%s\", \"%s\");\n"
-      "    return NULL;\n"
-      "  }\n", S(node), E(node, "row concatenation failed"));
+    write_except_handler(c, node, S(node), is_main);
   }
   else if (ntype == AST_TYPE_COLUMN) {
     W("  Object %s = object_vertcat(&_z1, %d", S(node), node->n_down);
@@ -583,10 +488,7 @@ static void write_statements (Compiler c, AST node) {
       W(", %s", S(node->down[i]));
     W(");\n");
 
-    W("  if (!%s) {\n"
-      "    fprintf(stderr, \"%%s\", \"%s\");\n"
-      "    return NULL;\n"
-      "  }\n", S(node), E(node, "column concatenation failed"));
+    write_except_handler(c, node, S(node), is_main);
   }
   else if (ntok == T_ASSIGN) {
     W("  %s = %s;\n", S(node), S(node->down[1]));
@@ -606,11 +508,8 @@ static void write_statements (Compiler c, AST node) {
     }
 
     down = node->down[1];
-    W("  rets = matte_%s(&_z1, args);\n"
-      "  if (!rets) {\n"
-      "    fprintf(stderr, \"%%s\", \"%s\");\n"
-      "    return NULL;\n"
-      "  }\n", S(down), E(down, "call to '%s' failed", S(down)));
+    W("  rets = matte_%s(&_z1, args);\n", S(down));
+    write_except_handler(c, down, "rets", is_main);
 
     down = node->down[0];
     if (ast_get_type(down) == (ASTNodeType) T_IDENT) {
@@ -628,8 +527,24 @@ static void write_statements (Compiler c, AST node) {
     W("  object_free(&_z1, rets);\n");
   }
 
-  if (node->node_disp)
-    W("  object_disp(&_z1, %s, \"%s\");\n", S(node), S(node));
+  if (node->node_disp) {
+    W("  if (!object_disp(&_z1, %s, \"%s\")) {\n", S(node), S(node));
+
+    if (is_main) {
+      W("    Exception _e = (Exception) exceptions_get(&_z1);\n"
+        "    except_add_call(&_z1, _e, \"%s\", \"%s\", %ld);\n"
+        "    object_disp(&_z1, (Object) _e, \"e\");\n"
+        "    return 1;\n", node->fname, ast_get_func(node), node->line);
+    }
+    else {
+      W("    Exception _e = (Exception) exceptions_get(_z0);\n"
+        "    except_add_call(_z0, _e, \"%s\", \"%s\", %ld);\n"
+        "    return (Object) _e;\n",
+        node->fname, ast_get_func(node), node->line);
+    }
+
+    W("  }\n");
+  }
 }
 
 /* write_symbols(): write variable and literal symbol initializers from
@@ -715,10 +630,9 @@ static void write_globals (Compiler c) {
   gs = c->tree->syms;
 
   /* write the matte include. */
-  W("\n#include <matte/matte.h>\n");
+  W("\n#include <matte/matte.h>\n\n");
 
   /* write the function declarations. */
-  W("\n");
   for (i = 0; i < gs->n; i++) {
     if (!(gs->sym_type[i] & SYMBOL_FUNC)) continue;
     W("Object matte_%s (Zone z, Object argin);\n", gs->sym_name[i]);
@@ -764,7 +678,7 @@ static void write_functions (Compiler c) {
     write_symbols(c, node->syms);
 
     W("\n");
-    write_statements(c, node->down[3]);
+    write_statements(c, node->down[3], false);
 
     W("\n");
     down = node->down[0];
@@ -818,7 +732,7 @@ static void write_main (Compiler c) {
 
   /* write all global statements into the main function. */
   for (i = 0; i < c->tree->n_down; i++)
-    write_statements(c, c->tree->down[i]);
+    write_statements(c, c->tree->down[i], c->mode != COMPILE_TO_MEM);
 
   /* write the end of the main function. */
   if (c->mode == COMPILE_TO_MEM)
@@ -1031,9 +945,13 @@ static int compile_to_mem (Compiler c) {
     /* run the main function. */
     fn = sym;
     results = fn(NULL, NULL);
-    object_free(NULL, results);
 
-    /* return the result. */
+    /* handle any exceptions. */
+    if (IS_EXCEPTION(results))
+      object_disp(NULL, results, "e");
+
+    /* free the result and return. */
+    object_free(NULL, results);
     return 1;
   }
 

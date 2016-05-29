@@ -17,35 +17,6 @@
 /* include the matte exception definition header. */
 #include <matte/except-defs.h>
 
-/* error(): macro function to add an error message into the global
- * exception object.
- */
-#define error(...) \
-  exceptions_add(__FILE__, __FUNCTION__, __LINE__, __VA_ARGS__);
-
-/* fail(): macro function to add an error message into the global
- * exception object, then return zero.
- */
-#define fail(...) \
-  { exceptions_add(__FILE__, __FUNCTION__, __LINE__, __VA_ARGS__); \
-    return 0; }
-
-/* throw(): macro function to add an error message into the global
- * exception object, copy the object into a zone allocator, and
- * return the copied exception.
- */
-#define throw(z, ...) \
-  { exceptions_add(__FILE__, __FUNCTION__, __LINE__, __VA_ARGS__); \
-    return exceptions_get(z); }
-
-/* die(): macro function to add an error message into the global
- * exception object, print the contents of the object, and return
- * an error status code for main().
- */
-#define die(...) \
-  { exceptions_add(__FILE__, __FUNCTION__, __LINE__, __VA_ARGS__); \
-    exceptions_disp(); return 1; }
-
 /* IS_EXCEPTION: macro to check that an object is a matte exception.
  */
 #define IS_EXCEPTION(obj) \

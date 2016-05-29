@@ -172,7 +172,7 @@ Exception except_copy (Zone z, Exception e) {
                               string_get_value(e->msg));
 
   /* copy the call stack entries. */
-  for (long i = 0; i < enew->n_stack; i++)
+  for (long i = 0; i < e->n_stack; i++)
     except_add_call(z, enew, string_get_value(e->stack[i].fname),
                              string_get_value(e->stack[i].func),
                              int_get_value(e->stack[i].line));

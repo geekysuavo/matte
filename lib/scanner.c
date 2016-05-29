@@ -882,7 +882,7 @@ int scanner_set_file (Scanner s, const char *fname) {
 
   /* validate the input arguments. */
   if (!s || !fname)
-    fail("invalid input arguments");
+    fail(ERR_INVALID_ARGIN);
 
   /* close any open input files. */
   scanner_close(s);
@@ -891,14 +891,14 @@ int scanner_set_file (Scanner s, const char *fname) {
   s->fd = open(fname, O_RDONLY);
   if (s->fd < 0) {
     scanner_close(s);
-    fail("unable to open '%s' for reading", fname);
+    fail(ERR_FOPEN, fname);
   }
 
   /* store the filename string. */
   s->fname = strdup(fname);
   if (!s->fname) {
     scanner_close(s);
-    fail("unable to set filename");
+    fail(ERR_BAD_ALLOC);
   }
 
   /* initialize the buffer size. */
@@ -908,7 +908,7 @@ int scanner_set_file (Scanner s, const char *fname) {
   s->buf = (char*) malloc(s->buf_size * sizeof(char));
   if (!s->buf) {
     scanner_close(s);
-    fail("unable to allocate buffer");
+    fail(ERR_BAD_ALLOC);
   }
 
   /* initialize the buffer contents. */
@@ -951,7 +951,7 @@ int scanner_set_file (Scanner s, const char *fname) {
 int scanner_set_string (Scanner s, const char *str) {
   /* validate the input arguments. */
   if (!s || !str)
-    fail("invalid input arguments");
+    fail(ERR_INVALID_ARGIN);
 
   /* close any open input files. */
   scanner_close(s);
@@ -959,7 +959,7 @@ int scanner_set_string (Scanner s, const char *str) {
   /* duplicate the input string into the buffer. */
   s->buf = strdup(str);
   if (!s->buf)
-    fail("unable to copy buffer");
+    fail(ERR_BAD_ALLOC);
 
   /* set the buffer length and end pointer. */
   s->buf_size = strlen(s->buf);
@@ -1062,8 +1062,10 @@ char *scanner_get_linestr (Scanner s) {
 
   /* allocate the line string. */
   str = (char*) malloc((2L * n + 4L) * sizeof(char));
-  if (!str)
+  if (!str) {
+    error(ERR_BAD_ALLOC);
     return NULL;
+  }
 
   /* copy in the string. */
   strcpy(str, " ");

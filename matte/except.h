@@ -14,14 +14,17 @@
 #include <matte/string.h>
 #include <matte/int.h>
 
-/* definitions of useful ansi terminal codes for generating pretty text.
+/* include the matte exception definition header. */
+#include <matte/except-defs.h>
+
+/* error(): macro function to add an error message into the global
+ * exception object.
  */
-#define ANSI_NORM "\x1B[0m"
-#define ANSI_BOLD "\x1B[01m"
-#define ANSI_RED  "\x1B[01;31m"
+#define error(...) \
+  exceptions_add(__FILE__, __FUNCTION__, __LINE__, __VA_ARGS__);
 
 /* fail(): macro function to add an error message into the global
- * exception object.
+ * exception object, then return zero.
  */
 #define fail(...) \
   { exceptions_add(__FILE__, __FUNCTION__, __LINE__, __VA_ARGS__); \
@@ -94,7 +97,8 @@ struct _Exception {
 /* global exception function declarations (except.c): */
 
 void exceptions_add (const char *fname, const char *func,
-                     unsigned long line, const char *format, ...);
+                     unsigned long line, const char *id,
+                     const char *format, ...);
 
 Object exceptions_get (Zone z);
 

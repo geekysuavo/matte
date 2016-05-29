@@ -38,6 +38,7 @@ String string_new (Zone z, Object args) {
   /* check if allocation failed. */
   if (!s->data) {
     /* return failure. */
+    error(ERR_BAD_ALLOC);
     object_free(z, s);
     return NULL;
   }
@@ -184,7 +185,7 @@ const char *string_get_value (String s) {
 int string_set_length (String s, int n) {
   /* validate the input arguments. */
   if (!s || n < 0)
-    fail("invalid input arguments");
+    fail(ERR_INVALID_ARGIN);
 
   /* return if the string already has the desired length. */
   if (n == s->n)
@@ -193,7 +194,7 @@ int string_set_length (String s, int n) {
   /* reallocate the string data. */
   s->data = (char*) realloc(s->data, (n + 1) * sizeof(char));
   if (!s->data)
-    fail("unable to reallocate array");
+    fail(ERR_BAD_ALLOC);
 
   /* fill new trailing string data with blanks. */
   if (n > s->n)
@@ -219,7 +220,7 @@ int string_set_length (String s, int n) {
 int string_set_value (String s, const char *str) {
   /* validate the input arguments. */
   if (!s || !str)
-    fail("invalid input arguments");
+    fail(ERR_INVALID_ARGIN);
 
   /* store the new string length. */
   s->n = strlen(str);
@@ -227,7 +228,7 @@ int string_set_value (String s, const char *str) {
   /* reallocate the string data. */
   s->data = (char*) realloc(s->data, (s->n + 1) * sizeof(char));
   if (!s->data)
-    fail("unable to reallocate array");
+    fail(ERR_BAD_ALLOC);
 
   /* copy the new string value and null-terminate the string data. */
   strcpy(s->data, str);
@@ -254,7 +255,7 @@ int string_append_value (String s, const char *suf) {
 
   /* validate the input arguments. */
   if (!s || !suf)
-    fail("invalid input arguments");
+    fail(ERR_INVALID_ARGIN);
 
   /* determine the new string length. */
   n = s->n + strlen(suf);
@@ -262,7 +263,7 @@ int string_append_value (String s, const char *suf) {
   /* reallocate the string data. */
   s->data = (char*) realloc(s->data, (n + 1) * sizeof(char));
   if (!s->data)
-    fail("unable to reallocate array");
+    fail(ERR_BAD_ALLOC);
 
   /* concatenate and null-terminate the string data. */
   strcat(s->data, suf);
@@ -298,7 +299,7 @@ int string_appendf (String s, const char *format, ...) {
 
   /* validate the input arguments. */
   if (!s || !format)
-    fail("invalid input arguments");
+    fail(ERR_INVALID_ARGIN);
 
   /* loop until the buffer contains the complete result. */
   nbuf = strlen(format);
@@ -310,7 +311,7 @@ int string_appendf (String s, const char *format, ...) {
 
     /* check if reallocation failed. */
     if (!buf)
-      fail("unable to reallocate buffer");
+      fail(ERR_BAD_ALLOC);
 
     /* print into the buffer. */
     va_start(vl, format);
@@ -321,7 +322,7 @@ int string_appendf (String s, const char *format, ...) {
 
   /* append the data to the string. */
   if (!string_append_value(s, buf))
-    fail("unable to append formatted data");
+    return 0;
 
   /* free the buffer and return success. */
   free(buf);
@@ -340,7 +341,7 @@ int string_appendf (String s, const char *format, ...) {
 int string_append (String s, String suffix) {
   /* validate the input arguments. */
   if (!s || !suffix)
-    fail("invalid input arguments");
+    fail(ERR_INVALID_ARGIN);
 
   /* use the raw data append function. */
   return string_append_value(s, suffix->data);
@@ -364,7 +365,7 @@ int string_trim (String s) {
 
   /* validate the input arguments. */
   if (!s)
-    fail("invalid input arguments");
+    fail(ERR_INVALID_ARGIN);
 
   /* while the left trim offset is left of the string end and the first
    * character is whitespace, move the left offset to the right.
@@ -394,7 +395,7 @@ int string_trim (String s) {
   /* reallocate a new buffer for trimmed string data. */
   dtmp = (char*) malloc((j - i + 2) * sizeof(char));
   if (!dtmp)
-    fail("unable to allocate array");
+    fail(ERR_BAD_ALLOC);
 
   /* copy the trimmed data into the new buffer. */
   strncpy(dtmp, s->data + i, j - i + 1);
@@ -430,7 +431,7 @@ int string_trim_left (String s) {
 
   /* validate the input arguments. */
   if (!s)
-    fail("invalid input arguments");
+    fail(ERR_INVALID_ARGIN);
 
   /* while the left trim offset is left of the string end and the first
    * character is whitespace, move the left offset to the right.
@@ -452,7 +453,7 @@ int string_trim_left (String s) {
   /* reallocate a new buffer for trimmed string data. */
   dtmp = (char*) malloc((n + 1) * sizeof(char));
   if (!dtmp)
-    fail("unable to allocate array");
+    fail(ERR_BAD_ALLOC);
 
   /* copy the trimmed data into the new buffer. */
   strncpy(dtmp, s->data + i, n);
@@ -485,7 +486,7 @@ int string_trim_right (String s) {
 
   /* validate the input arguments. */
   if (!s)
-    fail("invalid input arguments");
+    fail(ERR_INVALID_ARGIN);
 
   /* get the current string length. */
   n = s->n;
@@ -503,7 +504,7 @@ int string_trim_right (String s) {
 
   /* set the new string length. */
   if (!string_set_length(s, n))
-    fail("unable to set string length");
+    return 0;
 
   /* return success. */
   return 1;
@@ -525,7 +526,7 @@ int string_tolower (String s) {
 
   /* validate the input arguments. */
   if (!s)
-    fail("invalid input arguments");
+    fail(ERR_INVALID_ARGIN);
 
   /* convert each character in the string data to uppercase. */
   for (i = 0; i < s->n; i++)
@@ -551,7 +552,7 @@ int string_toupper (String s) {
 
   /* validate the input arguments. */
   if (!s)
-    fail("invalid input arguments");
+    fail(ERR_INVALID_ARGIN);
 
   /* convert each character in the string data to uppercase. */
   for (i = 0; i < s->n; i++)
@@ -622,6 +623,7 @@ ObjectList string_split (Zone z, String s, String pat) {
   /* check if allocation failed. */
   if (!buf) {
     /* free the object list and return failure. */
+    error(ERR_BAD_ALLOC);
     object_free(z, lst);
     return NULL;
   }
@@ -675,6 +677,7 @@ ObjectList string_split (Zone z, String s, String pat) {
 /* string_disp(): display function for strings.
  */
 int string_disp (Zone z, String s, const char *var) {
+  /* display the string data and return success. */
   printf("%s = '%s'\n", var, s->data);
   return 1;
 }

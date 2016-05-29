@@ -46,27 +46,27 @@ int main (int argc, char **argv) {
           arg[1] == 'I') {
         /* add the cflag into the compiler. */
         if (!compiler_add_cflag(compiler, arg))
-          die("unable to add compiler flag");
+          die("matte", "unable to add compiler flag");
       }
       else if (arg[1] == 'P') {
         /* add the path string into the compiler. */
         if (arglen < 3 || !compiler_add_path(compiler, arg + 2))
-          die("unable to add pathname string");
+          die("matte", "unable to add pathname string");
       }
       else if (arg[1] == 'c') {
         /* set the compilation mode to compile to source. */
         if (!compiler_set_mode(compiler, COMPILE_TO_C))
-          die("unable to set compiler mode");
+          die("matte", "unable to set compiler mode");
       }
       else if (arg[1] == 'o') {
         /* check that a required option value is provided. */
         if (argi == argc - 1)
-          die("expected output filename argument");
+          die("matte", "expected output filename argument");
 
         /* update the compilation mode. */
         if (compiler->mode == COMPILE_TO_MEM &&
             !compiler_set_mode(compiler, COMPILE_TO_EXE))
-          die("unable to set compiler mode");
+          die("matte", "unable to set compiler mode");
 
         /* get the next argument string. */
         argi++;
@@ -74,14 +74,14 @@ int main (int argc, char **argv) {
 
         /* set the compiler output filename. */
         if (!compiler_set_outfile(compiler, arg))
-          die("unable to set output filename");
+          die("matte", "unable to set output filename");
       }
-      else die("unsupported argument %s", arg);
+      else die("matte", "unsupported argument %s", arg);
     }
     else {
       /* assume all non-option arguments are input filenames. */
       if (!compiler_add_file(compiler, arg))
-        die("failed to compile '%s'", arg);
+        die("matte", "failed to compile '%s'", arg);
     }
 
     /* increment the argument index. */
@@ -90,7 +90,7 @@ int main (int argc, char **argv) {
 
   /* execute the compilation as configured. */
   if (!compiler_execute(compiler))
-    die("failed to perform compilation");
+    die("matte", "failed to perform compilation");
 
   /* free the compiler object. */
   object_free(NULL, compiler);

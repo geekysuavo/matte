@@ -9,16 +9,21 @@
 
 Object FUNCTION(F) (Zone z, Object a) {
   if (!a)
-    return NULL;
+    throw(z, ERR_INVALID_ARGIN);
 
   const ObjectType ta = MATTE_TYPE(a);
   obj_unary fn;
 
   fn = METHOD(ta,F);
-  if (fn)
-    return fn(z, a);
+  if (fn) {
+    Object obj = fn(z, a);
+    if (!obj)
+      return exceptions_get(z);
 
-  return NULL;
+    return obj;
+  }
+
+  throw(z, ERR_OBJ_UNARY, STRING(F), ta->name);
 }
 
 /* undefine the method handler generation macros.

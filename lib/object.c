@@ -22,8 +22,10 @@
  */
 Object object_alloc (Zone z, ObjectType type) {
   /* return null if the type is null. */
-  if (!type)
+  if (!type) {
+    error(ERR_INVALID_ARGIN);
     return NULL;
+  }
 
   /* allocate memory for the new object. */
   Object obj;
@@ -37,8 +39,10 @@ Object object_alloc (Zone z, ObjectType type) {
   }
 
   /* check if allocation failed. */
-  if (!obj)
+  if (!obj) {
+    error(ERR_OBJ_ALLOC, type->name);
     return NULL;
+  }
 
   /* store the object type and return the new object. */
   obj->type = type;
@@ -105,14 +109,14 @@ void object_free_all (Zone z) {
 int object_disp (Zone z, Object obj, const char *var) {
   /* validate the input arguments. */
   if (!obj || !var)
-    return 0;
+    fail(ERR_INVALID_ARGIN);
 
   /* obtain the object type. */
   const ObjectType type = MATTE_TYPE(obj);
 
   /* return if the object is untyped or has no display function. */
   if (!type || !type->fn_disp)
-    return 0;
+    fail(ERR_OBJ_UNARY, "disp", type->name);
 
   /* return the result of the display function. */
   return type->fn_disp(z, obj, var);
@@ -230,7 +234,7 @@ int object_disp (Zone z, Object obj, const char *var) {
  */
 Object object_subsref (Zone z, Object a, Object s) {
   if (!a || !s)
-    return NULL;
+    throw(z, ERR_INVALID_ARGIN);
 
   const ObjectType ta = MATTE_TYPE(a);
   obj_binary fn = ta->fn_subsref;
@@ -238,14 +242,14 @@ Object object_subsref (Zone z, Object a, Object s) {
   if (fn)
     return fn(z, a, s);
 
-  return NULL;
+  throw(z, ERR_OBJ_UNARY, "subsref", ta->name);
 }
 
 /* object_subsasgn(): subscripted assignment dispatch function.
  */
 Object object_subsasgn (Zone z, Object a, Object s, Object b) {
   if (!a || !s || !b)
-    return NULL;
+    throw(z, ERR_INVALID_ARGIN);
 
   const ObjectType ta = MATTE_TYPE(a);
   obj_ternary fn = ta->fn_subsasgn;
@@ -253,7 +257,7 @@ Object object_subsasgn (Zone z, Object a, Object s, Object b) {
   if (fn)
     return fn(z, a, s, b);
 
-  return NULL;
+  throw(z, ERR_OBJ_UNARY, "subsasgn", ta->name);
 }
 
 /* object_subsindex(): subscript index dispatch function. */

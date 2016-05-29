@@ -3,8 +3,9 @@
  * Released under the MIT License
  */
 
-/* include the object list header. */
+/* include the object list and exception headers. */
 #include <matte/object-list.h>
+#include <matte/except.h>
 
 /* object_list_type(): return a pointer to the object list object type.
  */
@@ -60,12 +61,12 @@ Object object_list_argout (Zone z, int n, ...) {
   /* allocate a new object list. */
   lst = object_list_new(z, NULL);
   if (!lst)
-    return NULL;
+    return exceptions_get(z);
 
   /* set the length of the list. */
   if (!object_list_set_length(lst, n)) {
     object_free(z, lst);
-    return NULL;
+    return exceptions_get(z);
   }
 
   /* loop over the arguments. */
@@ -124,7 +125,7 @@ int object_list_set_length (ObjectList lst, int n) {
 
   /* validate the input arguments. */
   if (!lst || n < 0)
-    return 0;
+    fail(ERR_INVALID_ARGIN);
 
   /* reallocate the object array. */
   lst->objs = (Object*)
@@ -136,7 +137,7 @@ int object_list_set_length (ObjectList lst, int n) {
     lst->n = n;
 
     /* return failure. */
-    return 0;
+    fail(ERR_BAD_ALLOC);
   }
 
   /* check if the object list expanded. */
@@ -165,7 +166,7 @@ int object_list_set_length (ObjectList lst, int n) {
 int object_list_append (ObjectList lst, Object obj) {
   /* validate the input arguments. */
   if (!lst || !obj)
-    return 0;
+    fail(ERR_INVALID_ARGIN);
 
   /* increment the object array size. */
   lst->n++;
@@ -176,7 +177,7 @@ int object_list_append (ObjectList lst, Object obj) {
 
   /* check if reallocation failed. */
   if (!lst->objs)
-    return 0;
+    fail(ERR_BAD_ALLOC);
 
   /* store the object in the list. */
   lst->objs[lst->n - 1] = obj;
@@ -198,7 +199,7 @@ int object_list_append (ObjectList lst, Object obj) {
 int object_list_set (ObjectList lst, int i, Object obj) {
   /* validate the input arguments. */
   if (!lst || i < 0)
-    return 0;
+    fail(ERR_INVALID_ARGIN);
 
   /* check if the index is out of bounds. */
   if (i >= lst->n) {

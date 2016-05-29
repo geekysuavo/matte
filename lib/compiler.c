@@ -27,10 +27,6 @@
 #define asterr(nd, ...) \
   { exceptions_add(nd->fname, ast_get_func(nd), nd->line, __VA_ARGS__); \
     return 0; }
-/*
-  { ast_error_string(c, nd, false, __VA_ARGS__); \
-    if (c->cerr) fprintf(stderr, "%s", c->cerr); }
- */
 
 /* operators: array of c function names that are mapped to overloadable
  * operations in the matte compiler.
@@ -482,8 +478,7 @@ static int resolve_symbols (Compiler c, AST node, AST root) {
 
     /* check if no symbol was found. */
     if (!node->sym_table || !node->sym_index)
-      asterr(node, "symbol '" ANSI_BOLD "%s" ANSI_NORM "' is undefined",
-             ast_get_string(node));
+      asterr(node, ERR_UNDEFINED_SYMBOL, ast_get_string(node));
   }
   else if (ntype == AST_TYPE_FUNCTION) {
     /* traverse only into the statement list. */
@@ -941,7 +936,7 @@ static int compile_to_exe (Compiler c) {
   strcpy(ftmp, "/tmp/matteXXXXXX.c");
   fd = mkstemps(ftmp, 2);
   if (fd < 0)
-    fail("unable to create temporary file");
+    fail(ERR_FOPEN, ftmp);
 
   /* write the source code to the file. */
   write(fd, c->ccode->data, c->ccode->n * sizeof(char));
@@ -997,8 +992,10 @@ static int compile_to_mem (Compiler c) {
   strcpy(ftmpx, "/tmp/matteXXXXXX.x");
   fdc = mkstemps(ftmpc, 2);
   fdx = mkstemps(ftmpx, 2);
-  if (fdc < 0 || fdx < 0)
-    fail("unable to create temporary files");
+
+  /* handle file open failures. */
+  if (fdc < 0) fail(ERR_FOPEN, ftmpc);
+  if (fdx < 0) fail(ERR_FOPEN, ftmpx);
 
   /* write the source code to the file. */
   write(fdc, c->ccode->data, c->ccode->n * sizeof(char));
@@ -1024,12 +1021,12 @@ static int compile_to_mem (Compiler c) {
 
     /* check if the load succeeded. */
     if (!lib)
-      fail("unable to load compiled result");
+      fail(ERR_DLOPEN, ftmpx);
 
     /* gain access to the main function. */
     sym = dlsym(lib, "matte_main");
     if (!sym)
-      fail("unable to load compiled result");
+      fail(ERR_DLOPEN, ftmpx);
 
     /* run the main function. */
     fn = sym;
@@ -1167,7 +1164,7 @@ void compiler_delete (Zone z, Compiler c) {
 int compiler_set_mode (Compiler c, CompilerMode mode) {
   /* validate the input arguments. */
   if (!c)
-    fail("invalid input arguments");
+    fail(ERR_INVALID_ARGIN);
 
   /* store the new mode. */
   c->mode = mode;
@@ -1192,11 +1189,11 @@ int compiler_set_mode (Compiler c, CompilerMode mode) {
 int compiler_set_outfile (Compiler c, const char *fname) {
   /* validate the input arguments. */
   if (!c || !fname)
-    fail("invalid input arguments");
+    fail(ERR_INVALID_ARGIN);
 
   /* check that we're not trying to set a file for memory compilation. */
   if (c->mode == COMPILE_TO_MEM)
-    fail("cannot set a filename for compilation to memory");
+    fail("matte:compiler", "mode does not support output files");
 
   /* store the output filename. */
   return string_set_value(c->fout, fname);
@@ -1214,7 +1211,7 @@ int compiler_set_outfile (Compiler c, const char *fname) {
 int compiler_add_cflag (Compiler c, const char *str) {
   /* validate the input arguments. */
   if (!c || !str)
-    fail("invalid input arguments");
+    fail(ERR_INVALID_ARGIN);
 
   /* append the flag to the flags string. */
   return (string_append_value(c->cflags, " ") &&
@@ -1233,7 +1230,7 @@ int compiler_add_cflag (Compiler c, const char *str) {
 int compiler_add_path (Compiler c, const char *fname) {
   /* validate the input arguments. */
   if (!c || !fname)
-    fail("invalid input arguments");
+    fail(ERR_INVALID_ARGIN);
 
   /* append the path string into the list. */
   Object sobj = (Object) string_new_with_value(NULL, fname);
@@ -1252,7 +1249,7 @@ int compiler_add_path (Compiler c, const char *fname) {
 int compiler_add_file (Compiler c, const char *fname) {
   /* validate the input arguments. */
   if (!c || !fname)
-    fail("invalid input arguments");
+    fail(ERR_INVALID_ARGIN);
 
   /* set the string in the associated parser. */
   if (!parser_set_file(c->par, fname)) {
@@ -1283,7 +1280,7 @@ int compiler_add_file (Compiler c, const char *fname) {
 int compiler_add_string (Compiler c, const char *str) {
   /* validate the input arguments. */
   if (!c || !str)
-    fail("invalid input arguments");
+    fail(ERR_INVALID_ARGIN);
 
   /* set the string in the associated parser. */
   if (!parser_set_string(c->par, str)) {
@@ -1332,7 +1329,7 @@ int compiler_execute (Compiler c) {
     case COMPILE_TO_MEM: return compile_to_mem(c);
 
     /* any other mode: */
-    default: fail("unsupported compilation type");
+    default: fail("matte:compiler", "unsupported compilation type");
   }
 
   /* return success. */

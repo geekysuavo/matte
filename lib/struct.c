@@ -3,8 +3,9 @@
  * Released under the MIT License
  */
 
-/* include the struct header. */
+/* include the struct and exception headers. */
 #include <matte/struct.h>
+#include <matte/except.h>
 
 /* struct_type(): return a pointer to the struct object type.
  */
@@ -158,7 +159,7 @@ int struct_set (Struct st, const char *key, Object obj) {
 
   /* return failure if any argument is null. */
   if (!st || !key)
-    return 0;
+    fail(ERR_INVALID_ARGIN);
 
   /* lookup any existing object by its key string. */
   i = struct_find(st, key);
@@ -187,7 +188,7 @@ int struct_set (Struct st, const char *key, Object obj) {
 
   /* check if reallocation failed. */
   if (!st->keys || !st->objs)
-    return 0;
+    fail(ERR_BAD_ALLOC);
 
   /* shift the larger key/value pairs down in the array. */
   for (j = st->n - 1; j > i; j--) {

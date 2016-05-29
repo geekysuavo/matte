@@ -171,7 +171,7 @@ long vector_get_length (Vector x) {
 int vector_set_length (Vector x, long n) {
   /* validate the input arguments. */
   if (!x || n < 0)
-    fail("invalid input arguments");
+    fail(ERR_INVALID_ARGIN);
 
   /* return if the vector already has the desired length. */
   if (x->n == n)
@@ -180,7 +180,7 @@ int vector_set_length (Vector x, long n) {
   /* reallocate the vector data. */
   x->data = (double*) realloc(x->data, n * sizeof(double));
   if (!x->data)
-    fail("unable to reallocate array");
+    fail(ERR_BAD_ALLOC);
 
   /* fill the new trailing elements with zeros. */
   if (n > x->n)
@@ -196,10 +196,12 @@ int vector_set_length (Vector x, long n) {
 /* vector_disp(): display function for matte vectors.
  */
 int vector_disp (Zone z, Vector x, const char *var) {
+  /* print the vector contents. */
   printf("%s =\n", var);
   for (long i = 0; i < x->n; i++)
     printf("\n  %lg", x->data[i]);
 
+  /* print newlines and return success. */
   printf("\n\n");
   return 1;
 }
@@ -213,8 +215,10 @@ Object vector_plus (Zone z, Object a, Object b) {
       Vector va = (Vector) a;
       Vector vb = (Vector) b;
 
-      if (va->n != vb->n || va->tr != vb->tr)
+      if (va->n != vb->n || va->tr != vb->tr) {
+        error(ERR_SIZE_MISMATCH);
         return NULL;
+      }
 
       Vector vc = vector_copy(z, va);
       if (!vc)

@@ -201,7 +201,7 @@ long complex_vector_get_length (ComplexVector x) {
 int complex_vector_set_length (ComplexVector x, long n) {
   /* validate the input arguments. */
   if (!x || n < 0)
-    fail("invalid input arguments");
+    fail(ERR_INVALID_ARGIN);
 
   /* return if the vector already has the desired length. */
   if (x->n == n)
@@ -213,7 +213,7 @@ int complex_vector_set_length (ComplexVector x, long n) {
 
   /* check if reallocation failed. */
   if (!x->data)
-    fail("unable to reallocate array");
+    fail(ERR_BAD_ALLOC);
 
   /* fill the new trailing elements with zeros. */
   if (n > x->n)
@@ -229,8 +229,8 @@ int complex_vector_set_length (ComplexVector x, long n) {
 /* complex_vector_disp(): display function for matte complex vectors.
  */
 int complex_vector_disp (Zone z, ComplexVector x, const char *var) {
+  /* print the vector contents. */
   printf("%s =\n", var);
-
   for (long i = 0; i < x->n; i++) {
     const double re = creal(x->data[i]);
     const double im = cimag(x->data[i]);
@@ -239,6 +239,7 @@ int complex_vector_disp (Zone z, ComplexVector x, const char *var) {
            im < 0.0 ? -im : im);
   }
 
+  /* print newlines and return success. */
   printf("\n\n");
   return 1;
 }

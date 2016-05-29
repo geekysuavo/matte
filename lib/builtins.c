@@ -60,7 +60,7 @@ int string_append_objs (String s, char *format, int begin, ObjectList lst) {
 
   /* validate the input arguments. */
   if (!s || !format)
-    fail("invalid input arguments");
+    fail(ERR_INVALID_ARGIN);
 
   /* initialize the first substring start pointer. */
   pa = format;
@@ -198,6 +198,8 @@ Object matte_sum (Zone z, Object argin) {
   }
   else if (nargin == 2) {
   }
+  else
+    throw(z, ERR_INVALID_ARGIN);
 
   return object_list_argout(z, 1, y);
 }
@@ -212,6 +214,8 @@ Object matte_sprintf (Zone z, Object argin) {
     str = string_new(z, NULL);
     string_append_objs(str, ((String) format)->data, 1, (ObjectList) argin);
   }
+  else
+    throw(z, ERR_INVALID_ARGIN);
 
   return object_list_argout(z, 1, (Object) str);
 }

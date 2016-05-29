@@ -1697,7 +1697,7 @@ void parser_delete (Zone z, Parser p) {
 int parser_set_file (Parser p, const char *fname) {
   /* validate the input arguments. */
   if (!p || !fname)
-    fail("invalid input arguments");
+    fail(ERR_INVALID_ARGIN);
 
   /* attempt to set the file in the associated scanner. */
   if (!scanner_set_file(p->scan, fname))
@@ -1719,7 +1719,7 @@ int parser_set_file (Parser p, const char *fname) {
 int parser_set_string (Parser p, const char *str) {
   /* validate the input arguments. */
   if (!p || !str)
-    fail("invalid input arguments");
+    fail(ERR_INVALID_ARGIN);
 
   /* attempt to set the string in the associated scanner. */
   if (!scanner_set_string(p->scan, str))

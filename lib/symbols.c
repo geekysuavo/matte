@@ -210,7 +210,7 @@ long symbols_add (Symbols syms, SymbolType stype, const char *sname, ...) {
   /* check if reallocation failed. */
   if (!syms->sym_type || !syms->sym_data ||
       !syms->own_data || !syms->sym_name)
-    fail("unable to reallocate array");
+    fail(ERR_BAD_ALLOC);
 
   /* store the symbol type; initialize the symbol data. */
   syms->sym_type[sid] = stype;

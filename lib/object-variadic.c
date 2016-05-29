@@ -1,6 +1,8 @@
 
 /* define macros for generating an arbitrary binary method handler.
  */
+#define STR(a)            #a
+#define STRING(a)         STR(a)
 #define CONCAT(a,b)       a ## b
 #define FUNCTION(name)    CONCAT(object_, name)
 #define METHOD(type,name) CONCAT(type->fn_, name)
@@ -31,14 +33,19 @@ Object FUNCTION(F) (Zone z, int n, ...) {
     obj = fn(z, n, vl);
     va_end(vl);
 
+    if (!obj)
+      return exceptions_get(z);
+
     return obj;
   }
 
-  return NULL;
+  throw(z, ERR_OBJ_VARIADIC, STRING(F), tmax->name);
 }
 
 /* undefine the method handler generation macros.
  */
+#undef STR
+#undef STRING
 #undef CONCAT
 #undef METHOD
 #undef FUNCTION

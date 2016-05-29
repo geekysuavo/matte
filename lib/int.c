@@ -3,8 +3,9 @@
  * Released under the MIT License
  */
 
-/* include the integer header. */
+/* include the integer and exception headers. */
 #include <matte/int.h>
+#include <matte/except.h>
 
 /* include headers for superior types. */
 #include <matte/range.h>

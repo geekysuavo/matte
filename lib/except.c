@@ -17,14 +17,17 @@ static Exception exceptions = NULL;
 
 /* exceptions_add(): append a call stack frame to the global exception.
  *
- * @fname: name of the source file that threw the exception.
- * @func: name of the function that threw the exception.
- * @line: line in the source file where the exception was thrown.
- * @format: printf-style format string for custom error messages.
- * @...: arguments that accompany the format string.
+ * arguments:
+ *  @fname: name of the source file that threw the exception.
+ *  @func: name of the function that threw the exception.
+ *  @line: line in the source file where the exception was thrown.
+ *  @id: identifier string to store for the exception.
+ *  @format: printf-style format string for custom error messages.
+ *  @...: arguments that accompany the format string.
  */
 void exceptions_add (const char *fname, const char *func,
-                     unsigned long line, const char *format, ...) {
+                     unsigned long line, const char *id,
+                     const char *format, ...) {
   /* declare required variables:
    *  @vl: variable-length argument list for string formatting.
    */
@@ -44,7 +47,7 @@ void exceptions_add (const char *fname, const char *func,
     va_end(vl);
 
     /* store the exception strings. */
-    except_set_strings(NULL, exceptions, "matte:runtime", msg);
+    except_set_strings(NULL, exceptions, id, msg);
   }
 
   /* add the call information into the call stack. */
@@ -325,7 +328,7 @@ Object except_addCause (Zone z, Exception e, ObjectList args) {
   }
 
   /* return nothing. */
-  return NULL;
+  throw(z, ERR_INVALID_ARGIN);
 }
 
 /* except_disp(): display function for exceptions.

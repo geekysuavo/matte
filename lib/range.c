@@ -3,8 +3,9 @@
  * Released under the MIT License
  */
 
-/* include the range header. */
+/* include the range and exception headers. */
 #include <matte/range.h>
+#include <matte/except.h>
 
 /* include headers for inferior types. */
 #include <matte/int.h>
@@ -255,6 +256,7 @@ inline long range_all (Range r) {
 /* range_disp(): display function for ranges.
  */
 int range_disp (Zone z, Range r, const char *var) {
+  /* print the range contents and return success. */
   printf("%s = %ld : %ld : %ld\n", var, r->begin, r->step, r->end);
   return 1;
 }
@@ -552,8 +554,10 @@ Vector range_horzcat (Zone z, int n, va_list vl) {
 /* range_vertcat(): vertical concatenation function for ranges.
  */
 Vector range_vertcat (Zone z, int n, va_list vl) {
-  if (n != 1)
+  if (n != 1) {
+    error(ERR_INVALID_ARGIN)
     return NULL;
+  }
 
   Vector x = vector_new_from_range(z, (Range) va_arg(vl, Range));
   if (!x)

@@ -410,7 +410,7 @@ inline void ast_set_source (AST node, const char *fname,
 int ast_add_down (AST node, AST down) {
   /* validate the input arguments. */
   if (!node)
-    fail("invalid input arguments");
+    fail(ERR_INVALID_ARGIN);
 
   /* increment the downstream array size. */
   node->n_down++;
@@ -421,7 +421,7 @@ int ast_add_down (AST node, AST down) {
 
   /* check if reallocation failed. */
   if (!node->down)
-    fail("unable to reallocate array");
+    fail(ERR_BAD_ALLOC);
 
   /* store the new downstream node and link it to it's parent. */
   node->down[node->n_down - 1] = down;

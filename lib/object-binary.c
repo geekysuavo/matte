@@ -9,24 +9,27 @@
 
 Object FUNCTION(F) (Zone z, Object a, Object b) {
   if (!a || !b)
-    return NULL;
+    throw(z, ERR_INVALID_ARGIN);
 
   const ObjectType ta = MATTE_TYPE(a);
   const ObjectType tb = MATTE_TYPE(b);
-  obj_binary fn;
+  obj_binary fn = NULL;
+  Object obj = NULL;
 
-  if (ta->precedence >= tb->precedence) {
+  if (ta->precedence >= tb->precedence)
     fn = METHOD(ta,F);
-    if (fn)
-      return fn(z, a, b);
-  }
-  else {
+  else
     fn = METHOD(tb,F);
-    if (fn)
-      return fn(z, a, b);
+
+  if (fn) {
+    obj = fn(z, a, b);
+    if (!obj)
+      return exceptions_get(z);
+
+    return obj;
   }
 
-  return NULL;
+  throw(z, ERR_OBJ_BINARY, STRING(F), ta->name, tb->name);
 }
 
 /* undefine the method handler generation macros.

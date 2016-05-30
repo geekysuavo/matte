@@ -80,13 +80,21 @@ enum _ScannerToken {
   T_OR,                  /* "||" */
 
   /* assignment. */
-  T_ASSIGN = 700,        /* "=" */
-  T_EQ_PLUS,             /* "+=" */
-  T_EQ_MINUS,            /* "-=" */
-  T_EQ_MUL,              /* "*=" */
-  T_EQ_DIV,              /* "/=" */
-  T_EQ_LDIV,             /* "\=" */
-  T_EQ_POW,              /* "^=" */
+  T_ASSIGN = 700,        /* "="   */
+
+  /* combined assignment. */
+  T_EQ_PLUS,             /* "+="  */
+  T_EQ_MINUS,            /* "-="  */
+  T_EQ_MUL,              /* "*="  */
+  T_EQ_DIV,              /* "/="  */
+  T_EQ_LDIV,             /* "\="  */
+  T_EQ_POW,              /* "^="  */
+
+  /* element-wise combined assignment. */
+  T_EQ_ELEM_MUL,         /* ".*=" */
+  T_EQ_ELEM_DIV,         /* "./=" */
+  T_EQ_ELEM_LDIV,        /* ".\=" */
+  T_EQ_ELEM_POW,         /* ".^=" */
 
   /* keywords. */
   T_BREAK = 800,         /* "break" */

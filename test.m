@@ -9,7 +9,7 @@ end
 
 function y = gtest
   global x;
-  y = x *= -0.1
+  y = x .*= -0.1
 
   if (x > 0)
     disp('x is positive');
@@ -21,7 +21,8 @@ function y = gtest
 end
 
 x = 55
-gtest; gtest; gtest;
+% currently working on for.
+for k = 1 : 3, gtest; end
 
 x = 0;
 gtest;

@@ -483,6 +483,33 @@ static ScannerToken state_int (Scanner s) {
   return T_INT;
 }
 
+/* state_op(): scanner state handling operators that can be combined
+ * with an assignment. also handles T_NOT and T_NE.
+ *
+ * arguments:
+ *  @s: matte scanner to utilize.
+ *  @without: token to return for non-assignment.
+ *  @with: token to return for combined assignment.
+ *
+ * returns:
+ *  if lookahead contains an equals sign, return @with.
+ *  otherwise, return @without.
+ */
+static ScannerToken state_op (Scanner s,
+                              ScannerToken without,
+                              ScannerToken with) {
+  /* read a single character of lookahead. */
+  char look = lookahead(s, 1);
+
+  /* if the lookahead is an equals sign, return the long token. */
+  if (look == '=')
+    return with;
+
+  /* if no equals sign, push back a character and return the short token. */
+  pushback(s, 1);
+  return without;
+}
+
 /* state_point(): scanner state handling lexemes starting with
  * a point.
  *
@@ -500,12 +527,12 @@ static ScannerToken state_point (Scanner s) {
   /* handle operators beginning with a point. */
   switch (look) {
     case '\'': return T_TR;
-    case '^':  return T_ELEM_POW;
+    case '^':  return state_op(s, T_ELEM_POW, T_EQ_ELEM_POW);
     case '+':  return T_PLUS;
     case '-':  return T_MINUS;
-    case '*':  return T_ELEM_MUL;
-    case '/':  return T_ELEM_DIV;
-    case '\\': return T_ELEM_LDIV;
+    case '*':  return state_op(s, T_ELEM_MUL,  T_EQ_ELEM_MUL);
+    case '/':  return state_op(s, T_ELEM_DIV,  T_EQ_ELEM_DIV);
+    case '\\': return state_op(s, T_ELEM_LDIV, T_EQ_ELEM_LDIV);
   }
 
   /* if the lookahead is a digit, move into the float state. */
@@ -562,33 +589,6 @@ static ScannerToken state_minus (Scanner s) {
   /* if nothing else, push back a character and return T_MINUS. */
   pushback(s, 1);
   return T_MINUS;
-}
-
-/* state_op(): scanner state handling operators that can be combined
- * with an assignment. also handles T_NOT and T_NE.
- *
- * arguments:
- *  @s: matte scanner to utilize.
- *  @without: token to return for non-assignment.
- *  @with: token to return for combined assignment.
- *
- * returns:
- *  if lookahead contains an equals sign, return @with.
- *  otherwise, return @without.
- */
-static ScannerToken state_op (Scanner s,
-                              ScannerToken without,
-                              ScannerToken with) {
-  /* read a single character of lookahead. */
-  char look = lookahead(s, 1);
-
-  /* if the lookahead is an equals sign, return the long token. */
-  if (look == '=')
-    return with;
-
-  /* if no equals sign, push back a character and return the short token. */
-  pushback(s, 1);
-  return without;
 }
 
 /* state_doub(): scanner state handling 'single-tap' and 'double-tap'

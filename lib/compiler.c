@@ -630,6 +630,35 @@ static int write_if (Compiler c, AST node, int i) {
   return 1;
 }
 
+/* write_flow(): write a control flow statement, or nothing if the specified
+ * ast-node is not a such a statement.
+ *
+ * arguments;
+ *  @c: matte compiler to utilize.
+ *  @node: matte ast-node to process.
+ */
+static int write_flow (Compiler c, AST node) {
+  /* get the current node type. */
+  const ScannerToken ntok = (ScannerToken) ast_get_type(node);
+
+  /* write based on the node type. */
+  if (ntok == T_BREAK) {
+    /* write a simple break and return. */
+    W("  break;\n");
+  }
+  else if (ntok == T_CONTINUE) {
+    /* write a simple continue and return. */
+    W("  continue;\n");
+  }
+  else if (ntok == T_RETURN) {
+    /* write a goto statement to skip all remaining function code. */
+    W("  goto wrap;\n");
+  }
+
+  /* not a control flow statement. */
+  return 0;
+}
+
 /* write_display(): write a single display statement, or nothing if the
  * specified ast-node is not meant to be displayed.
  *
@@ -697,7 +726,8 @@ static void write_statements (Compiler c, AST node) {
   if (write_operation(c, node) ||
       write_concat(c, node) ||
       write_assign(c, node) ||
-      write_call(c, node)) {
+      write_call(c, node) ||
+      write_flow(c, node)) {
     /* write a display handler, if necessary. */
     write_display(c, node);
   }
@@ -862,7 +892,8 @@ static void write_functions (Compiler c) {
       W("  Object argout = object_list_argout(_z0, 1, %s);\n", S(down));
     }
 
-    W("  object_free_all(&_z1);\n"
+    W("wrap:\n"
+      "  object_free_all(&_z1);\n"
       "  return argout;\n"
       "}\n\n");
   }
@@ -889,7 +920,7 @@ static void write_main (Compiler c) {
     write_statements(c, c->tree->down[i]);
 
   /* write the end of the main function. */
-  W("\n"
+  W("wrap:\n"
     "  return end;\n"
     "}\n\n");
 

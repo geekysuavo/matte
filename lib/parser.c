@@ -839,6 +839,10 @@ PARSE_RULE (lgor)
  *  | T_EQ_DIV expr
  *  | T_EQ_LDIV expr
  *  | T_EQ_POW expr
+ *  | T_EQ_ELEM_MUL expr
+ *  | T_EQ_ELEM_DIV expr
+ *  | T_EQ_ELEM_LDIV expr
+ *  | T_EQ_ELEM_POW expr
  *  | %empty
  *  ;
  *
@@ -862,12 +866,12 @@ PARSE_RULE (expr)
     if (!ast_last(node))
       PARSE_ERR_MISSING("expression");
   }
-  else if (match(p, T_EQ_PLUS) ||
+  else if (match(p, T_EQ_PLUS)  ||
            match(p, T_EQ_MINUS) ||
-           match(p, T_EQ_MUL) ||
-           match(p, T_EQ_DIV) ||
-           match(p, T_EQ_LDIV) ||
-           match(p, T_EQ_POW)) {
+           match(p, T_EQ_MUL)   || match(p, T_EQ_ELEM_MUL)  ||
+           match(p, T_EQ_DIV)   || match(p, T_EQ_ELEM_DIV)  ||
+           match(p, T_EQ_LDIV)  || match(p, T_EQ_ELEM_LDIV) ||
+           match(p, T_EQ_POW)   || match(p, T_EQ_ELEM_POW)) {
     if (ast_get_type(node) != (ASTNodeType) T_IDENT)
       PARSE_ERR_LVALUE;
 
@@ -876,12 +880,16 @@ PARSE_RULE (expr)
 
     ScannerToken tbin = T_ERR;
     switch (p->tok) {
-      case T_EQ_PLUS:  tbin = T_PLUS;  break;
-      case T_EQ_MINUS: tbin = T_MINUS; break;
-      case T_EQ_MUL:   tbin = T_MUL;   break;
-      case T_EQ_DIV:   tbin = T_DIV;   break;
-      case T_EQ_LDIV:  tbin = T_LDIV;  break;
-      case T_EQ_POW:   tbin = T_POW;   break;
+      case T_EQ_PLUS:      tbin = T_PLUS;      break;
+      case T_EQ_MINUS:     tbin = T_MINUS;     break;
+      case T_EQ_MUL:       tbin = T_MUL;       break;
+      case T_EQ_DIV:       tbin = T_DIV;       break;
+      case T_EQ_LDIV:      tbin = T_LDIV;      break;
+      case T_EQ_POW:       tbin = T_POW;       break;
+      case T_EQ_ELEM_MUL:  tbin = T_ELEM_MUL;  break;
+      case T_EQ_ELEM_DIV:  tbin = T_ELEM_DIV;  break;
+      case T_EQ_ELEM_LDIV: tbin = T_ELEM_LDIV; break;
+      case T_EQ_ELEM_POW:  tbin = T_ELEM_POW;  break;
       default: break;
     }
 

@@ -10,20 +10,21 @@ end
 function y = gtest
   global x;
   y = x *= -0.1
+
+  if (x > 0)
+    disp('x is positive');
+  elseif (x < 0)
+    disp('x is negative');
+  else
+    disp('x is zero');
+  end
 end
 
 x = 55
-
 gtest; gtest; gtest;
 
-% currently working on this:
-if (x > 0)
-  disp('positive');
-elseif (x < 0)
-  disp('negative');
-else
-  disp('zero');
-end
+x = 0;
+gtest;
 
 pi = [approx(20), ...
       approx(200), ...

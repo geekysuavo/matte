@@ -17,8 +17,10 @@
 /* warning definitions: */
 
 #define WARN_OBJ_COPY \
-  "matte:object", \
   "copied object has no copy constructor"
+
+#define WARN_OBJ_TRUE \
+  "object of type '" ANSI_BOLD "%s" ANSI_NORM "' used as condition"
 
 /* error definitions: */
 
@@ -80,8 +82,9 @@
 /* warn(): macro function to print a warning message.
  */
 #define warn(...) \
-  printf(ANSI_MAG "warning:" ANSI_NORM " " \
-         ANSI_BOLD "%s:" ANSI_NORM "\n %s\n\n", __VA_ARGS__);
+  { printf(ANSI_MAG "warning:" ANSI_NORM " " \
+           ANSI_BOLD "matte:runtime:" ANSI_NORM "\n " __VA_ARGS__); \
+    printf("\n\n"); }
 
 /* error(): macro function to add an error message into the global
  * exception object.

@@ -396,6 +396,9 @@ static int resolve_symbols (Compiler c, AST node, AST root) {
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+/* forward declarations: */
+static void write_statements (Compiler c, AST node);
+
 /* write_operation(): write a single operation, or nothing if the specified
  * ast-node is not a supported operation.
  *
@@ -576,8 +579,54 @@ static int write_call (Compiler c, AST node) {
   W("  object_free(&_z1, _ai);\n");
   W("  object_free(&_z1, _ao);\n");
 
-  /* not a function call. */
-  return 0;
+  /* return true. */
+  return 1;
+}
+
+/* write_if(): write an if-statement block, or nothing if the specified
+ * ast-node is not an if block.
+ *
+ * arguments;
+ *  @c: matte compiler to utilize.
+ *  @node: matte ast-node to process.
+ *  @i: offset in the child node array.
+ */
+static int write_if (Compiler c, AST node, int i) {
+  /* get the current node type. */
+  const ScannerToken ntok = (ScannerToken) ast_get_type(node);
+
+  /* accept if-statement blocks. */
+  if (ntok != T_IF)
+    return 0;
+
+  /* return if we've exhausted the condition list. */
+  if (i >= node->n_down)
+    return 1;
+
+  /* check what type of node we're processing. */
+  if (node->down[i]) {
+    /* write the first condition evaluation. */
+    write_statements(c, node->down[i]);
+    W("  if (object_is_true(%s)) {\n", S(node->down[i]));
+    write_statements(c, node->down[i + 1]);
+    W("  }\n");
+
+    /* return if no further blocks exist. */
+    if (node->n_down == 2)
+      return 1;
+
+    /* write the secondary condition evaluations. */
+    W("  else {\n");
+    write_if(c, node, i + 2);
+    W("  }\n");
+  }
+  else {
+    /* write the final statements. */
+    write_statements(c, node->down[i + 1]);
+  }
+
+  /* return true. */
+  return 1;
 }
 
 /* write_display(): write a single display statement, or nothing if the
@@ -633,8 +682,8 @@ static void write_statements (Compiler c, AST node) {
     /* functions and class definitions: do not traverse. */
     return;
   }
-  else if (ntok == T_IF) {
-    /* FIXME: implement if-statement handling. */
+  else if (write_if(c, node, 0)) {
+    /* if blocks: write and return. */
     return;
   }
   else {

@@ -199,6 +199,10 @@ Object object_subsref    (Zone z, Object a, Object b);
 Object object_subsasgn   (Zone z, Object a, Object b, Object c);
 Object object_subsindex  (Zone z, Object a);
 
+/* function declarations (builtins.c): */
+
+int object_is_true (Object obj);
+
 /* utility function declarations: */
 
 char *strdup (const char *s);

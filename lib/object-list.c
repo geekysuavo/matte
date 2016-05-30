@@ -52,10 +52,10 @@ ObjectList object_list_new (Zone z, Object args) {
 Object object_list_new_with_args (Zone z, bool cp, int n, ...) {
   /* declare required variables:
    *  @lst: new object list.
+   *  @obj: object to add to the list.
    *  @vl: variable-length argument list.
    *  @i: argument loop counter.
    */
-  ObjectType type;
   ObjectList lst;
   Object obj;
   va_list vl;
@@ -75,13 +75,12 @@ Object object_list_new_with_args (Zone z, bool cp, int n, ...) {
   /* loop over the arguments. */
   va_start(vl, n);
   for (i = 0; i < n; i++) {
-    /* get the object and its type. */
+    /* get the object. */
     obj = (Object) va_arg(vl, Object);
-    type = MATTE_TYPE(obj);
 
     /* copy or store the object into the list. */
-    if (cp && type->fn_copy)
-      lst->objs[i] = type->fn_copy(z, obj);
+    if (cp)
+      lst->objs[i] = object_copy(z, obj);
     else
       lst->objs[i] = obj;
   }

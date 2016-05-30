@@ -7,12 +7,15 @@ GREP=grep -RHni --color
 DIR=matte
 DATE=$(shell date +%Y%m%d)
 
-TST=test.m
 BIN=bin/matte
 LIB=lib/libmatte.so
 
 MATTE_ENV=env DYLD_LIBRARY_PATH=lib
 MATTE_FLAGS=-I. -I/usr/local/atlas/include -Llib
+
+TST=test.m
+TST_C=$(TST:.m=.c)
+TST_EXE=$(basename $(TST))
 
 all: $(BIN) $(LIB)
 
@@ -24,14 +27,26 @@ $(LIB):
 	@echo " MAKE $@"
 	@$(MAKE) -sC lib
 
-test: all $(TST)
-	@echo " TEST $(TST)"
+test-c: $(TST_C)
+test-exe: $(TST_EXE)
+
+test-mem:
+	@echo " TEST MEM $(TST)"
 	@$(MATTE_ENV) $(BIN) $(MATTE_FLAGS) $(TST)
-	@$(RM) -r $(TST:.m=.dSYM)
+
+$(TST_C):
+	@echo " TEST C   $(TST)"
+	@$(MATTE_ENV) $(BIN) $(MATTE_FLAGS) -c -o $(TST_C) $(TST)
+
+$(TST_EXE):
+	@echo " TEST EXE $(TST)"
+	@$(MATTE_ENV) $(BIN) $(MATTE_FLAGS) -o $(TST_EXE) $(TST)
+	@$(MATTE_ENV) ./$(TST_EXE)
 
 clean:
 	@$(MAKE) -sC bin clean
 	@$(MAKE) -sC lib clean
+	@$(RM) $(TST_C) $(TST_EXE)
 
 again: clean all
 

@@ -17,9 +17,12 @@
  */
 #define S(nd) ast_get_symbol_name(nd)
 
-/* E(): macro function for obtaining an error string from a matte ast-node.
+/* E(): macro function for writing an exception handler using data
+ * from a matte ast-node.
  */
-#define E(nd, ...) ast_error_string(c, nd, true, __VA_ARGS__)
+#define E(var, nd) \
+  W("  EXCEPT_HANDLE(%s, \"%s\", \"%s\", %ld);\n", \
+    var, nd->fname, ast_get_func(nd), nd->line);
 
 /* asterr(): macro function to print an immediate compiler error message
  * using information from a matte ast-node.
@@ -325,8 +328,8 @@ static int resolve_symbols (Compiler c, AST node, AST root) {
           if (!syms) return 0;
 
           /* register symbols for the function arguments and results. */
-          if (!symbols_add(syms, SYMBOL_VAR, "args") ||
-              !symbols_add(syms, SYMBOL_VAR, "rets"))
+          if (!symbols_add(syms, SYMBOL_VAR, "_ai") ||
+              !symbols_add(syms, SYMBOL_VAR, "_ao"))
             return 0;
 
           /* determine the call mode of the function. */
@@ -387,38 +390,13 @@ static int resolve_symbols (Compiler c, AST node, AST root) {
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/* write_except_handler(): write exception handler code based on the
- * location of a node within the syntax tree.
- *
- * arguments:
- *  @c: matte compiler to utilize.
- *  @node: ast-node to write code for.
- *  @sym: symbol name to check for exceptions.
- *  @is_main: whether the handler is within main().
- */
-static void write_except_handler (Compiler c, AST node,
-                                  const char *sym, bool is_main) {
-  /* determine which kind of exception handler to write. */
-  if (is_main) {
-    /* write an exception propagator for functions an matte_main(). */
-    W("  EXCEPT_HANDLE_MAIN(%s, \"%s\", \"%s\", %ld);\n",
-      sym, node->fname, ast_get_func(node), node->line);
-  }
-  else {
-    /* write an exception terminator for main(). */
-    W("  EXCEPT_HANDLE(%s, \"%s\", \"%s\", %ld);\n",
-      sym, node->fname, ast_get_func(node), node->line);
-  }
-}
-
 /* write_statements(): write a statement or statement list.
  *
  * arguments:
  *  @c: matte compiler to utilize.
  *  @node: matte ast-node to process.
- *  @is_main: whether the statements are within main().
  */
-static void write_statements (Compiler c, AST node, bool is_main) {
+static void write_statements (Compiler c, AST node) {
   /* FIXME: comment and refactor. */
   const char *sname;
   AST down;
@@ -431,19 +409,19 @@ static void write_statements (Compiler c, AST node, bool is_main) {
 
   if (ntype == AST_TYPE_STATEMENTS) {
     for (i = 0; i < node->n_down; i++)
-      write_statements(c, node->down[i], is_main);
+      write_statements(c, node->down[i]);
 
     return;
   }
   else if (ntype == AST_TYPE_FN_CALL) {
-    write_statements(c, node->down[1], is_main);
+    write_statements(c, node->down[1]);
   }
   else if (ntype == AST_TYPE_FUNCTION) {
     return;
   }
   else {
     for (i = 0; i < node->n_down; i++)
-      write_statements(c, node->down[i], is_main);
+      write_statements(c, node->down[i]);
   }
 
   for (i = 0; operators[i].fstr; i++) {
@@ -472,7 +450,7 @@ static void write_statements (Compiler c, AST node, bool is_main) {
         S(node->down[2]));
     }
 
-    write_except_handler(c, node, S(node), is_main);
+    E(S(node), node);
   }
   else if (ntype == AST_TYPE_ROW) {
     W("  Object %s = object_horzcat(&_z1, %d", S(node), node->n_down);
@@ -480,7 +458,7 @@ static void write_statements (Compiler c, AST node, bool is_main) {
       W(", %s", S(node->down[i]));
     W(");\n");
 
-    write_except_handler(c, node, S(node), is_main);
+    E(S(node), node);
   }
   else if (ntype == AST_TYPE_COLUMN) {
     W("  Object %s = object_vertcat(&_z1, %d", S(node), node->n_down);
@@ -488,62 +466,56 @@ static void write_statements (Compiler c, AST node, bool is_main) {
       W(", %s", S(node->down[i]));
     W(");\n");
 
-    write_except_handler(c, node, S(node), is_main);
+    E(S(node), node);
   }
   else if (ntok == T_ASSIGN) {
-    W("  %s = %s;\n", S(node), S(node->down[1]));
+    if (symbol_has_type(node->sym_table, node->sym_index-1, SYMBOL_GLOBAL))
+      W("  %s = object_copy(&_zg, %s);\n", S(node), S(node->down[1]));
+    else
+      W("  %s = %s;\n", S(node), S(node->down[1]));
   }
   else if (ntype == AST_TYPE_FN_CALL) {
     down = node->down[1];
     if (down->n_down == 1 &&
         ast_get_type(down->down[0]) == (ASTNodeType) T_PAREN_OPEN) {
       down = down->down[0];
-      W("  args = object_list_argin(&_z1, %d", down->n_down);
+      W("  _ai = object_list_argin(&_z1, %d", down->n_down);
       for (i = 0; i < down->n_down; i++)
         W(", %s", S(down->down[i]));
       W(");\n");
     }
     else {
-      W("  args = object_list_argin(&_z1, 0);\n");
+      W("  _ai = object_list_argin(&_z1, 0);\n");
     }
 
     down = node->down[1];
-    W("  rets = matte_%s(&_z1, args);\n", S(down));
-    write_except_handler(c, down, "rets", is_main);
+    W("  _ao = matte_%s(&_z1, _ai);\n", S(down));
+    E("_ao", down);
 
     down = node->down[0];
     if (ast_get_type(down) == (ASTNodeType) T_IDENT) {
       sname = S(down);
-      W("  %s%s = object_list_get((ObjectList) rets, 0);\n",
+      W("  %s%s = object_list_get((ObjectList) _ao, 0);\n",
         sname[0] == '_' ? "Object " : "", sname);
     }
     else if (ast_get_type(down) == AST_TYPE_ROW) {
       for (i = 0; i < down->n_down; i++)
-        W("  %s = object_list_get((ObjectList) rets, %d);\n",
+        W("  %s = object_list_get((ObjectList) _ao, %d);\n",
           S(down->down[i]), i);
     }
 
-    W("  object_free(&_z1, args);\n");
-    W("  object_free(&_z1, rets);\n");
+    W("  object_free(&_z1, _ai);\n");
+    W("  object_free(&_z1, _ao);\n");
   }
 
   if (node->node_disp) {
-    W("  if (!object_disp(&_z1, %s, \"%s\")) {\n", S(node), S(node));
-
-    if (is_main) {
-      W("    Exception _e = (Exception) exceptions_get(&_z1);\n"
-        "    except_add_call(&_z1, _e, \"%s\", \"%s\", %ld);\n"
-        "    object_disp(&_z1, (Object) _e, \"e\");\n"
-        "    return 1;\n", node->fname, ast_get_func(node), node->line);
-    }
-    else {
-      W("    Exception _e = (Exception) exceptions_get(_z0);\n"
-        "    except_add_call(_z0, _e, \"%s\", \"%s\", %ld);\n"
-        "    return (Object) _e;\n",
-        node->fname, ast_get_func(node), node->line);
-    }
-
-    W("  }\n");
+    W("  if (!object_disp(&_z1, %s, \"%s\")) {\n"
+      "    Exception _e = (Exception) exceptions_get(_z0);\n"
+      "    except_add_call(_z0, _e, \"%s\", \"%s\", %ld);\n"
+      "    return (Object) _e;\n"
+      "  }\n",
+      S(node), S(node),
+      node->fname, ast_get_func(node), node->line);
   }
 }
 
@@ -629,25 +601,37 @@ static void write_globals (Compiler c) {
   /* get the global symbol table. */
   gs = c->tree->syms;
 
-  /* write the matte include. */
-  W("\n#include <matte/matte.h>\n\n");
+  /* write the matte include and the global zone allocator. */
+  W("\n"
+    "#include <matte/matte.h>\n\n");
 
   /* write the function declarations. */
   for (i = 0; i < gs->n; i++) {
-    if (!(gs->sym_type[i] & SYMBOL_FUNC)) continue;
-    W("Object matte_%s (Zone z, Object argin);\n", gs->sym_name[i]);
+    if (!symbol_has_type(gs, i, SYMBOL_FUNC)) continue;
+    W("Object matte_%s (Zone z, Object argin);\n", symbol_name(gs, i));
   }
 
   /* write the variable declarations. */
-  W("\n");
+  W("\n"
+    "ZoneData _zg;\n"
+    "bool _zg_init = false;\n\n");
   for (i = 0; i < gs->n; i++) {
-    if (!(gs->sym_type[i] & SYMBOL_VAR) ||
-        gs->sym_name[i][0] == '_')
-     continue;
+    if (!symbol_has_type(gs, i, SYMBOL_VAR) ||
+         symbol_has_type(gs, i, SYMBOL_TEMP))
+      continue;
 
     /* write the global variable declaration. */
-    W("Object %s = NULL;\n", gs->sym_name[i]);
+    W("Object %s = NULL;\n", symbol_name(gs, i));
   }
+
+  /* write the global initializer function. */
+  W("\n"
+    "void initialize (void) {\n"
+    "  if (_zg_init) return;\n"
+    "  zone_init(&_zg, %ld);\n"
+    "  _zg_init = true;\n"
+    "}\n\n",
+    gs->n);
 }
 
 /* write_functions(): write all user-defined functions.
@@ -668,17 +652,16 @@ static void write_functions (Compiler c) {
     node = c->tree->down[i];
     if (ast_get_type(node) != AST_TYPE_FUNCTION) continue;
 
-    W("\n");
     W("Object matte_%s (Zone _z0, Object argin) {\n"
       "  ZoneData _z1;\n"
-      "  zone_init(&_z1, %ld);\n",
+      "  zone_init(&_z1, %ld);\n\n",
       ast_get_string(node->down[1]),
       node->syms->n);
 
     write_symbols(c, node->syms);
 
     W("\n");
-    write_statements(c, node->down[3], false);
+    write_statements(c, node->down[3]);
 
     W("\n");
     down = node->down[0];
@@ -697,7 +680,7 @@ static void write_functions (Compiler c) {
 
     W("  object_free_all(&_z1);\n"
       "  return argout;\n"
-      "}\n");
+      "}\n\n");
   }
 }
 
@@ -707,40 +690,37 @@ static void write_functions (Compiler c) {
  *  @c: matte compiler to utilize.
  */
 static void write_main (Compiler c) {
-  /* declare required variables:
-   *  @node: general-purpose ast-node.
-   *  @i: general-purpose loop counter.
-   */
-  AST node;
-  int i, n;
-
-  /* check if compile-to-memory mode is enabled. */
-  if (c->mode == COMPILE_TO_MEM) {
-    /* write a general-purpose main function. */
-    W("\nObject matte_main (Zone _z0, Object argin) {\n");
-  }
-  else {
-    /* write an application entry point. */
-    W("\nint main (int argc, char **argv) {\n");
-  }
-
-  /* write the zone allocator initialization. */
-  W("  ZoneData _z1;\n"
-    "  zone_init(&_z1, %ld);\n",
+  /* write a general-purpose main function. */
+  W("Object matte_main (Zone _z0, Object argin) {\n"
+    "  ZoneData _z1;\n"
+    "  zone_init(&_z1, %ld);\n"
+    "  initialize();\n\n",
     c->tree->syms->n);
 
   /* write all global variables and literals. */
   write_symbols(c, c->tree->syms);
 
   /* write all global statements into the main function. */
-  for (i = 0; i < c->tree->n_down; i++)
-    write_statements(c, c->tree->down[i], c->mode != COMPILE_TO_MEM);
+  for (int i = 0; i < c->tree->n_down; i++)
+    write_statements(c, c->tree->down[i]);
 
   /* write the end of the main function. */
-  if (c->mode == COMPILE_TO_MEM)
-    W("\n  return end;\n}\n");
-  else
-    W("\n  return 0;\n}\n");
+  W("\n"
+    "  return end;\n"
+    "}\n\n");
+
+  /* check if an application entry point is required. */
+  if (c->mode != COMPILE_TO_MEM) {
+    /* write a simple application entry point. */
+    W("int main (int argc, char **argv) {\n"
+      "  Object _ao = matte_main(NULL, NULL);\n"
+      "  if (IS_EXCEPTION(_ao)) {\n"
+      "    object_disp(NULL, _ao, \"e\");\n"
+      "    return 1;\n"
+      "  }\n\n"
+      "  return 0;\n"
+      "}\n\n");
+  }
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */

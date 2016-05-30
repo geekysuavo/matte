@@ -49,6 +49,37 @@ Object object_alloc (Zone z, ObjectType type) {
   return obj;
 }
 
+/* object_copy(): make a copy of a matte object.
+ *
+ * arguments:
+ *  @z: zone allocator to utilize.
+ *  @obj: matte object to duplicate.
+ */
+Object object_copy (Zone z, Object obj) {
+  /* return null if the object is null. */
+  if (!obj) {
+    error(ERR_INVALID_ARGIN);
+    return NULL;
+  }
+
+  /* get the object type. */
+  ObjectType type = MATTE_TYPE(obj);
+  if (!type) {
+    error(ERR_INVALID_ARGIN);
+    return NULL;
+  }
+
+  /* check that the type has a copy constructor. */
+  if (!type->fn_copy) {
+    /* output a warning and return the object. */
+    warn(WARN_OBJ_COPY);
+    return obj;
+  }
+
+  /* return the result of the object type's copy constructor. */
+  return type->fn_copy(z, obj);
+}
+
 /* object_free(): free all memory associated with a matte object.
  *
  * arguments:

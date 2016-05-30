@@ -156,6 +156,8 @@ struct _Object {
 
 Object object_alloc (Zone z, ObjectType type);
 
+Object object_copy (Zone z, Object obj);
+
 void object_free (Zone z, void *ptr);
 
 void object_free_all (Zone z);

@@ -508,16 +508,17 @@ static int write_assign (Compiler c, AST node) {
   const ScannerToken ntok = (ScannerToken) ast_get_type(node);
 
   /* accept only assignment nodes. */
-  if (ntok == T_ASSIGN) {
-    /* assign based on scope. */
-    if (symbol_has_type(node->sym_table, node->sym_index - 1, SYMBOL_GLOBAL))
-      W("  %s = object_copy(&_zg, %s);\n", S(node), S(node->down[1]));
-    else
-      W("  %s = %s;\n", S(node), S(node->down[1]));
-  }
+  if (ntok != T_ASSIGN)
+    return 0;
 
-  /* not an assignment. */
-  return 0;
+  /* assign based on scope. */
+  if (symbol_has_type(node->sym_table, node->sym_index - 1, SYMBOL_GLOBAL))
+    W("  %s = object_copy(&_zg, %s);\n", S(node), S(node->down[1]));
+  else
+    W("  %s = %s;\n", S(node), S(node->down[1]));
+
+  /* return true. */
+  return 1;
 }
 
 /* write_call(): write a single function or method call, or nothing if the
@@ -693,17 +694,13 @@ static void write_statements (Compiler c, AST node) {
   }
 
   /* write the statement based on its node type. */
-  if (write_operation(c, node))
-    return;
-  else if (write_concat(c, node))
-    return;
-  else if (write_assign(c, node))
-    return;
-  else if (write_call(c, node))
-    return;
-
-  /* write a display handler, if necessary. */
-  write_display(c, node);
+  if (write_operation(c, node) ||
+      write_concat(c, node) ||
+      write_assign(c, node) ||
+      write_call(c, node)) {
+    /* write a display handler, if necessary. */
+    write_display(c, node);
+  }
 }
 
 /* write_symbols(): write variable and literal symbol initializers from

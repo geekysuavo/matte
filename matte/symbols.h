@@ -20,6 +20,7 @@
 #define SYMBOL_TEMP_VAR        (SYMBOL_TEMP   | SYMBOL_VAR)
 #define SYMBOL_GLOBAL_VAR      (SYMBOL_GLOBAL | SYMBOL_VAR)
 #define SYMBOL_STATIC_VAR      (SYMBOL_STATIC | SYMBOL_VAR)
+#define SYMBOL_GLOBAL_CLASS    (SYMBOL_GLOBAL | SYMBOL_CLASS)
 #define SYMBOL_GLOBAL_FUNC     (SYMBOL_GLOBAL | SYMBOL_FUNC)
 #define SYMBOL_GLOBAL_INT      (SYMBOL_GLOBAL | SYMBOL_VAR | SYMBOL_INT)
 #define SYMBOL_GLOBAL_FLOAT    (SYMBOL_GLOBAL | SYMBOL_VAR | SYMBOL_FLOAT)
@@ -56,13 +57,15 @@ enum _SymbolType {
   SYMBOL_ARGIN     = 0x0020,
   SYMBOL_ARGOUT    = 0x0040,
 
-  /* function symbols. */
-  SYMBOL_FUNC      = 0x0080,
-
   /* symbol state/scope. */
   SYMBOL_GLOBAL    = 0x0100,
   SYMBOL_STATIC    = 0x0200,
-  SYMBOL_TEMP      = 0x0400
+  SYMBOL_TEMP      = 0x0400,
+
+  /* class and function symbols. */
+  SYMBOL_FUNC      = 0x1000,
+  SYMBOL_METHOD    = 0x2000,
+  SYMBOL_CLASS     = 0x4000
 };
 
 /* _SymbolData: union that holds any literal or identifier data value

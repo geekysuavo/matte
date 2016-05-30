@@ -242,9 +242,9 @@ Object object_list_get (ObjectList lst, int i) {
 
 /* object_list_disp(): display function for object lists.
  */
-int object_list_disp (Zone z, ObjectList lst, const char *var) {
+int object_list_disp (Zone z, ObjectList lst) {
   /* start the list. */
-  printf("%s = {", var);
+  printf("{");
 
   /* print the list objects. */
   for (int i = 0; i < lst->n; i++) {

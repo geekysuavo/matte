@@ -137,9 +137,9 @@ void object_free_all (Zone z) {
 
 /* object_disp(): display dispatch function.
  */
-int object_disp (Zone z, Object obj, const char *var) {
-  /* validate the input arguments. */
-  if (!obj || !var)
+int object_disp (Zone z, Object obj) {
+  /* validate the input argument. */
+  if (!obj)
     fail(ERR_INVALID_ARGIN);
 
   /* obtain the object type. */
@@ -150,7 +150,19 @@ int object_disp (Zone z, Object obj, const char *var) {
     fail(ERR_OBJ_UNARY, "disp", type->name);
 
   /* return the result of the display function. */
-  return type->fn_disp(z, obj, var);
+  return type->fn_disp(z, obj);
+}
+
+/* object_display(): display dispatch function.
+ */
+int object_display (Zone z, Object obj, const char *var) {
+  /* validate the input arguments. */
+  if (!obj || !var)
+    fail(ERR_INVALID_ARGIN);
+
+  /* return the result of object_disp() */
+  printf("%s = ", var);
+  return object_disp(z, obj);
 }
 
 /* object_plus(): addition dispatch function. */

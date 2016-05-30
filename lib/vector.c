@@ -195,9 +195,9 @@ int vector_set_length (Vector x, long n) {
 
 /* vector_disp(): display function for matte vectors.
  */
-int vector_disp (Zone z, Vector x, const char *var) {
+int vector_disp (Zone z, Vector x) {
   /* print the vector contents. */
-  printf("%s =\n", var);
+  printf("\n");
   for (long i = 0; i < x->n; i++)
     printf("\n  %lg", x->data[i]);
 

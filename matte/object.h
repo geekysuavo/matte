@@ -64,7 +64,7 @@ typedef Object (*matte_func) (Zone, Object);
  */
 typedef Object (*obj_constructor) (Zone, Object);
 typedef void   (*obj_destructor)  (Zone, Object);
-typedef int    (*obj_display)     (Zone, Object, const char *);
+typedef int    (*obj_display)     (Zone, Object);
 typedef Object (*obj_unary)       (Zone, Object);
 typedef Object (*obj_binary)      (Zone, Object, Object);
 typedef Object (*obj_ternary)     (Zone, Object, Object, Object);
@@ -162,7 +162,9 @@ void object_free (Zone z, void *ptr);
 
 void object_free_all (Zone z);
 
-int object_disp (Zone z, Object obj, const char *var);
+int object_disp (Zone z, Object obj);
+
+int object_display (Zone z, Object obj, const char *var);
 
 /* object method declarations (object.c): */
 

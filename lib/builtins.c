@@ -21,10 +21,18 @@ int matte_builtins_init (Symbols gs) {
    */
   int ret = 1;
 
-  /* register the global variables. */
+  /* register global variables. */
   ret = ret && symbols_add(gs, SYMBOL_GLOBAL_INT, "end", -1L);
 
+  /* register global types. */
+  ret = ret && symbols_add(gs, SYMBOL_GLOBAL_CLASS, "Int");
+  ret = ret && symbols_add(gs, SYMBOL_GLOBAL_CLASS, "Float");
+  ret = ret && symbols_add(gs, SYMBOL_GLOBAL_CLASS, "Complex");
+  ret = ret && symbols_add(gs, SYMBOL_GLOBAL_CLASS, "String");
+  ret = ret && symbols_add(gs, SYMBOL_GLOBAL_CLASS, "Exception");
+
   /* register global functions. */
+  ret = ret && symbols_add(gs, SYMBOL_GLOBAL_FUNC, "disp");
   ret = ret && symbols_add(gs, SYMBOL_GLOBAL_FUNC, "sum");
   ret = ret && symbols_add(gs, SYMBOL_GLOBAL_FUNC, "sprintf");
 
@@ -162,6 +170,18 @@ int string_append_objs (String s, char *format, int begin, ObjectList lst) {
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+Object matte_disp (Zone z, Object argin) {
+  const int nargin = object_list_get_length((ObjectList) argin);
+
+  Object x = object_list_get((ObjectList) argin, 0);
+  ObjectType type = MATTE_TYPE(x);
+
+  if (type->fn_disp)
+    type->fn_disp(z, x);
+
+  return object_list_argout(z, 0);
+}
 
 Object matte_sum (Zone z, Object argin) {
   const int nargin = object_list_get_length((ObjectList) argin);

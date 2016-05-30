@@ -72,6 +72,9 @@
 #define ERR_UNDEFINED_SYMBOL \
   "matte:compiler", "symbol '" ANSI_BOLD "%s" ANSI_NORM "' is undefined"
 
+#define ERR_COMPILER_EMPTY \
+  "matte:compiler", "no input files supplied"
+
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /* warn(): macro function to print a warning message.

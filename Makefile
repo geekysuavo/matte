@@ -30,15 +30,15 @@ $(LIB):
 test-c: $(TST_C)
 test-exe: $(TST_EXE)
 
-test-mem:
+test-mem: $(TST)
 	@echo " TEST MEM $(TST)"
 	@$(MATTE_ENV) $(BIN) $(MATTE_FLAGS) $(TST)
 
-$(TST_C):
+$(TST_C): $(TST)
 	@echo " TEST C   $(TST)"
 	@$(MATTE_ENV) $(BIN) $(MATTE_FLAGS) -c -o $(TST_C) $(TST)
 
-$(TST_EXE):
+$(TST_EXE): $(TST)
 	@echo " TEST EXE $(TST)"
 	@$(MATTE_ENV) $(BIN) $(MATTE_FLAGS) -o $(TST_EXE) $(TST)
 	@$(MATTE_ENV) ./$(TST_EXE)

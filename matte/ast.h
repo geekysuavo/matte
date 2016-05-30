@@ -41,7 +41,9 @@ enum _ASTNodeType {
   AST_TYPE_FUNCTION,
   AST_TYPE_FN_HANDLE, /* 1010 */
   AST_TYPE_FN_ANONY,
-  AST_TYPE_FN_CALL
+  AST_TYPE_FN_CALL,
+  AST_TYPE_MD_CALL,
+  AST_TYPE_CTOR
 };
 
 /* AST: structure for holding an abstract syntax tree.

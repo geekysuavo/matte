@@ -111,8 +111,8 @@ inline void float_set_value (Float f, double value) {
 
 /* float_disp(): display operation for floats.
  */
-int float_disp (Zone z, Float f, const char *var) {
-  printf("%s = %lg\n", var, f->value);
+int float_disp (Zone z, Float f) {
+  printf("%lg\n", f->value);
   return 1;
 }
 

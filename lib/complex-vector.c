@@ -228,9 +228,9 @@ int complex_vector_set_length (ComplexVector x, long n) {
 
 /* complex_vector_disp(): display function for matte complex vectors.
  */
-int complex_vector_disp (Zone z, ComplexVector x, const char *var) {
+int complex_vector_disp (Zone z, ComplexVector x) {
   /* print the vector contents. */
-  printf("%s =\n", var);
+  printf("\n");
   for (long i = 0; i < x->n; i++) {
     const double re = creal(x->data[i]);
     const double im = cimag(x->data[i]);

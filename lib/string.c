@@ -676,9 +676,9 @@ ObjectList string_split (Zone z, String s, String pat) {
 
 /* string_disp(): display function for strings.
  */
-int string_disp (Zone z, String s, const char *var) {
+int string_disp (Zone z, String s) {
   /* display the string data and return success. */
-  printf("%s = '%s'\n", var, s->data);
+  printf("'%s'\n", s->data);
   return 1;
 }
 

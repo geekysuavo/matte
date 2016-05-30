@@ -163,7 +163,13 @@ static int init_symbols (Compiler c, AST node, AST root) {
   }
 
   /* traverse based on node type. */
-  if (ntype == AST_TYPE_FUNCTION) {
+  if (ntype == AST_TYPE_CLASS) {
+    /* register the new class name. */
+    down = node->down[0];
+    if (!ast_add_symbol(down, down, SYMBOL_GLOBAL_CLASS))
+      return 0;
+  }
+  else if (ntype == AST_TYPE_FUNCTION) {
     /* register the input arguments (third child). */
     if (node->down[2]) {
       /* register a symbol with each node. */
@@ -390,91 +396,152 @@ static int resolve_symbols (Compiler c, AST node, AST root) {
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/* write_statements(): write a statement or statement list.
+/* write_operation(): write a single operation, or nothing if the specified
+ * ast-node is not a supported operation.
  *
  * arguments:
  *  @c: matte compiler to utilize.
  *  @node: matte ast-node to process.
+ *
+ * returns:
+ *  integer indicating whether the write was performed.
  */
-static void write_statements (Compiler c, AST node) {
-  /* FIXME: comment and refactor. */
-  const char *sname;
-  AST down;
-  int i;
-
-  if (!node) return;
-
+static int write_operation (Compiler c, AST node) {
+  /* get the current node type. */
   const ASTNodeType ntype = ast_get_type(node);
-  const ScannerToken ntok = (ScannerToken) ntype;
 
-  if (ntype == AST_TYPE_STATEMENTS) {
-    for (i = 0; i < node->n_down; i++)
-      write_statements(c, node->down[i]);
-
-    return;
-  }
-  else if (ntype == AST_TYPE_FN_CALL) {
-    write_statements(c, node->down[1]);
-  }
-  else if (ntype == AST_TYPE_FUNCTION) {
-    return;
-  }
-  else {
-    for (i = 0; i < node->n_down; i++)
-      write_statements(c, node->down[i]);
-  }
-
-  for (i = 0; operators[i].fstr; i++) {
+  /* search the operator definition array for the current node type. */
+  for (int i = 0; operators[i].fstr; i++) {
+    /* check if a match was found. */
     if (ntype == operators[i].ntype &&
-        node->n_down == operators[i].noper)
-      break;
+        node->n_down == operators[i].noper) {
+      /* write the operation based on argument count. */
+      if (node->n_down == 1) {
+        /* write a unary operation. */
+        W("  Object %s = %s(&_z1, %s);\n",
+          S(node), operators[i].fstr,
+          S(node->down[0]));
+      }
+      else if (node->n_down == 2) {
+        /* write a binary operation. */
+        W("  Object %s = %s(&_z1, %s, %s);\n",
+          S(node), operators[i].fstr,
+          S(node->down[0]),
+          S(node->down[1]));
+      }
+      else if (node->n_down == 3) {
+        /* write a ternary operation. */
+        W("  Object %s = %s(&_z1, %s, %s, %s);\n",
+          S(node), operators[i].fstr,
+          S(node->down[0]),
+          S(node->down[1]),
+          S(node->down[2]));
+      }
+
+      /* write the error handler and return valid. */
+      E(S(node), node);
+      return 1;
+    }
   }
 
-  if (operators[i].fstr) {
-    if (node->n_down == 1) {
-      W("  Object %s = %s(&_z1, %s);\n",
-        S(node), operators[i].fstr,
-        S(node->down[0]));
-    }
-    else if (node->n_down == 2) {
-      W("  Object %s = %s(&_z1, %s, %s);\n",
-        S(node), operators[i].fstr,
-        S(node->down[0]),
-        S(node->down[1]));
-    }
-    else if (node->n_down == 3) {
-      W("  Object %s = %s(&_z1, %s, %s, %s);\n",
-        S(node), operators[i].fstr,
-        S(node->down[0]),
-        S(node->down[1]),
-        S(node->down[2]));
-    }
+  /* not a valid operation. */
+  return 0;
+}
 
-    E(S(node), node);
-  }
-  else if (ntype == AST_TYPE_ROW) {
+/* write_concat(): write a single concatenation, or nothing if the
+ * specified ast-node is not a horzcat() or vertcat().
+ *
+ * arguments:
+ *  @c: matte compiler to utilize.
+ *  @node: matte ast-node to process.
+ *
+ * returns:
+ *  integer indicating whether the write was performed.
+ */
+static int write_concat (Compiler c, AST node) {
+  /* get the current node type. */
+  const ASTNodeType ntype = ast_get_type(node);
+
+  /* accept rows and columns. */
+  if (ntype == AST_TYPE_ROW) {
+    /* write the row (horizontal) concatenation. */
     W("  Object %s = object_horzcat(&_z1, %d", S(node), node->n_down);
-    for (i = 0; i < node->n_down; i++)
+    for (int i = 0; i < node->n_down; i++)
       W(", %s", S(node->down[i]));
     W(");\n");
 
+    /* write the error handler and return valid. */
     E(S(node), node);
+    return 1;
   }
   else if (ntype == AST_TYPE_COLUMN) {
+    /* write the column (vertical) concatenation. */
     W("  Object %s = object_vertcat(&_z1, %d", S(node), node->n_down);
-    for (i = 0; i < node->n_down; i++)
+    for (int i = 0; i < node->n_down; i++)
       W(", %s", S(node->down[i]));
     W(");\n");
 
+    /* write the error handler and return valid. */
     E(S(node), node);
+    return 1;
   }
-  else if (ntok == T_ASSIGN) {
-    if (symbol_has_type(node->sym_table, node->sym_index-1, SYMBOL_GLOBAL))
+
+  /* not a concatenation. */
+  return 0;
+}
+
+/* write_assign(): write a single assignment, or nothing if the
+ * specified ast-node is not an assignment statement.
+ *
+ * arguments:
+ *  @c: matte compiler to utilize.
+ *  @node: matte ast-node to process.
+ *
+ * returns:
+ *  integer indicating whether the write was performed.
+ */
+static int write_assign (Compiler c, AST node) {
+  /* get the current node type. */
+  const ScannerToken ntok = (ScannerToken) ast_get_type(node);
+
+  /* accept only assignment nodes. */
+  if (ntok == T_ASSIGN) {
+    /* assign based on scope. */
+    if (symbol_has_type(node->sym_table, node->sym_index - 1, SYMBOL_GLOBAL))
       W("  %s = object_copy(&_zg, %s);\n", S(node), S(node->down[1]));
     else
       W("  %s = %s;\n", S(node), S(node->down[1]));
   }
-  else if (ntype == AST_TYPE_FN_CALL) {
+
+  /* not an assignment. */
+  return 0;
+}
+
+/* write_call(): write a single function or method call, or nothing if the
+ * specified ast-node is not a call.
+ */
+static int write_call (Compiler c, AST node) {
+  /* declare required variables:
+   *  @sname: symbol name string storage variable.
+   *  @down: general-purpose child ast-node.
+   *  @i: general-purpose loop counter.
+   */
+  const char *sname;
+  AST down;
+  int i;
+
+  /* get the current node type. */
+  const ASTNodeType ntype = ast_get_type(node);
+
+  /* reject non-calls. */
+  if (ntype != AST_TYPE_FN_CALL &&
+      ntype != AST_TYPE_MD_CALL &&
+      ntype != AST_TYPE_CTOR)
+    return 0;
+
+  /* write based on node type. */
+  if (ntype == AST_TYPE_FN_CALL) {
+    /* FIXME: comment and refactor. */
     down = node->down[1];
     if (down->n_down == 1 &&
         ast_get_type(down->down[0]) == (ASTNodeType) T_PAREN_OPEN) {
@@ -503,20 +570,91 @@ static void write_statements (Compiler c, AST node) {
         W("  %s = object_list_get((ObjectList) _ao, %d);\n",
           S(down->down[i]), i);
     }
-
-    W("  object_free(&_z1, _ai);\n");
-    W("  object_free(&_z1, _ao);\n");
   }
 
-  if (node->node_disp) {
-    W("  if (!object_disp(&_z1, %s, \"%s\")) {\n"
-      "    Exception _e = (Exception) exceptions_get(_z0);\n"
-      "    except_add_call(_z0, _e, \"%s\", \"%s\", %ld);\n"
-      "    return (Object) _e;\n"
-      "  }\n",
-      S(node), S(node),
-      node->fname, ast_get_func(node), node->line);
+  /* write code to free the argument lists. */
+  W("  object_free(&_z1, _ai);\n");
+  W("  object_free(&_z1, _ao);\n");
+
+  /* not a function call. */
+  return 0;
+}
+
+/* write_display(): write a single display statement, or nothing if the
+ * specified ast-node is not meant to be displayed.
+ *
+ * arguments:
+ *  @c: matte compiler to utilize.
+ *  @node: matte ast-node to process.
+ */
+static void write_display (Compiler c, AST node) {
+  /* return if the node should not be displayed. */
+  if (!node->node_disp) return;
+
+  /* otherwise, write the display method. */
+  W("  if (!object_display(&_z1, %s, \"%s\")) {\n"
+    "    Exception _e = (Exception) exceptions_get(_z0);\n"
+    "    except_add_call(_z0, _e, \"%s\", \"%s\", %ld);\n"
+    "    return (Object) _e;\n"
+    "  }\n",
+    S(node), S(node),
+    node->fname, ast_get_func(node), node->line);
+}
+
+/* write_statements(): write a statement or statement list.
+ *
+ * arguments:
+ *  @c: matte compiler to utilize.
+ *  @node: matte ast-node to process.
+ */
+static void write_statements (Compiler c, AST node) {
+  /* do not traverse null nodes. */
+  if (!node) return;
+
+  /* get the current node type. */
+  const ASTNodeType ntype = ast_get_type(node);
+  const ScannerToken ntok = (ScannerToken) ntype;
+
+  /* traverse the current sub-tree based on node type. */
+  if (ntype == AST_TYPE_STATEMENTS) {
+    /* statement lists: visit each child node. */
+    for (int i = 0; i < node->n_down; i++)
+      write_statements(c, node->down[i]);
+
+    /* end traversal. */
+    return;
   }
+  else if (ntype == AST_TYPE_FN_CALL) {
+    /* function calls: traverse the second child. */
+    write_statements(c, node->down[1]);
+  }
+  else if (ntype == AST_TYPE_FUNCTION ||
+           ntok == T_CLASSDEF) {
+    /* functions and class definitions: do not traverse. */
+    return;
+  }
+  else if (ntok == T_IF) {
+    /* FIXME: implement if-statement handling. */
+    return;
+  }
+  else {
+    /* all else: traverse all child nodes. */
+    for (int i = 0; i < node->n_down; i++)
+      write_statements(c, node->down[i]);
+  }
+
+  /* write the statement based on its node type. */
+  if (write_operation(c, node))
+    return;
+  else if (write_concat(c, node))
+    return;
+  else if (write_assign(c, node))
+    return;
+  else if (write_call(c, node))
+    return;
+
+  /* write a display handler, if necessary. */
+  write_display(c, node);
 }
 
 /* write_symbols(): write variable and literal symbol initializers from
@@ -715,7 +853,7 @@ static void write_main (Compiler c) {
     W("int main (int argc, char **argv) {\n"
       "  Object _ao = matte_main(NULL, NULL);\n"
       "  if (IS_EXCEPTION(_ao)) {\n"
-      "    object_disp(NULL, _ao, \"e\");\n"
+      "    object_disp(NULL, _ao);\n"
       "    return 1;\n"
       "  }\n\n"
       "  return 0;\n"
@@ -930,7 +1068,7 @@ static int compile_to_mem (Compiler c) {
 
     /* handle any exceptions. */
     if (IS_EXCEPTION(results))
-      object_disp(NULL, results, "e");
+      object_disp(NULL, results);
 
     /* free the result and return. */
     object_free(NULL, results);
@@ -1203,6 +1341,10 @@ int compiler_add_string (Compiler c, const char *str) {
  *  integer indicating success (1) or failure (0).
  */
 int compiler_execute (Compiler c) {
+  /* check that the compiler is ready for compilation. */
+  if (!c || !c->tree)
+    fail(ERR_COMPILER_EMPTY);
+
   /* simplify horizontal and vertical concatenations. */
   simplify_concats(c->tree);
 

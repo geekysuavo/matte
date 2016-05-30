@@ -255,9 +255,9 @@ inline long range_all (Range r) {
 
 /* range_disp(): display function for ranges.
  */
-int range_disp (Zone z, Range r, const char *var) {
+int range_disp (Zone z, Range r) {
   /* print the range contents and return success. */
-  printf("%s = %ld : %ld : %ld\n", var, r->begin, r->step, r->end);
+  printf("%ld : %ld : %ld\n", r->begin, r->step, r->end);
   return 1;
 }
 

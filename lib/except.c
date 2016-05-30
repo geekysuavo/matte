@@ -71,7 +71,7 @@ Object exceptions_get (Zone z) {
  */
 void exceptions_disp (void) {
   /* display the exception. */
-  object_disp(NULL, (Object) exceptions, "");
+  object_disp(NULL, (Object) exceptions);
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -333,7 +333,7 @@ Object except_addCause (Zone z, Exception e, ObjectList args) {
 
 /* except_disp(): display function for exceptions.
  */
-int except_disp (Zone z, Exception e, const char *var) {
+int except_disp (Zone z, Exception e) {
   /* print the main error message. */
   printf(ANSI_RED "error:" ANSI_NORM " "
          ANSI_BOLD "%s:" ANSI_NORM "\n %s\n\n",

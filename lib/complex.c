@@ -135,11 +135,11 @@ inline void complex_set_value (Complex f, complex double value) {
 
 /* complex_disp(): display function for complex floats.
  */
-int complex_disp (Zone z, Complex f, const char *var) {
+int complex_disp (Zone z, Complex f) {
   const double re = creal(f->value);
   const double im = cimag(f->value);
 
-  printf("%s = %lg %s %lgi\n", var, re,
+  printf("%lg %s %lgi\n", re,
          im < 0.0 ? "-" : "+",
          im < 0.0 ? -im : im);
 

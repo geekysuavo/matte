@@ -16,6 +16,15 @@ x = 55
 
 gtest; gtest; gtest;
 
+% currently working on this:
+if (x > 0)
+  disp('positive');
+elseif (x < 0)
+  disp('negative');
+else
+  disp('zero');
+end
+
 pi = [approx(20), ...
       approx(200), ...
       approx(2000), ...

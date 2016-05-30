@@ -113,8 +113,8 @@ inline void int_set_value (Int i, long value) {
 
 /* int_disp(): display function for integers.
  */
-int int_disp (Zone z, Int i, const char *var) {
-  printf("%s = %ld\n", var, i->value);
+int int_disp (Zone z, Int i) {
+  printf("%ld\n", i->value);
   return 1;
 }
 

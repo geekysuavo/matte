@@ -73,6 +73,8 @@ void exceptions_add (const char *fname, const char *func,
 
 Object exceptions_get (Zone z);
 
+int exceptions_check (void);
+
 void exceptions_disp (void);
 
 /* object function declarations (except.c): */

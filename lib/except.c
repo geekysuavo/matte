@@ -67,6 +67,13 @@ Object exceptions_get (Zone z) {
   return (Object) except_copy(z, exceptions);
 }
 
+/* exceptions_check(): check if any exceptions have occurred.
+ */
+int exceptions_check (void) {
+  /* return whether or not the global exception has been allocated. */
+  return (exceptions ? 1 : 0);
+}
+
 /* exceptions_disp(): display the contents of the global exception.
  */
 void exceptions_disp (void) {

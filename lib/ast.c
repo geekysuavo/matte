@@ -825,6 +825,21 @@ const char *ast_get_symbol_name (AST node) {
   return NULL;
 }
 
+/* ast_has_global_symbol(): check the symbol registered with a matte
+ * ast-node, if any, is globally scoped.
+ *
+ * arguments:
+ *  @node: matte ast-node to access.
+ *
+ * returns:
+ *  integer indicating global (1) or non-global/undefined symbol (0).
+ */
+int ast_has_global_symbol (AST node) {
+  /* check the symbol type. */
+  return symbol_has_type(node->sym_table, node->sym_index - 1,
+                         SYMBOL_GLOBAL);
+}
+
 /* AST_type: object type structure for matte abstract syntax tree nodes.
  */
 struct _ObjectType AST_type = {

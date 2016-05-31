@@ -118,12 +118,11 @@ static void simplify_concats (AST node) {
  * arguments:
  *  @c: matte compiler to utilize.
  *  @node: matte ast-node to process.
- *  @root: root of the matte ast being processed.
  *
  * returns:
  *  integer indicating success (1) or failure (0).
  */
-static int init_symbols (Compiler c, AST node, AST root) {
+static int init_symbols (Compiler c, AST node) {
   /* declare required variables:
    *  @down: general-purpose downstream node.
    *  @sid: symbol index variable.
@@ -204,7 +203,16 @@ static int init_symbols (Compiler c, AST node, AST root) {
       return 0;
 
     /* traverse the function statements (fourth child). */
-    if (!init_symbols(c, node->down[3], root))
+    if (!init_symbols(c, node->down[3]))
+      return 0;
+  }
+  else if (ntok == T_FOR) {
+    /* register the iteration variable (first child). */
+    if (!ast_add_symbol(node->down[0], node->down[0], SYMBOL_VAR))
+      return 0;
+
+    /* traverse the loop statements (third child). */
+    if (!init_symbols(c, node->down[2]))
       return 0;
   }
   else if (ntok == T_GLOBAL) {
@@ -238,7 +246,7 @@ static int init_symbols (Compiler c, AST node, AST root) {
     }
 
     /* register symbols in the right-hand side expressions. */
-    if (!init_symbols(c, node->down[1], root))
+    if (!init_symbols(c, node->down[1]))
       return 0;
   }
   else if (ntok == T_INT) {
@@ -276,7 +284,7 @@ static int init_symbols (Compiler c, AST node, AST root) {
 
     /* perform general traversal. */
     for (i = 0; i < node->n_down; i++) {
-      if (!init_symbols(c, node->down[i], root))
+      if (!init_symbols(c, node->down[i]))
         return 0;
     }
   }
@@ -291,12 +299,11 @@ static int init_symbols (Compiler c, AST node, AST root) {
  * arguments:
  *  @c: matte compiler to utilize.
  *  @node: matte ast-node to process.
- *  @root: root of the matte ast being processed.
  *
  * returns:
  *  integer indicating success (1) or failure (0).
  */
-static int resolve_symbols (Compiler c, AST node, AST root) {
+static int resolve_symbols (Compiler c, AST node) {
   /* declare required variables:
    *  @super: upstream ast-node for symbol searching.
    *  @syms: symbol table for symbol searching.
@@ -355,7 +362,9 @@ static int resolve_symbols (Compiler c, AST node, AST root) {
                                 SYMBOL_TEMP_VAR))
               return 0;
 
-            /* also store the temporary symbol at the root. */
+            /* also store the temporary symbol at the root node
+             * of the function call.
+             */
             super->sym_table = super->down[0]->sym_table;
             super->sym_index = super->down[0]->sym_index;
           }
@@ -377,7 +386,7 @@ static int resolve_symbols (Compiler c, AST node, AST root) {
   }
   else if (ntype == AST_TYPE_FUNCTION) {
     /* traverse only into the statement list. */
-    if (!resolve_symbols(c, node->down[3], root))
+    if (!resolve_symbols(c, node->down[3]))
       return 0;
 
     /* return success. */
@@ -386,7 +395,7 @@ static int resolve_symbols (Compiler c, AST node, AST root) {
 
   /* traverse further into the tree. */
   for (i = 0; i < node->n_down; i++) {
-    if (!resolve_symbols(c, node->down[i], root))
+    if (!resolve_symbols(c, node->down[i]))
       return 0;
   }
 
@@ -512,7 +521,7 @@ static int write_assign (Compiler c, AST node) {
     return 0;
 
   /* assign based on scope. */
-  if (symbol_has_type(node->sym_table, node->sym_index - 1, SYMBOL_GLOBAL))
+  if (ast_has_global_symbol(node))
     W("  %s = object_copy(&_zg, %s);\n", S(node), S(node->down[1]));
   else
     W("  %s = %s;\n", S(node), S(node->down[1]));
@@ -566,13 +575,23 @@ static int write_call (Compiler c, AST node) {
     down = node->down[0];
     if (ast_get_type(down) == (ASTNodeType) T_IDENT) {
       sname = S(down);
-      W("  %s%s = object_list_get((ObjectList) _ao, 0);\n",
-        sname[0] == '_' ? "Object " : "", sname);
+      if (ast_has_global_symbol(down))
+        W("  %s = object_copy(&_zg, "
+          "object_list_get((ObjectList) _ao, 0));\n", sname);
+      else
+        W("  %s%s = object_list_get((ObjectList) _ao, 0);\n",
+          sname[0] == '_' ? "Object " : "", sname);
     }
     else if (ast_get_type(down) == AST_TYPE_ROW) {
-      for (i = 0; i < down->n_down; i++)
-        W("  %s = object_list_get((ObjectList) _ao, %d);\n",
-          S(down->down[i]), i);
+      for (i = 0; i < down->n_down; i++) {
+        if (ast_has_global_symbol(down->down[i]))
+          W("  %s = object_copy(&_zg, "
+            "object_list_get((ObjectList) _ao, %d));\n",
+            S(down->down[i]), i);
+        else
+          W("  %s = object_list_get((ObjectList) _ao, %d);\n",
+            S(down->down[i]), i);
+      }
     }
   }
 
@@ -641,12 +660,33 @@ static int write_flow (Compiler c, AST node) {
   /* get the current node type. */
   const ScannerToken ntok = (ScannerToken) ast_get_type(node);
 
+  /* for break and continue, check that the node is within a loop. */
+  AST loop = node;
+  while (loop) {
+    /* break upon encountering a loop node. */
+    if (ast_get_type(loop) == (ASTNodeType) T_FOR ||
+        ast_get_type(loop) == (ASTNodeType) T_WHILE ||
+        ast_get_type(loop) == (ASTNodeType) T_UNTIL)
+      break;
+
+    /* move up the tree. */
+    loop = loop->up;
+  }
+
   /* write based on the node type. */
   if (ntok == T_BREAK) {
+    /* check that a loop node was found. */
+    if (!loop)
+      asterr(node, ERR_OUTSIDE_LOOP, scanner_token_get_name(ntok));
+
     /* write a simple break and return. */
     W("  break;\n");
   }
   else if (ntok == T_CONTINUE) {
+    /* check that a loop node was found. */
+    if (!loop)
+      asterr(node, ERR_OUTSIDE_LOOP, scanner_token_get_name(ntok));
+
     /* write a simple continue and return. */
     W("  continue;\n");
   }
@@ -868,7 +908,8 @@ static void write_functions (Compiler c) {
 
     W("Object matte_%s (Zone _z0, Object argin) {\n"
       "  ZoneData _z1;\n"
-      "  zone_init(&_z1, %ld);\n\n",
+      "  zone_init(&_z1, %ld);\n"
+      "  Object argout = NULL;\n\n",
       ast_get_string(node->down[1]),
       node->syms->n);
 
@@ -877,23 +918,23 @@ static void write_functions (Compiler c) {
     W("\n");
     write_statements(c, node->down[3]);
 
-    W("\n");
+    W("\n"
+      "wrap:\n");
     down = node->down[0];
     if (!down) {
-      W("  Object argout = object_list_argout(_z0, 0);\n");
+      W("  argout = object_list_argout(_z0, 0);\n");
     }
     else if (down->n_down) {
-      W("  Object argout = object_list_argout(_z0, %d", down->n_down);
+      W("  argout = object_list_argout(_z0, %d", down->n_down);
       for (j = 0; j < down->n_down; j++)
         W(", %s", ast_get_string(down->down[j]));
       W(");\n");
     }
     else {
-      W("  Object argout = object_list_argout(_z0, 1, %s);\n", S(down));
+      W("  argout = object_list_argout(_z0, 1, %s);\n", S(down));
     }
 
-    W("wrap:\n"
-      "  object_free_all(&_z1);\n"
+    W("  object_free_all(&_z1);\n"
       "  return argout;\n"
       "}\n\n");
   }
@@ -1426,11 +1467,11 @@ int compiler_execute (Compiler c) {
   simplify_concats(c->tree);
 
   /* initialize the symbol tables inside the syntax tree. */
-  if (!init_symbols(c, c->tree, c->tree))
+  if (!init_symbols(c, c->tree))
     return 0;
 
   /* resolve symbols required by the syntax tree. */
-  if (!resolve_symbols(c, c->tree, c->tree))
+  if (!resolve_symbols(c, c->tree))
     return 0;
 
   /* write global symbols and functions. */
@@ -1440,6 +1481,10 @@ int compiler_execute (Compiler c) {
   /* write the main function. */
   write_main(c);
 
+  /* perform an explicit check for exceptions. */
+  if (exceptions_check())
+    fail(ERR_COMPILER_GENERAL);
+
   /* determine the compilation mode. */
   switch (c->mode) {
     /* supported modes: */
@@ -1448,7 +1493,7 @@ int compiler_execute (Compiler c) {
     case COMPILE_TO_MEM: return compile_to_mem(c);
 
     /* any other mode: */
-    default: fail("matte:compiler", "unsupported compilation type");
+    default: fail(ERR_COMPILER_MODE);
   }
 
   /* return success. */

@@ -71,11 +71,20 @@
 #define ERR_INVALID_ARGIN \
   "matte:invalid-input-arg", "one or more invalid arguments"
 
+#define ERR_OUTSIDE_LOOP \
+  "matte:compiler", "found '" ANSI_BOLD "%s" ANSI_NORM "' outside of a loop"
+
 #define ERR_UNDEFINED_SYMBOL \
   "matte:compiler", "symbol '" ANSI_BOLD "%s" ANSI_NORM "' is undefined"
 
+#define ERR_COMPILER_GENERAL \
+  "matte:compiler", "compilation errors occured"
+
 #define ERR_COMPILER_EMPTY \
   "matte:compiler", "no input files supplied"
+
+#define ERR_COMPILER_MODE \
+  "matte:compiler", "unsupported compilation mode"
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 

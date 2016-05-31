@@ -211,8 +211,13 @@ static int init_symbols (Compiler c, AST node) {
     if (!ast_add_symbol(node->down[0], node->down[0], SYMBOL_VAR))
       return 0;
 
-    /* traverse the loop statements (third child). */
-    if (!init_symbols(c, node->down[2]))
+    /* register a symbol for the iterator. */
+    if (!symbols_add(ast_get_symbols(node), SYMBOL_VAR, "_it"))
+      return 0;
+
+    /* traverse the loop expression and statements (second, third child). */
+    if (!init_symbols(c, node->down[1]) ||
+        !init_symbols(c, node->down[2]))
       return 0;
   }
   else if (ntok == T_GLOBAL) {
@@ -335,7 +340,7 @@ static int resolve_symbols (Compiler c, AST node) {
         node->sym_index = sid;
 
         /* check if the symbol is a function. */
-        if (super->syms->sym_type[sid - 1] & SYMBOL_FUNC) {
+        if (symbol_has_type(super->syms, sid - 1, SYMBOL_FUNC)) {
           /* get the symbol table for the node. */
           syms = ast_get_symbols(node);
           if (!syms) return 0;
@@ -649,6 +654,54 @@ static int write_if (Compiler c, AST node, int i) {
   return 1;
 }
 
+/* write_for(): write a for-statement block, or nothing if the specified
+ * ast-node is not a for loop.
+ *
+ * arguments;
+ *  @c: matte compiler to utilize.
+ *  @node: matte ast-node to process.
+ *  @i: offset in the child node array.
+ */
+static int write_for (Compiler c, AST node) {
+  /* get the current node type. */
+  const ScannerToken ntok = (ScannerToken) ast_get_type(node);
+
+  /* accept for loops. */
+  if (ntok != T_FOR)
+    return 0;
+
+  /* determine the scope/zone of the iteration variable. */
+  const char *itzone = (ast_has_global_symbol(node->down[0]) ?
+                        "&_zg" : "&_z1");
+
+  /* get references to the child nodes. */
+  AST var = node->down[0];
+  AST expr = node->down[1];
+  AST stmts = node->down[2];
+
+  /* evaluate the iteration expression. */
+  write_statements(c, expr);
+
+  /* create an iterator from the evaluated expression. */
+  W("  _it = (Object) iter_new(&_z1, %s);\n", S(expr));
+  E("_it", var);
+
+  /* write the loop head and variable assignment. */
+  W("  while (iter_next(%s, (Iter) _it)) {\n", itzone);
+  W("  %s = iter_get_value((Iter) _it);\n", S(var));
+  E(S(var), var);
+
+  /* write the body of the loop. */
+  write_statements(c, stmts);
+  W("  }\n");
+
+  /* write code to free the iterator. */
+  W("  object_free(&_z1, _it);\n");
+
+  /* return true. */
+  return 1;
+}
+
 /* write_flow(): write a control flow statement, or nothing if the specified
  * ast-node is not a such a statement.
  *
@@ -752,8 +805,9 @@ static void write_statements (Compiler c, AST node) {
     /* functions and class definitions: do not traverse. */
     return;
   }
-  else if (write_if(c, node, 0)) {
-    /* if blocks: write and return. */
+  else if (write_if(c, node, 0) ||
+           write_for(c, node)) {
+    /* if and for blocks: write and return. */
     return;
   }
   else {

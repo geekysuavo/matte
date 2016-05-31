@@ -624,9 +624,9 @@ Vector float_colon (Zone z, Object a, Object b, Object c) {
     return NULL;
 
   if (IS_FLOAT(b))
-    step = float_get_value((Float) a);
+    step = float_get_value((Float) b);
   else if (IS_INT(b))
-    step = (double) int_get_value((Int) a);
+    step = (double) int_get_value((Int) b);
   else
     return NULL;
 

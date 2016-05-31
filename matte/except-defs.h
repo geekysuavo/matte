@@ -74,6 +74,10 @@
 #define ERR_OUTSIDE_LOOP \
   "matte:compiler", "found '" ANSI_BOLD "%s" ANSI_NORM "' outside of a loop"
 
+#define ERR_ITER_SUPPORT \
+  "matte:iterator", \
+  "iteration on '" ANSI_BOLD "%s" ANSI_NORM "' is not supported"
+
 #define ERR_UNDEFINED_SYMBOL \
   "matte:compiler", "symbol '" ANSI_BOLD "%s" ANSI_NORM "' is undefined"
 

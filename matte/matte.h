@@ -20,6 +20,7 @@
 #include <matte/object.h>
 #include <matte/except.h>
 #include <matte/object-list.h>
+#include <matte/iter.h>
 
 /* include the matte non-numeric object headers. */
 #include <matte/cell.h>

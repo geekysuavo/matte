@@ -47,6 +47,7 @@ Vector vector_new (Zone z, Object args) {
   /* initialize the transposition state. */
   x->tr = CblasNoTrans;
 
+  /* return the new vector. */
   return x;
 }
 

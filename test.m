@@ -12,18 +12,11 @@ function y = gtest
   end
 end
 
-k = 'foo';
 x = 55
-k1 = 1;
-k2 = 5;
-for k = k1 : k2, gtest; end
 
-x = 0;
-gtest;
-
-x = 0 : 0.1 : 1
-for value = x
-  disp(value);
+k = 1;
+while (k < 5)
+  gtest;
+  k += 1; % inc/dec not yet implemented
 end
-disp(sprintf('value is now %lf', value));
 

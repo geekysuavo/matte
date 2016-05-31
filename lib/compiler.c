@@ -663,10 +663,8 @@ static int write_if (Compiler c, AST node, int i) {
  *  @i: offset in the child node array.
  */
 static int write_for (Compiler c, AST node) {
-  /* get the current node type. */
-  const ScannerToken ntok = (ScannerToken) ast_get_type(node);
-
   /* accept for loops. */
+  const ScannerToken ntok = (ScannerToken) ast_get_type(node);
   if (ntok != T_FOR)
     return 0;
 
@@ -697,6 +695,64 @@ static int write_for (Compiler c, AST node) {
 
   /* write code to free the iterator. */
   W("  object_free(&_z1, _it);\n");
+
+  /* return true. */
+  return 1;
+}
+
+/* write_while(): write a while loop block, or nothing if the specified
+ * ast-node is not a while loop.
+ *
+ * arguments;
+ *  @c: matte compiler to utilize.
+ *  @node: matte ast-node to process.
+ *  @i: offset in the child node array.
+ */
+static int write_while (Compiler c, AST node) {
+  /* accept while loops. */
+  const ScannerToken ntok = (ScannerToken) ast_get_type(node);
+  if (ntok != T_WHILE)
+    return 0;
+
+  /* get references to the child nodes. */
+  AST expr = node->down[0];
+  AST stmts = node->down[1];
+
+  /* write the while block. */
+  W("  while (1) {\n");
+  write_statements(c, expr);
+  W("  if (!object_is_true(%s)) break;\n", S(expr));
+  write_statements(c, stmts);
+  W("  }\n");
+
+  /* return true. */
+  return 1;
+}
+
+/* write_until(): write a do-until loop block, or nothing if the specified
+ * ast-node is not a do-until loop.
+ *
+ * arguments;
+ *  @c: matte compiler to utilize.
+ *  @node: matte ast-node to process.
+ *  @i: offset in the child node array.
+ */
+static int write_until (Compiler c, AST node) {
+  /* accept do-until loops. */
+  const ScannerToken ntok = (ScannerToken) ast_get_type(node);
+  if (ntok != T_UNTIL)
+    return 0;
+
+  /* get references to the child nodes. */
+  AST stmts = node->down[0];
+  AST expr = node->down[1];
+
+  /* write the do-until block. */
+  W("  while (1) {\n");
+  write_statements(c, stmts);
+  write_statements(c, expr);
+  W("  if (object_is_true(%s)) break;\n", S(expr));
+  W("  }\n");
 
   /* return true. */
   return 1;
@@ -806,8 +862,10 @@ static void write_statements (Compiler c, AST node) {
     return;
   }
   else if (write_if(c, node, 0) ||
-           write_for(c, node)) {
-    /* if and for blocks: write and return. */
+           write_for(c, node) ||
+           write_while(c, node) ||
+           write_until(c, node)) {
+    /* if, for, while and until blocks: write and return. */
     return;
   }
   else {

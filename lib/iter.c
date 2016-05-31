@@ -17,6 +17,48 @@
 #include <matte/complex-vector.h>
 #include <matte/complex-matrix.h>
 
+/* next_int(): increment the value of an integer-based iterator.
+ */
+static int next_int (Zone z, Iter it) {
+  /* check if initialization is required. */
+  if (!it->val) {
+    /* initialize the iteration value. */
+    it->val = (Object) int_copy(z, (Int) it->obj);
+    return 1;
+  }
+
+  /* integers are valid for a single iteration. */
+  return 0;
+}
+
+/* next_float(): increment the value of a float-based iterator.
+ */
+static int next_float (Zone z, Iter it) {
+  /* check if initialization is required. */
+  if (!it->val) {
+    /* initialize the iteration value. */
+    it->val = (Object) float_copy(z, (Float) it->obj);
+    return 1;
+  }
+
+  /* floats are valid for a single iteration. */
+  return 0;
+}
+
+/* next_complex(): increment the value of a complex-based iterator.
+ */
+static int next_complex (Zone z, Iter it) {
+  /* check if initialization is required. */
+  if (!it->val) {
+    /* initialize the iteration value. */
+    it->val = (Object) complex_copy(z, (Complex) it->obj);
+    return 1;
+  }
+
+  /* complex floats are valid for a single iteration. */
+  return 0;
+}
+
 /* next_range(): increment the value of a range-based iterator.
  */
 static int next_range (Zone z, Iter it) {
@@ -63,6 +105,32 @@ static int next_vector (Zone z, Iter it) {
 
     /* update the iteration value. */
     float_set_value((Float) it->val, x->data[it->i]);
+  }
+
+  /* return for another iteration. */
+  return 1;
+}
+
+/* next_complex_vector(): increment the value of a complex vector-based
+ * iterator.
+ */
+static int next_complex_vector (Zone z, Iter it) {
+  /* get the iteration object. */
+  ComplexVector x = (ComplexVector) it->obj;
+
+  /* check if initialization is required. */
+  if (!it->val) {
+    /* initialize the iteration value. */
+    it->i = 0;
+    it->val = (Object) complex_new_with_value(z, x->data[0]);
+  }
+  else {
+    /* check if the vector has been exhausted. */
+    if (++it->i >= x->n)
+      return 0;
+
+    /* update the iteration value. */
+    complex_set_value((Complex) it->val, x->data[it->i]);
   }
 
   /* return for another iteration. */
@@ -127,6 +195,16 @@ int iter_next (Zone z, Iter it) {
     return next_range(z, it);
   else if (type == vector_type())
     return next_vector(z, it);
+  else if (type == complex_vector_type())
+    return next_complex_vector(z, it);
+  /* FIXME: handle matrix iteration. */
+  /* FIXME: handle complex matrix iteration. */
+  else if (type == int_type())
+    return next_int(z, it);
+  else if (type == float_type())
+    return next_float(z, it);
+  else if (type == complex_type())
+    return next_complex(z, it);
 
   /* unsupported type: throw an exception. */
   error(ERR_ITER_SUPPORT, type->name);

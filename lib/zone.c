@@ -49,7 +49,7 @@ int zone_init (Zone z, unsigned long n) {
   memset(z->data, 0, n * ZONE_UNIT);
 
   /* initialize the contents of the availability array. */
-  for (unsigned long i = z->n; i < n; i++)
+  for (unsigned long i = 0; i < n; i++)
     z->av[i] = i;
 
   /* store the size information into the zone. */
@@ -75,10 +75,11 @@ int zone_init (Zone z, unsigned long n) {
 void *zone_alloc (Zone z) {
   /* declare required variables:
    *  @i: unit index for the new pointer.
-   *  @n: zone size for reallocation.
+   *  @n: zone unit count for expansion.
+   *  @sz: memory block size.
    *  @ptr: unit pointer.
    */
-  unsigned long i, n;
+  unsigned long i, n, sz;
   Zone zsrc;
   void *ptr;
 
@@ -98,14 +99,30 @@ void *zone_alloc (Zone z) {
     n += (n >> 3) + (n < 9 ? 3 : 6);
 
     /* allocate a pointer to the next block. */
-    zsrc->next = (Zone) malloc(sizeof(struct _Zone));
+    sz = sizeof(ZoneData) + (n * (ZONE_UNIT + sizeof(unsigned long)));
+    zsrc->next = (Zone) malloc(sz);
     if (!zsrc->next)
       return NULL;
 
-    /* initialize the allocated block. */
+    /* move to the newly allocated block. */
     zsrc = zsrc->next;
-    if (!zone_init(zsrc, n))
-      return NULL;
+    zsrc->next = NULL;
+
+    /* set the zone data pointers into the allocated block. */
+    zsrc->data = ((char*) zsrc) + sizeof(ZoneData);
+    zsrc->dend = ((char*) zsrc->data) + (n * ZONE_UNIT);
+    zsrc->n = n;
+
+    /* set the availability array pointer into the allocated block. */
+    zsrc->av = (unsigned long*) zsrc->dend;
+    zsrc->nav = n;
+
+    /* initialize the contents of the data block. */
+    memset(zsrc->data, 0, n * ZONE_UNIT);
+
+    /* initialize the contents of the availability array. */
+    for (unsigned long i = 0; i < n; i++)
+      zsrc->av[i] = i;
   }
 
   /* get the first available unit index. */

@@ -619,7 +619,26 @@ PARSE_RULE (postfix)
     return NULL;
 
   if (match(p, T_INC) || match(p, T_DEC)) {
-    node = ast_new_with_data(p, node);
+    if (ast_get_type(node) != (ASTNodeType) T_IDENT)
+      PARSE_ERR_MISSING("name");
+
+    const ScannerToken tbin = (match(p, T_INC) ? T_PLUS : T_MINUS);
+    next(p);
+
+    AST lhs = ast_copy(node);
+    lhs = ast_new_with_parms(T_ASSIGN, false, lhs);
+    ast_set_context(p, lhs);
+
+    AST rhs = ast_new_with_type(T_INT);
+    ast_set_context(p, rhs);
+    ast_set_int(rhs, 1L);
+
+    node = ast_new_with_parms(tbin, false, node);
+    ast_set_context(p, node);
+    ast_add_down(node, rhs);
+
+    ast_add_down(lhs, node);
+    node = lhs;
   }
 
   return node;

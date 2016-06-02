@@ -115,20 +115,27 @@ void object_free_all (Zone z) {
   if (!z)
     return;
 
-  /* compute the unit stride over the zone data, and initialize
-   * a pointer into the zone data.
-   */
-  const unsigned long stride = z->usz;
-  char *ptr = z->data;
+  /* loop over each block of the zone. */
+  Zone zsrc = z;
+  while (zsrc) {
+    /* compute the unit stride over the zone data, and initialize
+     * a pointer into the zone data.
+     */
+    const unsigned long stride = (zsrc->dend - zsrc->data) / zsrc->n;
+    char *ptr = zsrc->data;
 
-  /* loop over all units of the zone. */
-  for (unsigned long i = 0; i < z->n; i++, ptr += stride) {
-    /* get the type of the current unit. */
-    ObjectType type = MATTE_TYPE(ptr);
+    /* loop over all units of the zone. */
+    for (unsigned long i = 0; i < zsrc->n; i++, ptr += stride) {
+      /* get the type of the current unit. */
+      ObjectType type = MATTE_TYPE(ptr);
 
-    /* if the type is valid and contains a destructor, execute it. */
-    if (type && type->fn_delete)
-      type->fn_delete(z, (Object) ptr);
+      /* if the type is valid and contains a destructor, execute it. */
+      if (type && type->fn_delete)
+        type->fn_delete(z, (Object) ptr);
+    }
+
+    /* move to the next block. */
+    zsrc = zsrc->next;
   }
 
   /* destroy the zone. */

@@ -2,22 +2,13 @@
 function y = gtest
   global x;
   y = x .*= -0.1
-
-  if (x > 0)
-    disp('x is positive');
-  elseif (x < 0)
-    disp('x is negative');
-  else
-    disp('x is zero');
-  end
 end
 
 x = 55
 
 k = 1;
-while (foo = k < 5)
-  disp(foo);
+while (k < 100)
   gtest;
-  ++k;
+  k++;
 end
 

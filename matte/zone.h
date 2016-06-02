@@ -18,18 +18,21 @@ typedef struct _Zone ZoneData;
 /* _Zone: structure for holding a zone allocation context.
  */
 struct _Zone {
-  /* @data: chunk of object struct data.
+  /* @data: block of object struct data.
+   * @dend: end of the object data block.
    * @n: number of objects in the zone.
-   * @sz: number of bytes in the zone.
-   * @usz: number of bytes per object.
    */
-  void *data;
-  unsigned long n, sz, usz;
+  void *data, *dend;
+  unsigned long n;
 
   /* @av: array of available zone positions.
    * @nav: size of the availability array.
    */
   unsigned long *av, nav;
+
+  /* @next: next block of the zone allocation context.
+   */
+  Zone next;
 };
 
 /* function declarations (zone.c): */

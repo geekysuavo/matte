@@ -12,62 +12,6 @@
  */
 #define ZONE_UNIT  64
 
-/* FIXME: the zone allocator is really up a creek. in fact, resize()
- * will *invalidate* all prior pointers held by the zone! thus, two
- * things become critically important:
- *
- *  - code should avoid over-allocating objects from their zones.
- *  - zones can never call realloc(), only malloc()... ugh.
- *
- * basically, each zone will hold an array of chunks, where an
- * extra index is stored for each object to indicate its chunk
- * membership.
- *
- * probably also good to ensure that objects are allocated more or
- * less in-order within their zone chunk.
- */
-
-/* resize(): resize the contents of a zone allocator structure.
- *
- * arguments:
- *  @z: pointer to the zone structure to modify.
- *  @n: number of units to reserve for allocation.
- *
- * returns:
- *  integer indicating success (1) or failure (0).
- */
-static int resize (Zone z, unsigned long n) {
-  /* never decrease the size of the zone. */
-  if (n < z->n)
-    return 1;
-
-  /* reallocate the zone data chunk. */
-  z->data = realloc(z->data, n * ZONE_UNIT);
-  if (!z->data)
-    return 0;
-
-  /* reallocate the zone availability array. */
-  z->av = (unsigned long*) malloc(n * sizeof(unsigned long));
-  if (!z->av)
-    return 0;
-
-  /* initialize the contents of the data chunk. */
-  memset(((char*) z->data) + z->n, 0, (n - z->n) * ZONE_UNIT);
-
-  /* initialize the contents of the availability array. */
-  for (unsigned long i = z->n; i < n; i++)
-    z->av[z->nav++] = i;
-
-  /* store the size information into the zone. */
-  z->sz = n * ZONE_UNIT;
-  z->n = n;
-
-  /* return success. */
-  return 1;
-}
-
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
 /* zone_init(): initialize the contents of a zone allocator structure.
  *
  * arguments:
@@ -81,22 +25,46 @@ int zone_init (Zone z, unsigned long n) {
   /* fail if the zone pointer is null. */
   if (!z) return 0;
 
-  /* initialize the zone data chunk and availability array. */
+  /* initialize the zone data block and availability array. */
   z->data = NULL;
   z->av = NULL;
 
   /* initialize the zone size information. */
-  z->n = z->sz = z->nav = 0;
-  z->usz = ZONE_UNIT;
+  z->n = z->nav = 0;
 
-  /* resize the zone structure. */
-  return resize(z, n);
+  /* initialize the zone chain pointer. */
+  z->next = NULL;
+
+  /* allocate the zone data block. */
+  z->data = malloc(n * ZONE_UNIT);
+  if (!z->data)
+    return 0;
+
+  /* allocate the zone availability array. */
+  z->av = (unsigned long*) malloc(n * sizeof(unsigned long));
+  if (!z->av)
+    return 0;
+
+  /* initialize the contents of the data block. */
+  memset(z->data, 0, n * ZONE_UNIT);
+
+  /* initialize the contents of the availability array. */
+  for (unsigned long i = z->n; i < n; i++)
+    z->av[i] = i;
+
+  /* store the size information into the zone. */
+  z->dend = ((char*) z->data) + (n * ZONE_UNIT);
+  z->n = z->nav = n;
+
+  /* return success. */
+  return 1;
 }
 
 /* zone_alloc(): return a new unit of memory from a zone allocator.
  *
- * if the zone contains no available units, then it's chunk will be
- * resized using realloc() to make room for the new unit.
+ * if the zone contains no available units, then a new block will be
+ * added to the zone, and the new unit will be returned from the new
+ * block.
  *
  * arguments:
  *  @z: pointer to the zone structure to utilize.
@@ -111,30 +79,42 @@ void *zone_alloc (Zone z) {
    *  @ptr: unit pointer.
    */
   unsigned long i, n;
+  Zone zsrc;
   void *ptr;
 
   /* use malloc() if the zone pointer is null. */
   if (!z)
     return malloc(ZONE_UNIT);
 
-  /* resize the data chunk, if necessary. */
-  if (!z->nav) {
-    /* slightly over-reserve to achieve amortized O(1) "appends". */
-    n = z->n + 1;
+  /* locate the first non-empty zone block. */
+  zsrc = z;
+  while (!zsrc->nav && zsrc->next)
+    zsrc = zsrc->next;
+
+  /* check if no blocks are non empty. */
+  if (!zsrc->nav) {
+    /* reserve a slightly larger block than the previous one. */
+    n = zsrc->nav;
     n += (n >> 3) + (n < 9 ? 3 : 6);
 
-    /* resize the chunk. */
-    if (!resize(z, n))
+    /* allocate a pointer to the next block. */
+    zsrc->next = (Zone) malloc(sizeof(struct _Zone));
+    if (!zsrc->next)
+      return NULL;
+
+    /* initialize the allocated block. */
+    zsrc = zsrc->next;
+    if (!zone_init(zsrc, n))
       return NULL;
   }
 
   /* get the first available unit index. */
-  i = z->av[0];
-  ptr = ((char*) z->data) + (i * ZONE_UNIT);
+  i = zsrc->av[0];
+  ptr = ((char*) zsrc->data) + (i * ZONE_UNIT);
 
   /* swap in a new unit index for the next allocation. */
-  z->av[0] = z->av[z->nav - 1];
-  z->nav--;
+  zsrc->av[0] = zsrc->av[zsrc->nav - 1];
+  zsrc->nav--;
 
   /* return the new pointer. */
   return ptr;
@@ -142,31 +122,41 @@ void *zone_alloc (Zone z) {
 
 /* zone_free(): release a unit of memory back to a zone allocator.
  *
- * this function performs no bounds checking, so the user must be certain
- * that the memory to be freed was indeed allocated by the passed zone.
- *
  * arguments:
  *  @z: pointer to the zone structure to utilize.
  *  @ptr: pointer to the unit's memory to release.
  */
 void zone_free (Zone z, void *ptr) {
+  /* do not attempt to free null pointers. */
+  if (!ptr) return;
+
   /* use free() if the zone pointer is null. */
   if (!z) {
     free(ptr);
     return;
   }
 
-  /* do not attempt to free null pointers. */
-  if (!ptr) return;
+  /* loop until the correct block is identified. */
+  Zone zsrc = z;
+  while (zsrc) {
+    /* check if the pointer is within the current block. */
+    if (ptr >= zsrc->data && ptr < zsrc->dend) {
+      /* compute the offset of the pointer in the zone data block. */
+      const unsigned long i = ((char*) ptr - (char*) zsrc->data) / ZONE_UNIT;
 
-  /* compute the offset of the pointer in the zone data chunk. */
-  const unsigned long i = ((char*) ptr - (char*) z->data) / ZONE_UNIT;
+      /* place the offset back into the availability array. */
+      zsrc->av[zsrc->nav++] = i;
 
-  /* place the offset back into the availability array. */
-  z->av[z->nav++] = i;
+      /* re-initialize the released memory. */
+      memset(ptr, 0, ZONE_UNIT);
 
-  /* re-initialize the released memory. */
-  memset(ptr, 0, ZONE_UNIT);
+      /* the pointer is freed. return without checking the next blocks. */
+      return;
+    }
+
+    /* no dice. move to the next block. */
+    zsrc = zsrc->next;
+  }
 }
 
 /* zone_destroy(): release all allocated memory associated with a zone
@@ -182,14 +172,22 @@ void zone_destroy (Zone z) {
   if (!z) return;
 
   /* reset the data sizes. */
-  z->n = z->sz = z->nav = 0;
+  z->n = z->nav = 0;
 
   /* free the zone data. */
   free(z->data);
   z->data = NULL;
+  z->dend = NULL;
 
   /* free the availability array. */
   free(z->av);
   z->av = NULL;
+
+  /* free the next block. */
+  if (z->next) {
+    zone_destroy(z->next);
+    free(z->next);
+    z->next = NULL;
+  }
 }
 

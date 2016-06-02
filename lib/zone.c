@@ -12,6 +12,21 @@
  */
 #define ZONE_UNIT  64
 
+/* FIXME: the zone allocator is really up a creek. in fact, resize()
+ * will *invalidate* all prior pointers held by the zone! thus, two
+ * things become critically important:
+ *
+ *  - code should avoid over-allocating objects from their zones.
+ *  - zones can never call realloc(), only malloc()... ugh.
+ *
+ * basically, each zone will hold an array of chunks, where an
+ * extra index is stored for each object to indicate its chunk
+ * membership.
+ *
+ * probably also good to ensure that objects are allocated more or
+ * less in-order within their zone chunk.
+ */
+
 /* resize(): resize the contents of a zone allocator structure.
  *
  * arguments:
@@ -45,7 +60,7 @@ static int resize (Zone z, unsigned long n) {
 
   /* store the size information into the zone. */
   z->sz = n * ZONE_UNIT;
-  z->n = z->nav = n;
+  z->n = n;
 
   /* return success. */
   return 1;

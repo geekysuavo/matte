@@ -15,8 +15,9 @@ end
 x = 55
 
 k = 1;
-while (k < 5)
+while (foo = k < 5)
+  disp(foo);
   gtest;
-  k += 1; % inc/dec not yet implemented
+  ++k;
 end
 

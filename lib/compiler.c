@@ -702,7 +702,8 @@ static int write_switch (Compiler c, AST node, int i) {
     write_statements(c, value);
     W("  _sw = object_eq(&_z1, %s, %s);\n", S(expr), S(value));
     E("_sw", value);
-    W("  if (object_is_true(_sw)) {\n");
+    W("  if (object_is_true(_sw)) {\n"
+      "  object_free(&_z1, _sw);\n");
     write_statements(c, stmts);
     W("  }\n");
 

@@ -71,6 +71,11 @@
 #define ERR_INVALID_ARGIN \
   "matte:invalid-input-arg", "one or more invalid arguments"
 
+#define ERR_INVALID_TRY \
+  "matte:compiler", \
+  "found illegal " ANSI_BOLD "try" ANSI_NORM \
+  " within " ANSI_BOLD "try" ANSI_NORM
+
 #define ERR_OUTSIDE_LOOP \
   "matte:compiler", "found '" ANSI_BOLD "%s" ANSI_NORM "' outside of a loop"
 

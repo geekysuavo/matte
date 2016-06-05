@@ -652,6 +652,17 @@ static int write_try (Compiler c, AST node) {
   if (ntok != T_TRY)
     return 0;
 
+  /* feebly attempt to disallow nesting of try within try. */
+  AST up = node->up;
+  while (up) {
+    /* fail on encountering a try. */
+    if (ast_get_type(up) == (ASTNodeType) T_TRY)
+      asterr(node, ERR_INVALID_TRY);
+
+    /* move up the tree. */
+    up = up->up;
+  }
+
   /* store the name of the catch variable. */
   c->cvar = S(node->down[1]);
 

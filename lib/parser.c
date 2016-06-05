@@ -1003,8 +1003,10 @@ PARSE_RULE (try)
   if (!accept(p, T_TRY))
     return NULL;
 
+  SAVE_CONTEXT;
   PARSE_REQUIRE_STMT_END;
   node = ast_new_with_type(T_TRY);
+  ast_set_source(node, SAVED_CONTEXT);
   ast_add_down(node, parse_stmts(p));
 
   PARSE_REQUIRE(T_CATCH);

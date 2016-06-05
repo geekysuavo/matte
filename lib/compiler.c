@@ -21,8 +21,18 @@
  * from a matte ast-node.
  */
 #define E(var, nd) \
-  W("  EXCEPT_HANDLE(%s, \"%s\", \"%s\", %ld);\n", \
-    var, nd->fname, ast_get_func(nd), nd->line);
+  if (c->catching) { \
+    W("  EXCEPT_CATCH(%s, %s, %s, \"%s\", \"%s\", %ld);\n", \
+      var, c->cvar, c->clbl, nd->fname, ast_get_func(nd), nd->line); \
+  } else { \
+    W("  EXCEPT_HANDLE(%s, \"%s\", \"%s\", %ld);\n", \
+      var, nd->fname, ast_get_func(nd), nd->line); }
+
+/* NEW_LABEL: macro function to construct a new label string and store it
+ * in the current matte compiler.
+ */
+#define NEW_LABEL \
+  sprintf(c->clbl, "lbl%ld", c->cidx++)
 
 /* asterr(): macro function to print an immediate compiler error message
  * using information from a matte ast-node.
@@ -230,6 +240,16 @@ static int init_symbols (Compiler c, AST node) {
       if (!init_symbols(c, node->down[i]))
         return 0;
     }
+  }
+  else if (ntok == T_TRY) {
+    /* register the catch variable. */
+    if (!ast_add_symbol(node->down[1], node->down[1], SYMBOL_VAR))
+      return 0;
+
+    /* traverse the try and catch statement lists (first, third child). */
+    if (!init_symbols(c, node->down[0]) ||
+        !init_symbols(c, node->down[2]))
+      return 0;
   }
   else if (ntok == T_GLOBAL) {
     /* register global symbols. */
@@ -619,6 +639,51 @@ static int write_call (Compiler c, AST node) {
   return 1;
 }
 
+/* write_try(): write a try/catch-statement block, or nothing if the
+ * specified ast-node is not a try/catch block.
+ *
+ * arguments;
+ *  @c: matte compiler to utilize.
+ *  @node: matte ast-node to process.
+ */
+static int write_try (Compiler c, AST node) {
+  /* accept try-statement blocks. */
+  const ScannerToken ntok = (ScannerToken) ast_get_type(node);
+  if (ntok != T_TRY)
+    return 0;
+
+  /* store the name of the catch variable. */
+  c->cvar = S(node->down[1]);
+
+  /* catch any exceptions from the try block. */
+  c->catching = true;
+  write_statements(c, node->down[0]);
+  c->catching = false;
+
+  /* store a copy of the catch block label, and generate a new label. */
+  char *lbl = strdup(c->clbl);
+  NEW_LABEL;
+
+  /* write code that will bypass the catch if no exceptions occurred. */
+  W("  goto %s;\n%s: ;\n", c->clbl, lbl);
+
+  /* store the new label string. */
+  free(lbl);
+  lbl = strdup(c->clbl);
+  NEW_LABEL;
+
+  /* write the catch statements. */
+  write_statements(c, node->down[2]);
+  W("%s: ;\n", lbl);
+  free(lbl);
+
+  /* unset the catch variable name. */
+  c->cvar = NULL;
+
+  /* return true. */
+  return 1;
+}
+
 /* write_if(): write an if-statement block, or nothing if the specified
  * ast-node is not an if block.
  *
@@ -929,12 +994,13 @@ static void write_statements (Compiler c, AST node) {
     /* functions and class definitions: do not traverse. */
     return;
   }
-  else if (write_if(c, node, 0) ||
+  else if (write_try(c, node) ||
+           write_if(c, node, 0) ||
            write_switch(c, node, 0) ||
            write_for(c, node) ||
            write_while(c, node) ||
            write_until(c, node)) {
-    /* if, for, while and until blocks: write and return. */
+    /* try, if, switch, for, while and until blocks: write and return. */
     return;
   }
   else {
@@ -1443,9 +1509,14 @@ Compiler compiler_new (Zone z, Object args) {
   c->fout = string_new(NULL, NULL);
   c->cflags = string_new(NULL, NULL);
 
-  /* initialize the c code and error strings. */
+  /* initialize the c code string. */
   c->ccode = string_new(NULL, NULL);
-  c->cerr = NULL;
+
+  /* initialize the catch variables. */
+  c->catching = false;
+  c->cvar = NULL;
+  c->cidx = 0;
+  NEW_LABEL;
 
   /* initialize the error count. */
   c->err = 0L;
@@ -1484,9 +1555,8 @@ void compiler_delete (Zone z, Compiler c) {
   object_free(NULL, c->fout);
   object_free(NULL, c->cflags);
 
-  /* free the c code and error strings. */
+  /* free the c code string. */
   object_free(NULL, c->ccode);
-  free(c->cerr);
 }
 
 /* compiler_set_mode(): set the output mode of a compiler.

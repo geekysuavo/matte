@@ -4,20 +4,13 @@ function y = gtest
   y = x .*= -0.1
 end
 
-x = 1
-y = 2
-z = 3
-
-value = 2
-
-switch value
-  case x
-    disp('value equals x');
-  case y
-    disp('value equals y');
-  case z
-    disp('value equals z');
-  otherwise
-    disp('value is different');
+try
+  test = [1; 2; 3] == 3;
+catch ex
+  disp(['caught exception!'; 'here it be...'; '']);
+  disp(ex);
 end
+
+disp('this will execute, despite the error:');
+x = 1 + 1
 

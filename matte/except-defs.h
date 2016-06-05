@@ -143,5 +143,13 @@
 #define EXCEPT_HANDLE(var, fi, fn, ln) \
   if (IS_EXCEPTION(var)) EXCEPT_PROPAGATE(var, fi, fn, ln)
 
+/* EXCEPT_CATCH: macro function to handle exceptions within a try block.
+ */
+#define EXCEPT_CATCH(var, catchvar, lbl, fi, fn, ln) \
+  if (IS_EXCEPTION(var)) { \
+    except_add_call(&_z1, (Exception) var, fi, fn, ln); \
+    catchvar = var; \
+    goto lbl; }
+
 #endif /* !__MATTE_EXCEPT_DEFS_H__ */
 

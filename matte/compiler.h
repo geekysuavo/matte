@@ -70,10 +70,18 @@ struct _Compiler {
   String fout, cflags;
 
   /* @ccode: output c source code.
-   * @cerr: temporary error string storage location.
    */
   String ccode;
-  char *cerr;
+
+  /* @catching: whether the output code is in a try block.
+   * @cvar: variable name string used to store exceptions.
+   * @clbl: label name used to move into catch code.
+   * @cidx: label index for creating @clbl.
+   */
+  bool catching;
+  const char *cvar;
+  char clbl[32];
+  long cidx;
 
   /* @err: number of errors encountered by the compiler.
    */

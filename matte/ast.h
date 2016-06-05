@@ -136,6 +136,8 @@ AST ast_get_down (AST node, int index);
 
 #define ast_last(node) ast_get_down(node, -1)
 
+int ast_contains (AST node, AST down);
+
 AST ast_get_root (AST node);
 
 void ast_shrink_down (AST node);

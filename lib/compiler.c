@@ -656,7 +656,8 @@ static int write_try (Compiler c, AST node) {
   AST up = node->up;
   while (up) {
     /* fail on encountering a try. */
-    if (ast_get_type(up) == (ASTNodeType) T_TRY)
+    if (ast_get_type(up) == (ASTNodeType) T_TRY &&
+        ast_contains(up->down[0], node))
       asterr(node, ERR_INVALID_TRY);
 
     /* move up the tree. */

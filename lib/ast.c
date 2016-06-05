@@ -470,6 +470,30 @@ AST ast_get_down (AST node, int index) {
   return NULL;
 }
 
+/* ast_contains(): check if a matte syntax sub-tree contains a given node.
+ *
+ * arguments:
+ *  @node: matte ast sub-tree to search.
+ *  @down: matte ast-node to look for.
+ *
+ * returns:
+ *  integer indicating containment (1) or non-containment (0).
+ */
+int ast_contains (AST node, AST down) {
+  /* match found. return true. */
+  if (node == down)
+    return 1;
+
+  /* search all downstream nodes of the sub-tree. */
+  for (int i = 0; i < node->n_down; i++) {
+    if (ast_contains(node->down[i], down))
+      return 1;
+  }
+
+  /* the downstream node is not contained within the sub-tree. */
+  return 0;
+}
+
 /* ast_get_root(): get the root node of a matte ast-node.
  *
  * arguments:

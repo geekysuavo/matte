@@ -220,6 +220,17 @@ static int init_symbols (Compiler c, AST node) {
         !init_symbols(c, node->down[2]))
       return 0;
   }
+  else if (ntok == T_SWITCH) {
+    /* register a symbol for the comparison result. */
+    if (!symbols_add(ast_get_symbols(node), SYMBOL_VAR, "_sw"))
+      return 0;
+
+    /* traverse the rest of the block. */
+    for (i = 0; i < node->n_down; i++) {
+      if (!init_symbols(c, node->down[i]))
+        return 0;
+    }
+  }
   else if (ntok == T_GLOBAL) {
     /* register global symbols. */
     for (i = 0; i < node->n_down; i++) {
@@ -617,10 +628,8 @@ static int write_call (Compiler c, AST node) {
  *  @i: offset in the child node array.
  */
 static int write_if (Compiler c, AST node, int i) {
-  /* get the current node type. */
-  const ScannerToken ntok = (ScannerToken) ast_get_type(node);
-
   /* accept if-statement blocks. */
+  const ScannerToken ntok = (ScannerToken) ast_get_type(node);
   if (ntok != T_IF)
     return 0;
 
@@ -628,26 +637,84 @@ static int write_if (Compiler c, AST node, int i) {
   if (i >= node->n_down)
     return 1;
 
+  /* get references to the child nodes. */
+  AST expr = node->down[i];
+  AST stmts = node->down[i + 1];
+
   /* check what type of node we're processing. */
-  if (node->down[i]) {
-    /* write the first condition evaluation. */
-    write_statements(c, node->down[i]);
-    W("  if (object_is_true(%s)) {\n", S(node->down[i]));
-    write_statements(c, node->down[i + 1]);
+  if (expr) {
+    /* write the current condition evaluation. */
+    write_statements(c, expr);
+    W("  if (object_is_true(%s)) {\n", S(expr));
+    write_statements(c, stmts);
     W("  }\n");
 
-    /* return if no further blocks exist. */
-    if (node->n_down == 2)
+    /* return if no further conditions exist. */
+    if (node->n_down == i + 2)
       return 1;
 
-    /* write the secondary condition evaluations. */
+    /* write the next condition evaluations. */
     W("  else {\n");
     write_if(c, node, i + 2);
     W("  }\n");
   }
   else {
-    /* write the final statements. */
-    write_statements(c, node->down[i + 1]);
+    /* write the 'else' statements. */
+    write_statements(c, stmts);
+  }
+
+  /* return true. */
+  return 1;
+}
+
+/* write_switch(): write a switch block, or nothing if the specified
+ * ast-node is not a switch block.
+ *
+ * arguments;
+ *  @c: matte compiler to utilize.
+ *  @node: matte ast-node to process.
+ *  @i: offset in the child node array.
+ */
+static int write_switch (Compiler c, AST node, int i) {
+  /* accept switch blocks. */
+  const ScannerToken ntok = (ScannerToken) ast_get_type(node);
+  if (ntok != T_SWITCH)
+    return 0;
+
+  /* return if we've exhausted the condition list. */
+  if (i >= node->n_down)
+    return 1;
+
+  /* get references to the child nodes. */
+  AST expr = node->down[0];
+  AST value = node->down[i];
+  AST stmts = node->down[i + 1];
+
+  /* upon entering the switch, evaluate its expression. */
+  if (i == 0) {
+    write_statements(c, expr);
+    return write_switch(c, node, 1);
+  }
+
+  /* check what type of node we're processing. */
+  if (value) {
+    /* write the current condition evaluation. */
+    write_statements(c, value);
+    W("  _sw = object_eq(&_z1, %s, %s);\n", S(expr), S(value));
+    E("_sw", value);
+    W("  if (object_is_true(_sw)) {\n");
+    write_statements(c, stmts);
+    W("  }\n");
+
+    /* write the following cases. */
+    W("  else {\n"
+      "  object_free(&_z1, _sw);\n");
+    write_switch(c, node, i + 2);
+    W("  }\n");
+  }
+  else {
+    /* write the 'otherwise' statements. */
+    write_statements(c, stmts);
   }
 
   /* return true. */
@@ -862,6 +929,7 @@ static void write_statements (Compiler c, AST node) {
     return;
   }
   else if (write_if(c, node, 0) ||
+           write_switch(c, node, 0) ||
            write_for(c, node) ||
            write_while(c, node) ||
            write_until(c, node)) {

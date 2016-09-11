@@ -651,7 +651,7 @@ Vector float_colon (Zone z, Object a, Object b, Object c) {
   return x;
 }
 
-/* float_horzcat(): horizontal concatenation function for floats
+/* float_horzcat(): horizontal concatenation function for floats.
  */
 Vector float_horzcat (Zone z, int n, va_list vl) {
   Vector x = vector_new(z, NULL);

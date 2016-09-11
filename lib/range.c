@@ -269,12 +269,12 @@ Range range_plus (Zone z, Object a, Object b) {
     if (range_get_length((Range) a) != range_get_length((Range) b))
       return NULL;
 
-    const long b = range_get_begin((Range) a) + range_get_begin((Range) b);
-    const long s = range_get_step((Range) a)  + range_get_step((Range) b);
-    const long e = range_get_end((Range) a)   + range_get_end((Range) b);
+    const long lb = range_get_begin((Range) a) + range_get_begin((Range) b);
+    const long ls = range_get_step((Range) a)  + range_get_step((Range) b);
+    const long le = range_get_end((Range) a)   + range_get_end((Range) b);
 
     Range r = range_new(z, NULL);
-    range_set(r, b, s, e);
+    range_set(r, lb, ls, le);
 
     return r;
   }
@@ -312,12 +312,12 @@ Range range_minus (Zone z, Object a, Object b) {
     if (range_get_length((Range) a) != range_get_length((Range) b))
       return NULL;
 
-    const long b = range_get_begin((Range) a) - range_get_begin((Range) b);
-    const long s = range_get_step((Range) a)  - range_get_step((Range) b);
-    const long e = range_get_end((Range) a)   - range_get_end((Range) b);
+    const long lb = range_get_begin((Range) a) - range_get_begin((Range) b);
+    const long ls = range_get_step((Range) a)  - range_get_step((Range) b);
+    const long le = range_get_end((Range) a)   - range_get_end((Range) b);
 
     Range r = range_new(z, NULL);
-    range_set(r, b, s, e);
+    range_set(r, lb, ls, le);
 
     return r;
   }

@@ -47,7 +47,7 @@ The **matte** runtime library depends on the C API's to LAPACK and BLAS
 provided by [ATLAS] (http://math-atlas.sourceforge.net). On OSX El Capitan,
 this is a nightmare. Long story short, dump clang.
 
-I successfully compiled ATLAS 3.10.2 using gcc-5.3.0 from homebrew-core,
+I successfully compiled ATLAS 3.10.2 using GCC 5.3.0 from homebrew-core,
 with LAPACK 3.6.0, using the following commands:
 
 ```bash
@@ -58,7 +58,7 @@ cd ~/ATLAS
 mkdir osx
 cd osx
 ../configure -b 64 -O 12 -A 28 -V 480 --prefix=/usr/local/atlas \
-  --with-netlib-lapack-tarfile=../../lapack-3.6.0.tar \
+  --shared --with-netlib-lapack-tarfile=../../lapack-3.6.0.tar \
   -C alg gcc-5 -C if gfortran-5 \
   -Fa acg '-Xassembler -q'
 make build
@@ -67,6 +67,8 @@ make ptcheck
 make time
 sudo make install
 ```
+
+The above sequence also works for GCC 6.1.0 from homebrew-core.
 
 ## Licensing
 

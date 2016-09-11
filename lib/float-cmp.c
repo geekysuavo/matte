@@ -7,13 +7,13 @@
 Object FUNCTION(F) (Zone z, Object a, Object b) {
   if (IS_FLOAT(a)) {
     if (IS_FLOAT(b)) {
-      /* float <op> float => float */
-      return (Object) float_new_with_value(z,
+      /* float <op> float => int */
+      return (Object) int_new_with_value(z,
         float_get_value((Float) a) OP float_get_value((Float) b));
     }
     else if (IS_INT(b)) {
-      /* float <op> int => float */
-      return (Object) float_new_with_value(z,
+      /* float <op> int => int */
+      return (Object) int_new_with_value(z,
         float_get_value((Float) a) OP (double) int_get_value((Int) b));
     }
     else if (IS_RANGE(b)) {
@@ -31,8 +31,8 @@ Object FUNCTION(F) (Zone z, Object a, Object b) {
   }
   else if (IS_FLOAT(b)) {
     if (IS_INT(a)) {
-      /* int <op> float => float */
-      return (Object) float_new_with_value(z,
+      /* int <op> float => int */
+      return (Object) int_new_with_value(z,
         (double) int_get_value((Int) a) OP float_get_value((Float) b));
     }
     else if (IS_RANGE(a)) {

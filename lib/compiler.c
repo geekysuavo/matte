@@ -45,11 +45,11 @@
  * operations in the matte compiler.
  */
 static const struct {
-  /* @ntype: node type of the matte ast-node containing the operation.
+  /* @tok: node type (token) of the matte ast-node containing the operation.
    * @noper: number of downfield operands in the operation.
    * @fstr: function name of the overloadable operation.
    */
-  ASTNodeType ntype;
+  ScannerToken tok;
   const int noper;
   const char *fstr;
 }
@@ -388,7 +388,7 @@ static int resolve_symbols (Compiler c, AST node) {
           }
           else {
             /* insert an assignment for the function call. */
-            super = ast_new_with_type(T_IDENT);
+            super = ast_new_with_type((ASTNodeType) T_IDENT);
             super = ast_new_with_parms(AST_TYPE_FN_CALL, false, super);
             if (!ast_slip(node, super))
               return 0;
@@ -461,7 +461,7 @@ static int write_operation (Compiler c, AST node) {
   /* search the operator definition array for the current node type. */
   for (int i = 0; operators[i].fstr; i++) {
     /* check if a match was found. */
-    if (ntype == operators[i].ntype &&
+    if (ntype == (ASTNodeType) operators[i].tok &&
         node->n_down == operators[i].noper) {
       /* write the operation based on argument count. */
       if (node->n_down == 1) {

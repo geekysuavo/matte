@@ -48,6 +48,10 @@ double complex_get_real (Complex f);
 
 double complex_get_imag (Complex f);
 
+double complex_get_abs (Complex f);
+
+double complex_get_arg (Complex f);
+
 void complex_set_value (Complex f, complex double value);
 
 void complex_set_real (Complex f, double value);

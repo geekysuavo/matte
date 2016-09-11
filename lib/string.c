@@ -682,6 +682,12 @@ int string_disp (Zone z, String s) {
   return 1;
 }
 
+/* string_true(): assertion function for strings.
+ */
+int string_true (String s) {
+  return s->n;
+}
+
 /* string_horzcat(): horizontal concatenation function for strings.
  */
 String string_horzcat (Zone z, int n, va_list vl) {
@@ -763,6 +769,7 @@ struct _ObjectType String_type = {
   (obj_constructor) string_copy,                 /* fn_copy   */
   (obj_destructor)  string_delete,               /* fn_delete */
   (obj_display)     string_disp,                 /* fn_disp   */
+  (obj_assert)      string_true,                 /* fn_true   */
 
   NULL,                                          /* fn_plus       */
   NULL,                                          /* fn_minus      */

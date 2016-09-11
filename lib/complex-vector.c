@@ -291,6 +291,7 @@ struct _ObjectType ComplexVector_type = {
   (obj_constructor) complex_vector_copy,         /* fn_copy   */
   (obj_destructor)  complex_vector_delete,       /* fn_delete */
   (obj_display)     complex_vector_disp,         /* fn_disp   */
+  NULL,                                          /* fn_true   */
 
   NULL,                                          /* fn_plus       */
   NULL,                                          /* fn_minus      */

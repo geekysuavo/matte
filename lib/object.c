@@ -172,6 +172,30 @@ int object_display (Zone z, Object obj, const char *var) {
   return object_disp(z, obj);
 }
 
+/* object_true(): truth assertion dispatch function.
+ */
+int object_true (Object obj) {
+  /* return false for null objects. */
+  if (!obj)
+    return 0;
+
+  /* obtain the object type. */
+  const ObjectType type = MATTE_TYPE(obj);
+
+  /* determine whether the object is typed. */
+  if (type) {
+    /* if available, dispatch the truth method. */
+    if (type->fn_true)
+      return type->fn_true(obj);
+
+    /* otherwise, output a warning and return false. */
+    warn(WARN_OBJ_TRUE, type->name);
+  }
+
+  /* in all other cases, return false. */
+  return 0;
+}
+
 /* object_plus(): addition dispatch function. */
 #define F plus
 #include "object-binary.c"

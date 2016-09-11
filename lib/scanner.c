@@ -1296,6 +1296,7 @@ struct _ObjectType Scanner_type = {
   NULL,                                          /* fn_copy   */
   (obj_destructor)  scanner_delete,              /* fn_delete */
   NULL,                                          /* fn_disp   */
+  NULL,                                          /* fn_true   */
 
   NULL,                                          /* fn_plus       */
   NULL,                                          /* fn_minus      */

@@ -26,8 +26,11 @@ int matte_builtins_init (Symbols gs) {
 
   /* register global types. */
   ret = ret && symbols_add(gs, SYMBOL_GLOBAL_CLASS, "Int");
+  ret = ret && symbols_add(gs, SYMBOL_GLOBAL_CLASS, "Range");
   ret = ret && symbols_add(gs, SYMBOL_GLOBAL_CLASS, "Float");
   ret = ret && symbols_add(gs, SYMBOL_GLOBAL_CLASS, "Complex");
+  ret = ret && symbols_add(gs, SYMBOL_GLOBAL_CLASS, "Vector");
+  ret = ret && symbols_add(gs, SYMBOL_GLOBAL_CLASS, "ComplexVector");
   ret = ret && symbols_add(gs, SYMBOL_GLOBAL_CLASS, "String");
   ret = ret && symbols_add(gs, SYMBOL_GLOBAL_CLASS, "Exception");
 
@@ -41,38 +44,6 @@ int matte_builtins_init (Symbols gs) {
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
-/* object_is_true(): evaluate the truthiness of an object based on
- * its type.
- *
- * arguments:
- *  @obj: object to check.
- *
- * returns:
- *  integer indicating object truth (1) or non-truth (0).
- */
-int object_is_true (Object obj) {
-  /* determine truth based on object type. */
-  if (IS_INT(obj)) {
-    return int_get_value((Int) obj);
-  }
-  else if (IS_RANGE(obj)) {
-    return range_all((Range) obj);
-  }
-  else if (IS_FLOAT(obj)) {
-    return float_get_value((Float) obj);
-  }
-  else if (IS_STRING(obj)) {
-    return string_get_length((String) obj);
-  }
-
-  /* output a warning message. */
-  if (obj && obj->type)
-    warn(WARN_OBJ_TRUE, obj->type->name)
-
-  /* return false. */
-  return 0;
-}
 
 /* string_append_objs(): append matte object data to the end of a matte
  * string in a printf-style manner.

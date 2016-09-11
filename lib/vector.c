@@ -446,6 +446,7 @@ struct _ObjectType Vector_type = {
   (obj_constructor) vector_copy,                 /* fn_copy   */
   (obj_destructor)  vector_delete,               /* fn_delete */
   (obj_display)     vector_disp,                 /* fn_disp   */
+  NULL,                                          /* fn_true   */
 
   (obj_binary)   vector_plus,                    /* fn_plus       */
   (obj_binary)   vector_minus,                   /* fn_minus      */

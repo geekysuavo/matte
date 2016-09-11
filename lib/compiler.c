@@ -722,7 +722,7 @@ static int write_if (Compiler c, AST node, int i) {
   if (expr) {
     /* write the current condition evaluation. */
     write_statements(c, expr);
-    W("  if (object_is_true(%s)) {\n", S(expr));
+    W("  if (object_true(%s)) {\n", S(expr));
     write_statements(c, stmts);
     W("  }\n");
 
@@ -779,7 +779,7 @@ static int write_switch (Compiler c, AST node, int i) {
     write_statements(c, value);
     W("  _sw = object_eq(&_z1, %s, %s);\n", S(expr), S(value));
     E("_sw", value);
-    W("  if (object_is_true(_sw)) {\n"
+    W("  if (object_true(_sw)) {\n"
       "  object_free(&_z1, _sw);\n");
     write_statements(c, stmts);
     W("  }\n");
@@ -866,7 +866,7 @@ static int write_while (Compiler c, AST node) {
   /* write the while block. */
   W("  while (1) {\n");
   write_statements(c, expr);
-  W("  if (!object_is_true(%s)) break;\n", S(expr));
+  W("  if (!object_true(%s)) break;\n", S(expr));
   write_statements(c, stmts);
   W("  }\n");
 
@@ -896,7 +896,7 @@ static int write_until (Compiler c, AST node) {
   W("  while (1) {\n");
   write_statements(c, stmts);
   write_statements(c, expr);
-  W("  if (object_is_true(%s)) break;\n", S(expr));
+  W("  if (object_true(%s)) break;\n", S(expr));
   W("  }\n");
 
   /* return true. */
@@ -1774,6 +1774,7 @@ struct _ObjectType Compiler_type = {
   NULL,                                          /* fn_copy   */
   (obj_destructor)  compiler_delete,             /* fn_delete */
   NULL,                                          /* fn_disp   */
+  NULL,                                          /* fn_true   */
 
   NULL,                                          /* fn_plus       */
   NULL,                                          /* fn_minus      */

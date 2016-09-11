@@ -118,6 +118,12 @@ int int_disp (Zone z, Int i) {
   return 1;
 }
 
+/* int_true(): assertion function for integers.
+ */
+int int_true (Int i) {
+  return i->value;
+}
+
 /* int_plus(): addition function for integers.
  */
 Int int_plus (Zone z, Int a, Int b) {
@@ -319,6 +325,7 @@ struct _ObjectType Int_type = {
   (obj_constructor) int_copy,                    /* fn_copy   */
   NULL,                                          /* fn_delete */
   (obj_display)     int_disp,                    /* fn_disp   */
+  (obj_assert)      int_true,                    /* fn_true   */
 
   (obj_binary)   int_plus,                       /* fn_plus       */
   (obj_binary)   int_minus,                      /* fn_minus      */

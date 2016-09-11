@@ -12,5 +12,14 @@ a == 10
 
 a^3
 
-a : 0.1i : b
+a : 0.5i : b
+z = 0i
+
+if a
+  disp('a is true');
+end
+
+if z
+  disp('z is true');
+end
 

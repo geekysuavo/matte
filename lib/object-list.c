@@ -277,6 +277,7 @@ struct _ObjectType ObjectList_type = {
   NULL,                                          /* fn_copy   */
   (obj_destructor)  object_list_delete,          /* fn_delete */
   (obj_display)     object_list_disp,            /* fn_disp   */
+  NULL,                                          /* fn_true   */
 
   NULL,                                          /* fn_plus       */
   NULL,                                          /* fn_minus      */

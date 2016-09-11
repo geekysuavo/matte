@@ -379,6 +379,7 @@ struct _ObjectType Exception_type = {
   (obj_constructor) except_copy,                 /* fn_copy   */
   (obj_destructor)  except_delete,               /* fn_delete */
   (obj_display)     except_disp,                 /* fn_disp   */
+  NULL,                                          /* fn_true   */
 
   NULL,                                          /* fn_plus       */
   NULL,                                          /* fn_minus      */

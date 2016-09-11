@@ -309,6 +309,7 @@ struct _ObjectType Struct_type = {
   NULL,                                          /* fn_copy   */
   (obj_destructor)  struct_delete,               /* fn_delete */
   NULL,                                          /* fn_disp   */
+  NULL,                                          /* fn_true   */
 
   NULL,                                          /* fn_plus       */
   NULL,                                          /* fn_minus      */

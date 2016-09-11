@@ -65,6 +65,7 @@ typedef Object (*matte_func) (Zone, Object);
 typedef Object (*obj_constructor) (Zone, Object);
 typedef void   (*obj_destructor)  (Zone, Object);
 typedef int    (*obj_display)     (Zone, Object);
+typedef int    (*obj_assert)      (Object);
 typedef Object (*obj_unary)       (Zone, Object);
 typedef Object (*obj_binary)      (Zone, Object, Object);
 typedef Object (*obj_ternary)     (Zone, Object, Object, Object);
@@ -101,6 +102,7 @@ struct _ObjectType {
   obj_constructor fn_copy;
   obj_destructor  fn_delete;
   obj_display     fn_disp;
+  obj_assert      fn_true;
 
   /* numeric method table:
    */
@@ -166,6 +168,8 @@ int object_disp (Zone z, Object obj);
 
 int object_display (Zone z, Object obj, const char *var);
 
+int object_true (Object obj);
+
 /* object method declarations (object.c): */
 
 Object object_plus       (Zone z, Object a, Object b);
@@ -198,10 +202,6 @@ Object object_vertcat    (Zone z, int n, ...);
 Object object_subsref    (Zone z, Object a, Object b);
 Object object_subsasgn   (Zone z, Object a, Object b, Object c);
 Object object_subsindex  (Zone z, Object a);
-
-/* function declarations (builtins.c): */
-
-int object_is_true (Object obj);
 
 /* utility function declarations: */
 

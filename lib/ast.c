@@ -875,6 +875,7 @@ struct _ObjectType AST_type = {
   NULL,                                          /* fn_copy   */
   (obj_destructor)  ast_delete,                  /* fn_delete */
   NULL,                                          /* fn_disp   */
+  NULL,                                          /* fn_true   */
 
   NULL,                                          /* fn_plus       */
   NULL,                                          /* fn_minus      */

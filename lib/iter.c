@@ -236,6 +236,7 @@ struct _ObjectType Iter_type = {
   NULL,                                          /* fn_copy   */
   NULL,                                          /* fn_delete */
   NULL,                                          /* fn_disp   */
+  NULL,                                          /* fn_true   */
 
   NULL,                                          /* fn_plus       */
   NULL,                                          /* fn_minus      */

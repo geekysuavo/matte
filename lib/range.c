@@ -261,6 +261,12 @@ int range_disp (Zone z, Range r) {
   return 1;
 }
 
+/* range_true(): assertion function for ranges.
+ */
+int range_true (Range r) {
+  return (int) range_all(r);
+}
+
 /* range_plus(): addition function for ranges.
  */
 Range range_plus (Zone z, Object a, Object b) {
@@ -577,6 +583,7 @@ struct _ObjectType Range_type = {
   (obj_constructor) range_copy,                  /* fn_copy   */
   NULL,                                          /* fn_delete */
   (obj_display)     range_disp,                  /* fn_disp   */
+  (obj_assert)      range_true,                  /* fn_true   */
 
   (obj_binary) range_plus,                       /* fn_plus       */
   (obj_binary) range_minus,                      /* fn_minus      */

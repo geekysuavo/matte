@@ -116,6 +116,12 @@ int float_disp (Zone z, Float f) {
   return 1;
 }
 
+/* float_true(): assertion function for floats.
+ */
+int float_true (Float f) {
+  return (f->value ? 1 : 0);
+}
+
 /* float_plus(): addition operation for floats.
  */
 Object float_plus (Zone z, Object a, Object b) {
@@ -735,6 +741,7 @@ struct _ObjectType Float_type = {
   (obj_constructor) float_copy,                  /* fn_copy   */
   NULL,                                          /* fn_delete */
   (obj_display)     float_disp,                  /* fn_disp   */
+  (obj_assert)      float_true,                  /* fn_true   */
 
   (obj_binary)   float_plus,                     /* fn_plus       */
   (obj_binary)   float_minus,                    /* fn_minus      */

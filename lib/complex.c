@@ -198,6 +198,12 @@ int complex_disp (Zone z, Complex f) {
   return 1;
 }
 
+/* complex_true(): assertion function for complex floats.
+ */
+int complex_true (Complex f) {
+  return (creal(f->value) && cimag(f->value) ? 1 : 0);
+}
+
 /* complex_plus(): addition function for complex floats.
  */
 Object complex_plus (Zone z, Object a, Object b) {
@@ -886,6 +892,7 @@ struct _ObjectType Complex_type = {
   (obj_constructor) complex_copy,                /* fn_copy   */
   NULL,                                          /* fn_delete */
   (obj_display)     complex_disp,                /* fn_disp   */
+  (obj_assert)      complex_true,                /* fn_true   */
 
   (obj_binary)   complex_plus,                   /* fn_plus       */
   (obj_binary)   complex_minus,                  /* fn_minus      */

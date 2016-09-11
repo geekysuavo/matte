@@ -1861,6 +1861,7 @@ struct _ObjectType Parser_type = {
   NULL,                                          /* fn_copy   */
   (obj_destructor)  parser_delete,               /* fn_delete */
   NULL,                                          /* fn_disp   */
+  NULL,                                          /* fn_true   */
 
   NULL,                                          /* fn_plus       */
   NULL,                                          /* fn_minus      */

@@ -271,6 +271,18 @@ inline const char *symbol_name (Symbols syms, long index) {
           syms->sym_name[index] : NULL);
 }
 
+/* symbol_type(): return the type of a registered symbol.
+ *
+ * arguments:
+ *  @syms: matte symbol table to access.
+ *  @index: zero-based symbol index in the table.
+ */
+inline SymbolType symbol_type (Symbols syms, long index) {
+  /* return the symbol name string. */
+  return (syms && index >= 0 && index < syms->n ?
+          syms->sym_type[index] : SYMBOL_ANY);
+}
+
 /* symbol_int(): return the integer data of a symbol.
  *
  * arguments:

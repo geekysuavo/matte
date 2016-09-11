@@ -969,8 +969,8 @@ static void write_display (Compiler c, AST node) {
     "    Exception _e = (Exception) exceptions_get(_z0);\n"
     "    except_add_call(_z0, _e, \"%s\", \"%s\", %ld);\n"
     "    return (Object) _e;\n"
-    "  }\n",
-    S(node), S(node),
+    "  }\n", S(node),
+    ast_get_symbol_type(node) & SYMBOL_TEMP ? "ans" : S(node),
     node->fname, ast_get_func(node), node->line);
 }
 

@@ -34,10 +34,13 @@ int matte_builtins_init (Symbols gs) {
   ret = ret && symbols_add(gs, SYMBOL_GLOBAL_CLASS, "String");
   ret = ret && symbols_add(gs, SYMBOL_GLOBAL_CLASS, "Exception");
 
-  /* register global functions. */
+  /* register global functions: io. */
   ret = ret && symbols_add(gs, SYMBOL_GLOBAL_FUNC, "disp");
-  ret = ret && symbols_add(gs, SYMBOL_GLOBAL_FUNC, "sum");
   ret = ret && symbols_add(gs, SYMBOL_GLOBAL_FUNC, "sprintf");
+
+  /* register global functions: sums. */
+  ret = ret && symbols_add(gs, SYMBOL_GLOBAL_FUNC, "sum");
+  ret = ret && symbols_add(gs, SYMBOL_GLOBAL_FUNC, "prod");
 
   /* return the result. */
   return ret;
@@ -174,72 +177,6 @@ int string_append_objs (String s, char *format, int begin, ObjectList lst) {
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-Object matte_disp (Zone z, Object argin) {
-  const int nargin = object_list_get_length((ObjectList) argin);
-
-  Object x = object_list_get((ObjectList) argin, 0);
-  ObjectType type = MATTE_TYPE(x);
-
-  if (type->fn_disp)
-    type->fn_disp(z, x);
-
-  return object_list_argout(z, 0);
-}
-
-Object matte_sum (Zone z, Object argin) {
-  const int nargin = object_list_get_length((ObjectList) argin);
-  Object x = object_list_get((ObjectList) argin, 0);
-  Object dim = object_list_get((ObjectList) argin, 1);
-
-  Object y = NULL;
-
-  if (nargin == 1) {
-    if (IS_INT(x))
-      y = (Object) int_copy(z, (Int) x);
-    else if (IS_FLOAT(x))
-      y = (Object) float_copy(z, (Float) x);
-    else if (IS_COMPLEX(x))
-      y = (Object) complex_copy(z, (Complex) x);
-    else if (IS_RANGE(x)) {
-      Range r = (Range) x;
-      long sum = 0;
-
-      for (long elem = r->begin; elem <= r->end; elem += r->step)
-        sum += elem;
-
-      y = (Object) int_new_with_value(z, sum);
-    }
-    else if (IS_VECTOR(x)) {
-      Vector v = (Vector) x;
-      double sum = 0.0;
-
-      for (long i = 0; i < v->n; i++)
-        sum += v->data[i];
-
-      y = (Object) float_new_with_value(z, sum);
-    }
-  }
-  else if (nargin == 2) {
-  }
-  else
-    throw(z, ERR_INVALID_ARGIN);
-
-  return object_list_argout(z, 1, y);
-}
-
-Object matte_sprintf (Zone z, Object argin) {
-  const int nargin = object_list_get_length((ObjectList) argin);
-  Object format = object_list_get((ObjectList) argin, 0);
-
-  String str = NULL;
-
-  if (IS_STRING(format)) {
-    str = string_new(z, NULL);
-    string_append_objs(str, ((String) format)->data, 1, (ObjectList) argin);
-  }
-  else
-    throw(z, ERR_INVALID_ARGIN);
-
-  return object_list_argout(z, 1, (Object) str);
-}
+#include "builtins/io.c"
+#include "builtins/sums.c"
 

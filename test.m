@@ -12,14 +12,13 @@ a == 10
 
 a^3
 
+a : 0.25 : b
 a : 0.5i : b
 z = 0i
 
-if a
-  disp('a is true');
-end
+T1 = prod(1:10)
+a2 = 0.1 : 0.1 : 1.5
+T2 = prod(a2)
 
-if z
-  disp('z is true');
-end
+S = sum([1.1, 2.2, 3.3])
 

@@ -841,12 +841,30 @@ int ast_add_symbol (AST node, AST data, SymbolType stype) {
  *  name string of the current node.
  */
 const char *ast_get_symbol_name (AST node) {
-  /* if a symbol is registered with the node, then return it's name. */
+  /* if a symbol is registered with the node, then return its name. */
   if (node->sym_index && node->sym_table)
     return symbol_name(node->sym_table, node->sym_index - 1);
 
   /* otherwise, return null. */
   return NULL;
+}
+
+/* ast_get_symbol_type(): get the type of the symbol registered with
+ * a matte ast-node.
+ *
+ * arguments:
+ *  @node: matte ast-node to access.
+ *
+ * returns:
+ *  type enum-value of the current node.
+ */
+SymbolType ast_get_symbol_type (AST node) {
+  /* if a symbol is registered with the node, then return its type. */
+  if (node->sym_index && node->sym_table)
+    return symbol_type(node->sym_table, node->sym_index - 1);
+
+  /* otherwise, return an empty type. */
+  return SYMBOL_ANY;
 }
 
 /* ast_has_global_symbol(): check the symbol registered with a matte

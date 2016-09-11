@@ -156,6 +156,8 @@ int ast_add_symbol (AST node, AST data, SymbolType stype);
 
 const char *ast_get_symbol_name (AST node);
 
+SymbolType ast_get_symbol_type (AST node);
+
 int ast_has_global_symbol (AST node);
 
 #endif /* !__MATTE_AST_H__ */

@@ -114,6 +114,8 @@ int symbol_has_type (Symbols syms, long index, SymbolType stype);
 
 const char *symbol_name (Symbols syms, long index);
 
+SymbolType symbol_type (Symbols syms, long index);
+
 long symbol_int (Symbols syms, long index);
 
 double symbol_float (Symbols syms, long index);

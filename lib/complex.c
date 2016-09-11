@@ -792,7 +792,7 @@ ComplexVector complex_colon (Zone z, Object a, Object b, Object c) {
   else
     return NULL;
 
-  long n = (long) floor(creal((end - begin) / step)) + 1;
+  long n = (long) ceil(creal((end - begin) / step)) + 1;
   if (n < 0)
     n = 0;
 

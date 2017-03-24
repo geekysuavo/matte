@@ -1,5 +1,5 @@
 
-/* Copyright (c) 2016 Bradley Worley <geekysuavo@gmail.com>
+/* Copyright (c) 2016, 2017 Bradley Worley <geekysuavo@gmail.com>
  * Released under the MIT License
  */
 
@@ -58,6 +58,8 @@ long matrix_get_length (Matrix A);
 int matrix_set_rows (Matrix A, long m);
 
 int matrix_set_cols (Matrix A, long n);
+
+int matrix_set_size (Matrix A, long m, long n);
 
 #endif /* !__MATTE_MATRIX_H__ */
 

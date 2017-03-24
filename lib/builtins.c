@@ -1,5 +1,5 @@
 
-/* Copyright (c) 2016 Bradley Worley <geekysuavo@gmail.com>
+/* Copyright (c) 2016, 2017 Bradley Worley <geekysuavo@gmail.com>
  * Released under the MIT License
  */
 
@@ -30,8 +30,12 @@ int matte_builtins_init (Symbols gs) {
   ret = ret && symbols_add(gs, SYMBOL_GLOBAL_CLASS, "Float");
   ret = ret && symbols_add(gs, SYMBOL_GLOBAL_CLASS, "Complex");
   ret = ret && symbols_add(gs, SYMBOL_GLOBAL_CLASS, "Vector");
+  ret = ret && symbols_add(gs, SYMBOL_GLOBAL_CLASS, "Matrix");
   ret = ret && symbols_add(gs, SYMBOL_GLOBAL_CLASS, "ComplexVector");
+  ret = ret && symbols_add(gs, SYMBOL_GLOBAL_CLASS, "ComplexMatrix");
   ret = ret && symbols_add(gs, SYMBOL_GLOBAL_CLASS, "String");
+  ret = ret && symbols_add(gs, SYMBOL_GLOBAL_CLASS, "Struct");
+  ret = ret && symbols_add(gs, SYMBOL_GLOBAL_CLASS, "Cell");
   ret = ret && symbols_add(gs, SYMBOL_GLOBAL_CLASS, "Exception");
 
   /* register global functions: io. */

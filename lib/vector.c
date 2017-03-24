@@ -1,5 +1,5 @@
 
-/* Copyright (c) 2016 Bradley Worley <geekysuavo@gmail.com>
+/* Copyright (c) 2016, 2017 Bradley Worley <geekysuavo@gmail.com>
  * Released under the MIT License
  */
 
@@ -184,8 +184,9 @@ int vector_set_length (Vector x, long n) {
     fail(ERR_BAD_ALLOC);
 
   /* fill the new trailing elements with zeros. */
+  const long excess = (n - x->n) * sizeof(double);
   if (n > x->n)
-    memset(x->data + x->n, 0, (n - x->n) * sizeof(double));
+    memset(x->data + x->n, 0, excess);
 
   /* store the new vector length. */
   x->n = n;

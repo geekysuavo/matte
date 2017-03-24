@@ -1,5 +1,5 @@
 
-/* Copyright (c) 2016 Bradley Worley <geekysuavo@gmail.com>
+/* Copyright (c) 2016, 2017 Bradley Worley <geekysuavo@gmail.com>
  * Released under the MIT License
  */
 
@@ -13,9 +13,9 @@
 #include <matte/float.h>
 #include <matte/complex.h>
 #include <matte/vector.h>
+#include <matte/matrix.h>
 
 /* include headers for superior types. */
-#include <matte/matrix.h>
 #include <matte/complex-matrix.h>
 
 /* complex_vector_type(): return a pointer to the complex vector object type.
@@ -47,6 +47,7 @@ ComplexVector complex_vector_new (Zone z, Object args) {
   /* initialize the transposition state. */
   x->tr = CblasNoTrans;
 
+  /* return the new vector. */
   return x;
 }
 
@@ -144,7 +145,7 @@ ComplexVector complex_vector_copy (Zone z, ComplexVector x) {
   if (!x)
     return NULL;
 
-  /* allocate a new vector. */
+  /* allocate a new complex vector. */
   ComplexVector xnew = complex_vector_new(z, NULL);
   if (!xnew || !complex_vector_set_length(xnew, x->n))
     return NULL;
@@ -156,7 +157,7 @@ ComplexVector complex_vector_copy (Zone z, ComplexVector x) {
   /* copy the transposition state. */
   xnew->tr = x->tr;
 
-  /* return the new complex vector. */
+  /* return the new vector. */
   return xnew;
 }
 
@@ -216,8 +217,9 @@ int complex_vector_set_length (ComplexVector x, long n) {
     fail(ERR_BAD_ALLOC);
 
   /* fill the new trailing elements with zeros. */
+  const long excess = (n - x->n) * sizeof(complex double);
   if (n > x->n)
-    memset(x->data + x->n, 0, (n - x->n) * sizeof(complex double));
+    memset(x->data + x->n, 0, excess);
 
   /* store the new vector length. */
   x->n = n;
@@ -285,7 +287,7 @@ ComplexVector complex_vector_transpose (Zone z, ComplexVector a) {
 struct _ObjectType ComplexVector_type = {
   "ComplexVector",                               /* name       */
   sizeof(struct _ComplexVector),                 /* size       */
-  6,                                             /* precedence */
+  7,                                             /* precedence */
 
   (obj_constructor) complex_vector_new,          /* fn_new    */
   (obj_constructor) complex_vector_copy,         /* fn_copy   */

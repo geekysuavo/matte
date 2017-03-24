@@ -14,7 +14,8 @@ LIBS=-ltatlas -lm
 LIB=libmatte.so
 
 SRC=  zone.c builtins.c object.c except.c object-list.c iter.c struct.c
-SRC+= string.c int.c range.c float.c complex.c vector.c complex-vector.c
+SRC+= cell.c string.c int.c range.c float.c complex.c vector.c matrix.c
+SRC+= complex-vector.c complex-matrix.c
 SRC+= scanner.c scanner-token.c parser.c ast.c symbols.c compiler.c
 OBJ=$(SRC:.c=.o)
 

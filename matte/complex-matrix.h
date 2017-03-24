@@ -1,5 +1,5 @@
 
-/* Copyright (c) 2016 Bradley Worley <geekysuavo@gmail.com>
+/* Copyright (c) 2016, 2017 Bradley Worley <geekysuavo@gmail.com>
  * Released under the MIT License
  */
 
@@ -58,6 +58,8 @@ long complex_matrix_get_length (ComplexMatrix A);
 int complex_matrix_set_rows (ComplexMatrix A, long m);
 
 int complex_matrix_set_cols (ComplexMatrix A, long n);
+
+int complex_matrix_set_size (ComplexMatrix A, long m, long n);
 
 #endif /* !__MATTE_COMPLEX_MATRIX_H__ */
 

@@ -55,11 +55,21 @@ long complex_matrix_get_cols (ComplexMatrix A);
 
 long complex_matrix_get_length (ComplexMatrix A);
 
+complex double complex_matrix_get (ComplexMatrix A, long i, long j);
+
+complex double complex_matrix_get_element (ComplexMatrix A, long i);
+
 int complex_matrix_set_rows (ComplexMatrix A, long m);
 
 int complex_matrix_set_cols (ComplexMatrix A, long n);
 
 int complex_matrix_set_size (ComplexMatrix A, long m, long n);
+
+void complex_matrix_set (ComplexMatrix A, long i, long j,
+                         complex double aij);
+
+void complex_matrix_set_element (ComplexMatrix A, long i,
+                                 complex double ai);
 
 #endif /* !__MATTE_COMPLEX_MATRIX_H__ */
 

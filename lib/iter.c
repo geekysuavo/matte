@@ -1,5 +1,5 @@
 
-/* Copyright (c) 2016 Bradley Worley <geekysuavo@gmail.com>
+/* Copyright (c) 2016, 2017 Bradley Worley <geekysuavo@gmail.com>
  * Released under the MIT License
  */
 
@@ -68,13 +68,13 @@ static int next_range (Zone z, Iter it) {
   /* check if initialization is required. */
   if (!it->val) {
     /* initialize the iteration value. */
-    it->i = r->begin;
-    it->n = r->end;
+    it->i = range_get_begin(r);
+    it->n = range_get_end(r);
     it->val = (Object) int_new_with_value(z, it->i);
   }
   else {
     /* update the iteration value. */
-    it->i += r->step;
+    it->i += range_get_step(r);
     int_set_value((Int) it->val, it->i);
   }
 
@@ -92,20 +92,25 @@ static int next_vector (Zone z, Iter it) {
   /* get the iteration object. */
   Vector x = (Vector) it->obj;
 
+  /* check if the vector has no elements. */
+  if (!vector_get_length(x))
+    return 0;
+
   /* check if initialization is required. */
   if (!it->val) {
     /* initialize the iteration value. */
     it->i = 0;
-    it->val = (Object) float_new_with_value(z, x->data[0]);
+    it->n = vector_get_length(x);
+    it->val = (Object) float_new(z, NULL);
   }
   else {
     /* check if the vector has been exhausted. */
-    if (++it->i >= x->n)
+    if (++it->i >= it->n)
       return 0;
-
-    /* update the iteration value. */
-    float_set_value((Float) it->val, x->data[it->i]);
   }
+
+  /* update the iteration value. */
+  float_set_value((Float) it->val, vector_get(x, it->i));
 
   /* return for another iteration. */
   return 1;
@@ -118,20 +123,87 @@ static int next_complex_vector (Zone z, Iter it) {
   /* get the iteration object. */
   ComplexVector x = (ComplexVector) it->obj;
 
+  /* check if the vector has no elements. */
+  if (!complex_vector_get_length(x))
+    return 0;
+
   /* check if initialization is required. */
   if (!it->val) {
     /* initialize the iteration value. */
     it->i = 0;
-    it->val = (Object) complex_new_with_value(z, x->data[0]);
+    it->n = complex_vector_get_length(x);
+    it->val = (Object) complex_new(z, NULL);
   }
   else {
     /* check if the vector has been exhausted. */
-    if (++it->i >= x->n)
+    if (++it->i >= it->n)
       return 0;
-
-    /* update the iteration value. */
-    complex_set_value((Complex) it->val, x->data[it->i]);
   }
+
+  /* update the iteration value. */
+  complex_set_value((Complex) it->val, complex_vector_get(x, it->i));
+
+  /* return for another iteration. */
+  return 1;
+}
+
+/* next_matrix(): increment the value of a matrix-based iterator.
+ */
+static int next_matrix (Zone z, Iter it) {
+  /* get the iteration object. */
+  Matrix A = (Matrix) it->obj;
+
+  /* check if the matrix has no elements. */
+  if (!matrix_get_length(A))
+    return 0;
+
+  /* check if initialization is required. */
+  if (!it->val) {
+    /* initialize the iteration value. */
+    it->i = 0;
+    it->n = matrix_get_length(A);
+    it->val = (Object) float_new(z, NULL);
+  }
+  else {
+    /* check if the matrix has been exhausted. */
+    if (++it->i >= it->n)
+      return 0;
+  }
+
+  /* update the iteration value. */
+  float_set_value((Float) it->val, matrix_get_element(A, it->i));
+
+  /* return for another iteration. */
+  return 1;
+}
+
+/* next_complex_matrix(): increment the value of a complex matrix-based
+ * iterator.
+ */
+static int next_complex_matrix (Zone z, Iter it) {
+  /* get the iteration object. */
+  ComplexMatrix A = (ComplexMatrix) it->obj;
+
+  /* check if the matrix has no elements. */
+  if (!complex_matrix_get_length(A))
+    return 0;
+
+  /* check if initialization is required. */
+  if (!it->val) {
+    /* initialize the iteration value. */
+    it->i = 0;
+    it->n = complex_matrix_get_length(A);
+    it->val = (Object) complex_new(z, NULL);
+  }
+  else {
+    /* check if the matrix has been exhausted. */
+    if (++it->i >= it->n)
+      return 0;
+  }
+
+  /* update the iteration value. */
+  complex_set_value((Complex) it->val,
+    complex_matrix_get_element(A, it->i));
 
   /* return for another iteration. */
   return 1;
@@ -197,8 +269,10 @@ int iter_next (Zone z, Iter it) {
     return next_vector(z, it);
   else if (type == complex_vector_type())
     return next_complex_vector(z, it);
-  /* FIXME: handle matrix iteration. */
-  /* FIXME: handle complex matrix iteration. */
+  else if (type == matrix_type())
+    return next_matrix(z, it);
+  else if (type == complex_matrix_type())
+    return next_complex_matrix(z, it);
   else if (type == int_type())
     return next_int(z, it);
   else if (type == float_type())

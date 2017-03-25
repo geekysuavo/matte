@@ -55,11 +55,19 @@ long matrix_get_cols (Matrix A);
 
 long matrix_get_length (Matrix A);
 
+double matrix_get (Matrix A, long i, long j);
+
+double matrix_get_element (Matrix A, long i);
+
 int matrix_set_rows (Matrix A, long m);
 
 int matrix_set_cols (Matrix A, long n);
 
 int matrix_set_size (Matrix A, long m, long n);
+
+void matrix_set (Matrix A, long i, long j, double aij);
+
+void matrix_set_element (Matrix A, long i, double ai);
 
 #endif /* !__MATTE_MATRIX_H__ */
 

@@ -1,5 +1,5 @@
 
-/* Copyright (c) 2016 Bradley Worley <geekysuavo@gmail.com>
+/* Copyright (c) 2016, 2017 Bradley Worley <geekysuavo@gmail.com>
  * Released under the MIT License
  */
 
@@ -55,7 +55,16 @@ void complex_vector_free (Zone z, ComplexVector x);
 
 long complex_vector_get_length (ComplexVector x);
 
+complex double complex_vector_get (ComplexVector x, long i);
+
 int complex_vector_set_length (ComplexVector x, long n);
+
+void complex_vector_set (ComplexVector x, long i,
+                         complex double xi);
+
+void complex_vector_add_const (ComplexVector x, complex double f);
+
+void complex_vector_negate (ComplexVector x);
 
 #endif /* !__MATTE_COMPLEX_VECTOR_H__ */
 

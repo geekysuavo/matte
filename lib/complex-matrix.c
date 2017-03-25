@@ -163,6 +163,44 @@ long complex_matrix_get_length (ComplexMatrix A) {
   return (A ? A->m * A->n : 0);
 }
 
+/* complex_matrix_get(): get an element from a matte complex matrix.
+ *
+ * arguments:
+ *  @A: matte complex matrix to access.
+ *  @i: element row index to get.
+ *  @j: element column index to get.
+ *
+ * returns:
+ *  requested matrix element.
+ */
+inline complex double complex_matrix_get (ComplexMatrix A, long i, long j) {
+  /* if the pointer and indices are valid, return the element. */
+  if (A && i < A->m && j < A->n)
+    return A->data[i + j * A->m];
+
+  /* return zero. */
+  return 0.0;
+}
+
+/* complex_matrix_get_element(): get an element from a matte complex
+ * matrix by its array index.
+ *
+ * arguments:
+ *  @A: matte complex matrix to access.
+ *  @i: element array index to get.
+ *
+ * returns:
+ *  requested matrix element.
+ */
+inline complex double complex_matrix_get_element (ComplexMatrix A, long i) {
+  /* if the pointer and index are valid, return the element. */
+  if (A && i < A->m * A->n)
+    return A->data[i];
+
+  /* return zero. */
+  return 0.0;
+}
+
 /* complex_matrix_set_rows(): set the row count of a matte complex matrix.
  *
  * arguments:
@@ -238,6 +276,36 @@ int complex_matrix_set_size (ComplexMatrix A, long m, long n) {
 
   /* return success. */
   return 1;
+}
+
+/* complex_matrix_set(): set an element of a matte complex matrix.
+ *
+ * arguments:
+ *  @A: matte complex matrix to modify.
+ *  @i: element row index to set.
+ *  @j: element column index to set.
+ *  @aij: element value.
+ */
+inline void complex_matrix_set (ComplexMatrix A, long i, long j,
+                                complex double aij) {
+  /* if the pointer and indices are valid, set the element. */
+  if (A && i < A->m && j < A->n)
+    A->data[i + j * A->m] = aij;
+}
+
+/* complex_matrix_set_element(): set an element of a matte complex
+ * matrix by its array index.
+ *
+ * arguments:
+ *  @A: matte complex matrix to modify.
+ *  @i: element array index to set.
+ *  @ai: element value.
+ */
+inline void complex_matrix_set_element (ComplexMatrix A, long i,
+                                        complex double ai) {
+  /* if the pointer and index are valid, set the element. */
+  if (A && i < A->m * A->n)
+    A->data[i] = ai;
 }
 
 /* complex_matrix_disp(): display function for matte complex matrices.

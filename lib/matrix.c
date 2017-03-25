@@ -158,6 +158,44 @@ long matrix_get_length (Matrix A) {
   return (A ? A->m * A->n : 0);
 }
 
+/* matrix_get(): get an element from a matte matrix.
+ *
+ * arguments:
+ *  @A: matte matrix to access.
+ *  @i: element row index to get.
+ *  @j: element column index to get.
+ *
+ * returns:
+ *  requested matrix element.
+ */
+inline double matrix_get (Matrix A, long i, long j) {
+  /* if the pointer and indices are valid, return the element. */
+  if (A && i < A->m && j < A->n)
+    return A->data[i + j * A->m];
+
+  /* return zero. */
+  return 0.0;
+}
+
+/* matrix_get_element(): get an element from a matte matrix by its
+ * array index.
+ *
+ * arguments:
+ *  @A: matte matrix to access.
+ *  @i: element array index to get.
+ *
+ * returns:
+ *  requested matrix element.
+ */
+inline double matrix_get_element (Matrix A, long i) {
+  /* if the pointer and index are valid, return the element. */
+  if (A && i < A->m * A->n)
+    return A->data[i];
+
+  /* return zero. */
+  return 0.0;
+}
+
 /* matrix_set_rows(): set the row count of a matte matrix.
  *
  * arguments:
@@ -232,6 +270,34 @@ int matrix_set_size (Matrix A, long m, long n) {
 
   /* return success. */
   return 1;
+}
+
+/* matrix_set(): set an element of a matte matrix.
+ *
+ * arguments:
+ *  @A: matte matrix to modify.
+ *  @i: element row index to set.
+ *  @j: element column index to set.
+ *  @aij: element value.
+ */
+inline void matrix_set (Matrix A, long i, long j, double aij) {
+  /* if the pointer and indices are valid, set the element. */
+  if (A && i < A->m && j < A->n)
+    A->data[i + j * A->m] = aij;
+}
+
+/* matrix_set_element(): set an element of a matte matrix by its
+ * array index.
+ *
+ * arguments:
+ *  @A: matte matrix to modify.
+ *  @i: element array index to set.
+ *  @ai: element value.
+ */
+inline void matrix_set_element (Matrix A, long i, double ai) {
+  /* if the pointer and index are valid, set the element. */
+  if (A && i < A->m * A->n)
+    A->data[i] = ai;
 }
 
 /* matrix_disp(): display function for matte matrices.

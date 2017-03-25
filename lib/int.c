@@ -1,5 +1,5 @@
 
-/* Copyright (c) 2016 Bradley Worley <geekysuavo@gmail.com>
+/* Copyright (c) 2016, 2017 Bradley Worley <geekysuavo@gmail.com>
  * Released under the MIT License
  */
 
@@ -195,61 +195,45 @@ Int int_power (Zone z, Int a, Int b) {
   return int_new_with_value(z, val);
 }
 
-/* int_lt(): less-than comparison function for integers.
- */
-Int int_lt (Zone z, Int a, Int b) {
-  /* return the comparison result. */
-  return int_new_with_value(z, a->value < b->value);
-}
+/* int_lt(): less-than comparison function for integers. */
+#define F lt
+#define OP <
+#include "int-cmp.c"
 
-/* int_gt(): greater-than comparison function for integers.
- */
-Int int_gt (Zone z, Int a, Int b) {
-  /* return the comparison result. */
-  return int_new_with_value(z, a->value > b->value);
-}
+/* int_gt(): greater-than comparison function for integers. */
+#define F gt
+#define OP >
+#include "int-cmp.c"
 
-/* int_le(): less-than-or-equal-to comparison function for integers.
- */
-Int int_le (Zone z, Int a, Int b) {
-  /* return the comparison result. */
-  return int_new_with_value(z, a->value <= b->value);
-}
+/* int_le(): less-than-or-equal-to comparison function for integers. */
+#define F le
+#define OP <=
+#include "int-cmp.c"
 
-/* int_ge(): greater-than-or-equal-to comparison function for integers.
- */
-Int int_ge (Zone z, Int a, Int b) {
-  /* return the comparison result. */
-  return int_new_with_value(z, a->value >= b->value);
-}
+/* int_ge(): greater-than-or-equal-to comparison function for integers. */
+#define F ge
+#define OP >=
+#include "int-cmp.c"
 
-/* int_ne(): inequality comparison function for integers.
- */
-Int int_ne (Zone z, Int a, Int b) {
-  /* return the comparison result. */
-  return int_new_with_value(z, a->value != b->value);
-}
+/* int_ne(): inequality comparison function for integers. */
+#define F ne
+#define OP !=
+#include "int-cmp.c"
 
-/* int_eq(): equality comparison function for integers.
- */
-Int int_eq (Zone z, Int a, Int b) {
-  /* return the comparison result. */
-  return int_new_with_value(z, a->value == b->value);
-}
+/* int_eq(): equality comparison function for integers. */
+#define F eq
+#define OP ==
+#include "int-cmp.c"
 
-/* int_and(): logical-and operation for integers.
- */
-Int int_and (Zone z, Int a, Int b) {
-  /* return the logical result. */
-  return int_new_with_value(z, a->value && b->value);
-}
+/* int_and(): logical-and operation for integers. */
+#define F and
+#define OP &&
+#include "int-cmp.c"
 
-/* int_or(): logical-or operation for integers.
- */
-Int int_or (Zone z, Int a, Int b) {
-  /* return the logical result. */
-  return int_new_with_value(z, a->value || b->value);
-}
+/* int_or(): logical-or operation for integers. */
+#define F or
+#define OP ||
+#include "int-cmp.c"
 
 /* int_not(): logical negation operation for integers.
  */

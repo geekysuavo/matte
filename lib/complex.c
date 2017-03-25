@@ -1,10 +1,11 @@
 
-/* Copyright (c) 2016 Bradley Worley <geekysuavo@gmail.com>
+/* Copyright (c) 2016, 2017 Bradley Worley <geekysuavo@gmail.com>
  * Released under the MIT License
  */
 
-/* include the complex float header. */
+/* include the complex float and blas headers. */
 #include <matte/complex.h>
+#include <matte/blas.h>
 
 /* include headers for inferior types. */
 #include <matte/int.h>
@@ -201,7 +202,7 @@ int complex_disp (Zone z, Complex f) {
 /* complex_true(): assertion function for complex floats.
  */
 int complex_true (Complex f) {
-  return (creal(f->value) && cimag(f->value) ? 1 : 0);
+  return (creal(f->value) || cimag(f->value) ? 1 : 0);
 }
 
 /* complex_plus(): addition function for complex floats.
@@ -233,9 +234,7 @@ Object complex_plus (Zone z, Object a, Object b) {
       if (!v)
         return NULL;
 
-      for (long i = 0; i < v->n; i++)
-        v->data[i] += fval;
-
+      complex_vector_add_const(v, fval);
       return (Object) v;
     }
   }
@@ -261,9 +260,7 @@ Object complex_plus (Zone z, Object a, Object b) {
       if (!v)
         return NULL;
 
-      for (long i = 0; i < v->n; i++)
-        v->data[i] += fval;
-
+      complex_vector_add_const(v, fval);
       return (Object) v;
     }
   }
@@ -300,9 +297,8 @@ Object complex_minus (Zone z, Object a, Object b) {
       if (!v)
         return NULL;
 
-      for (long i = 0; i < v->n; i++)
-        v->data[i] = fval - v->data[i];
-
+      complex_vector_add_const(v, -fval);
+      complex_vector_negate(v);
       return (Object) v;
     }
   }
@@ -328,9 +324,7 @@ Object complex_minus (Zone z, Object a, Object b) {
       if (!v)
         return NULL;
 
-      for (long i = 0; i < v->n; i++)
-        v->data[i] -= fval;
-
+      complex_vector_add_const(v, -fval);
       return (Object) v;
     }
   }
@@ -374,9 +368,7 @@ Object complex_times (Zone z, Object a, Object b) {
       if (!v)
         return NULL;
 
-      for (long i = 0; i < v->n; i++)
-        v->data[i] *= fval;
-
+      matte_zscal(fval, v);
       return (Object) v;
     }
   }
@@ -402,9 +394,7 @@ Object complex_times (Zone z, Object a, Object b) {
       if (!v)
         return NULL;
 
-      for (long i = 0; i < v->n; i++)
-        v->data[i] *= fval;
-
+      matte_zscal(fval, v);
       return (Object) v;
     }
   }
@@ -469,9 +459,7 @@ Object complex_rdivide (Zone z, Object a, Object b) {
       if (!v)
         return NULL;
 
-      for (long i = 0; i < v->n; i++)
-        v->data[i] /= fval;
-
+      matte_zscal(1.0 / fval, v);
       return (Object) v;
     }
   }
@@ -510,9 +498,7 @@ Object complex_ldivide (Zone z, Object a, Object b) {
       if (!v)
         return NULL;
 
-      for (long i = 0; i < v->n; i++)
-        v->data[i] /= fval;
-
+      matte_zscal(1.0 / fval, v);
       return (Object) v;
     }
   }

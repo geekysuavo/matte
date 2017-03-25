@@ -1,5 +1,5 @@
 
-/* Copyright (c) 2016 Bradley Worley <geekysuavo@gmail.com>
+/* Copyright (c) 2016, 2017 Bradley Worley <geekysuavo@gmail.com>
  * Released under the MIT License
  */
 
@@ -53,7 +53,15 @@ void vector_free (Zone z, Vector x);
 
 long vector_get_length (Vector x);
 
+double vector_get (Vector x, long i);
+
 int vector_set_length (Vector x, long n);
+
+void vector_set (Vector x, long i, double xi);
+
+void vector_add_const (Vector x, double f);
+
+void vector_negate (Vector x);
 
 #endif /* !__MATTE_VECTOR_H__ */
 

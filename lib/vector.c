@@ -160,6 +160,24 @@ long vector_get_length (Vector x) {
   return (x ? x->n : 0);
 }
 
+/* vector_get(): get an element from a matte vector.
+ *
+ * arguments:
+ *  @x: matte vector to access.
+ *  @i: element index to get.
+ *
+ * returns:
+ *  requested vector element.
+ */
+inline double vector_get (Vector x, long i) {
+  /* if the pointer and index are valid, return the element. */
+  if (x && i < x->n)
+    return x->data[i];
+
+  /* return zero. */
+  return 0.0;
+}
+
 /* vector_set_length(): set the length of a matte vector.
  *
  * arguments:
@@ -195,13 +213,58 @@ int vector_set_length (Vector x, long n) {
   return 1;
 }
 
+/* vector_set(): set an element of a matte vector.
+ *
+ * arguments:
+ *  @x: matte vector to modify.
+ *  @i: element index to set.
+ *  @xi: element value.
+ */
+inline void vector_set (Vector x, long i, double xi) {
+  /* if the pointer and index are valid, set the element. */
+  if (x && i < x->n)
+    x->data[i] = xi;
+}
+
+/* vector_add_const(): add a constant value to a matte vector.
+ *
+ * arguments:
+ *  @x: matte vector to modify.
+ *  @f: constant to add to @x.
+ */
+inline void vector_add_const (Vector x, double f) {
+  /* return if the vector is null. */
+  if (!x)
+    return;
+
+  /* add the constant to every element of the vector. */
+  for (long i = 0; i < x->n; i++)
+    x->data[i] += f;
+}
+
+/* vector_negate(): negate the elements of a matte vector.
+ *
+ * arguments:
+ *  @x: matte vector to modify.
+ */
+inline void vector_negate (Vector x) {
+  /* return if the vector is null. */
+  if (!x)
+    return;
+
+  /* negate every element of the vector. */
+  for (long i = 0; i < x->n; i++)
+    x->data[i] = -(x->data[i]);
+}
+
 /* vector_disp(): display function for matte vectors.
  */
 int vector_disp (Zone z, Vector x) {
   /* print the vector contents. */
   printf("\n");
+  const long n = vector_get_length(x);
   for (long i = 0; i < x->n; i++)
-    printf("\n  %lg", x->data[i]);
+    printf("\n  %lg", vector_get(x, i));
 
   /* print newlines and return success. */
   printf("\n\n");

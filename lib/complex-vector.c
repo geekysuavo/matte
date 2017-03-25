@@ -190,6 +190,24 @@ long complex_vector_get_length (ComplexVector x) {
   return (x ? x->n : 0);
 }
 
+/* complex_vector_get(): get an element from a matte complex vector.
+ *
+ * arguments:
+ *  @x: matte complex vector to access.
+ *  @i: element index to get.
+ *
+ * returns:
+ *  requested vector element.
+ */
+inline complex double complex_vector_get (ComplexVector x, long i) {
+  /* if the pointer and index are valid, return the element. */
+  if (x && i < x->n)
+    return x->data[i];
+
+  /* return zero. */
+  return 0.0;
+}
+
 /* complex_vector_set_length(): set the length of a matte complex vector.
  *
  * arguments:
@@ -226,6 +244,52 @@ int complex_vector_set_length (ComplexVector x, long n) {
 
   /* return success. */
   return 1;
+}
+
+/* complex_vector_set(): set an element of a matte complex vector.
+ *
+ * arguments:
+ *  @x: matte complex vector to modify.
+ *  @i: element index to set.
+ *  @xi: element value.
+ */
+inline void complex_vector_set (ComplexVector x, long i,
+                                complex double xi) {
+  /* if the pointer and index are valid, set the element. */
+  if (x && i < x->n)
+    x->data[i] = xi;
+}
+
+/* complex_vector_add_const(): add a constant value to a matte
+ * complex vector.
+ *
+ * arguments:
+ *  @x: matte complex vector to modify.
+ *  @f: constant to add to @x.
+ */
+inline void complex_vector_add_const (ComplexVector x, complex double f) {
+  /* return if the vector is null. */
+  if (!x)
+    return;
+
+  /* add the constant to every element of the vector. */
+  for (long i = 0; i < x->n; i++)
+    x->data[i] += f;
+}
+
+/* complex_vector_negate(): negate the elements of a matte complex vector.
+ *
+ * arguments:
+ *  @x: matte complex vector to modify.
+ */
+inline void complex_vector_negate (ComplexVector x) {
+  /* return if the vector is null. */
+  if (!x)
+    return;
+
+  /* negate every element of the vector. */
+  for (long i = 0; i < x->n; i++)
+    x->data[i] = -(x->data[i]);
 }
 
 /* complex_vector_disp(): display function for matte complex vectors.

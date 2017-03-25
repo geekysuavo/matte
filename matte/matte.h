@@ -1,5 +1,5 @@
 
-/* Copyright (c) 2016 Bradley Worley <geekysuavo@gmail.com>
+/* Copyright (c) 2016, 2017 Bradley Worley <geekysuavo@gmail.com>
  * Released under the MIT License
  */
 
@@ -36,6 +36,9 @@
 #include <matte/matrix.h>
 #include <matte/complex-vector.h>
 #include <matte/complex-matrix.h>
+
+/* include the matte blas and lapack wrapper headers. */
+#include <matte/blas.h>
 
 /* include the matte builtin function header. */
 #include <matte/builtins.h>

@@ -1,11 +1,11 @@
 
-/* Copyright (c) 2016 Bradley Worley <geekysuavo@gmail.com>
+/* Copyright (c) 2016, 2017 Bradley Worley <geekysuavo@gmail.com>
  * Released under the MIT License
  */
 
-/* include the float, integer and range headers. */
-/* include the float header. */
+/* include the float and blas headers. */
 #include <matte/float.h>
+#include <matte/blas.h>
 
 /* include headers for inferior types. */
 #include <matte/int.h>
@@ -145,9 +145,7 @@ Object float_plus (Zone z, Object a, Object b) {
       if (!x)
         return NULL;
 
-      for (long i = 0; i < x->n; i++)
-        x->data[i] += fval;
-
+      vector_add_const(x, fval);
       return (Object) x;
     }
   }
@@ -165,9 +163,7 @@ Object float_plus (Zone z, Object a, Object b) {
       if (!x)
         return NULL;
 
-      for (long i = 0; i < x->n; i++)
-        x->data[i] += fval;
-
+      vector_add_const(x, fval);
       return (Object) x;
     }
   }
@@ -198,9 +194,8 @@ Object float_minus (Zone z, Object a, Object b) {
       if (!x)
         return NULL;
 
-      for (long i = 0; i < x->n; i++)
-        x->data[i] = fval - x->data[i];
-
+      vector_add_const(x, -fval);
+      vector_negate(x);
       return (Object) x;
     }
   }
@@ -218,9 +213,7 @@ Object float_minus (Zone z, Object a, Object b) {
       if (!x)
         return NULL;
 
-      for (long i = 0; i < x->n; i++)
-        x->data[i] -= fval;
-
+      vector_add_const(x, -fval);
       return (Object) x;
     }
   }
@@ -235,9 +228,9 @@ Float float_uminus (Zone z, Float a) {
   return float_new_with_value(z, -(a->value));
 }
 
-/* float_mtimes(): matrix multiplication operation for floats.
+/* float_times(): element-wise multiplication operation for floats.
  */
-Object float_mtimes (Zone z, Object a, Object b) {
+Object float_times (Zone z, Object a, Object b) {
   if (IS_FLOAT(a)) {
     if (IS_FLOAT(b)) {
       /* float * float => float */
@@ -251,6 +244,16 @@ Object float_mtimes (Zone z, Object a, Object b) {
         float_new_with_value(z, float_get_value((Float) a) *
                              (double) int_get_value((Int) b));
     }
+    else if (IS_RANGE(b)) {
+      /* float .* range => vector */
+      double fval = float_get_value((Float) a);
+      Vector x = vector_new_from_range(z, (Range) b);
+      if (!x)
+        return NULL;
+
+      matte_dscal(fval, x);
+      return (Object) x;
+    }
   }
   else if (IS_FLOAT(b)) {
     if (IS_INT(a)) {
@@ -259,44 +262,19 @@ Object float_mtimes (Zone z, Object a, Object b) {
         float_new_with_value(z, float_get_value((Float) b) *
                              (double) int_get_value((Int) a));
     }
-  }
-
-  return NULL;
-}
-
-/* float_times(): element-wise multiplication operation for floats.
- */
-Object float_times (Zone z, Object a, Object b) {
-  if (IS_FLOAT(a)) {
-    if (IS_RANGE(b)) {
-      /* float .* range => vector */
-      double fval = float_get_value((Float) a);
-      Vector x = vector_new_from_range(z, (Range) b);
-      if (!x)
-        return NULL;
-
-      for (long i = 0; i < x->n; i++)
-        x->data[i] *= fval;
-
-      return (Object) x;
-    }
-  }
-  else if (IS_FLOAT(b)) {
-    if (IS_RANGE(a)) {
+    else if (IS_RANGE(a)) {
       /* range .* float => vector */
       double fval = float_get_value((Float) b);
       Vector x = vector_new_from_range(z, (Range) a);
       if (!x)
         return NULL;
 
-      for (long i = 0; i < x->n; i++)
-        x->data[i] *= fval;
-
+      matte_dscal(fval, x);
       return (Object) x;
     }
   }
 
-  return float_mtimes(z, a, b);
+  return NULL;
 }
 
 /* float_mrdivide(): matrix right-division operation for floats.
@@ -353,9 +331,7 @@ Object float_rdivide (Zone z, Object a, Object b) {
       if (!x)
         return NULL;
 
-      for (long i = 0; i < x->n; i++)
-        x->data[i] /= fval;
-
+      matte_dscal(1.0 / fval, x);
       return (Object) x;
     }
   }
@@ -403,9 +379,7 @@ Object float_ldivide (Zone z, Object a, Object b) {
       if (!x)
         return NULL;
 
-      for (long i = 0; i < x->n; i++)
-        x->data[i] /= fval;
-
+      matte_dscal(1.0 / fval, x);
       return (Object) x;
     }
   }
@@ -747,7 +721,7 @@ struct _ObjectType Float_type = {
   (obj_binary)   float_minus,                    /* fn_minus      */
   (obj_unary)    float_uminus,                   /* fn_uminus     */
   (obj_binary)   float_times,                    /* fn_times      */
-  (obj_binary)   float_mtimes,                   /* fn_mtimes     */
+  (obj_binary)   float_times,                    /* fn_mtimes     */
   (obj_binary)   float_rdivide,                  /* fn_rdivide    */
   (obj_binary)   float_ldivide,                  /* fn_ldivide    */
   (obj_binary)   float_mrdivide,                 /* fn_mrdivide   */

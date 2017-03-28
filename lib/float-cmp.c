@@ -23,8 +23,9 @@ Object FUNCTION(F) (Zone z, Object a, Object b) {
       if (!v)
         return NULL;
 
-      for (long i = 0; i < v->n; i++)
-        v->data[i] = (fval OP v->data[i]);
+      const long n = vector_get_length(v);
+      for (long i = 0; i < n; i++)
+        vector_set(v, i, fval OP vector_get(v, i));
 
       return (Object) v;
     }
@@ -42,8 +43,9 @@ Object FUNCTION(F) (Zone z, Object a, Object b) {
       if (!v)
         return NULL;
 
-      for (long i = 0; i < v->n; i++)
-        v->data[i] = (v->data[i] OP fval);
+      const long n = vector_get_length(v);
+      for (long i = 0; i < n; i++)
+        vector_set(v, i, vector_get(v, i) OP fval);
 
       return (Object) v;
     }

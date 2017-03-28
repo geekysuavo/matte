@@ -59,9 +59,9 @@ int vector_set_length (Vector x, long n);
 
 void vector_set (Vector x, long i, double xi);
 
-void vector_add_const (Vector x, double f);
+int vector_add_const (Vector x, double f);
 
-void vector_negate (Vector x);
+int vector_negate (Vector x);
 
 #endif /* !__MATTE_VECTOR_H__ */
 

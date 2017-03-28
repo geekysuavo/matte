@@ -3,9 +3,10 @@
  * Released under the MIT License
  */
 
-/* include the vector and exception headers. */
+/* include the vector, exception and blas headers. */
 #include <matte/vector.h>
 #include <matte/except.h>
+#include <matte/blas.h>
 
 /* include headers for inferior types. */
 #include <matte/int.h>
@@ -231,30 +232,42 @@ inline void vector_set (Vector x, long i, double xi) {
  * arguments:
  *  @x: matte vector to modify.
  *  @f: constant to add to @x.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
  */
-inline void vector_add_const (Vector x, double f) {
-  /* return if the vector is null. */
+int vector_add_const (Vector x, double f) {
+  /* fail if the vector is null. */
   if (!x)
-    return;
+    fail(ERR_INVALID_ARGIN);
 
   /* add the constant to every element of the vector. */
   for (long i = 0; i < x->n; i++)
     x->data[i] += f;
+
+  /* return success. */
+  return 1;
 }
 
 /* vector_negate(): negate the elements of a matte vector.
  *
  * arguments:
  *  @x: matte vector to modify.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
  */
-inline void vector_negate (Vector x) {
-  /* return if the vector is null. */
+int vector_negate (Vector x) {
+  /* fail if the vector is null. */
   if (!x)
-    return;
+    fail(ERR_INVALID_ARGIN);
 
   /* negate every element of the vector. */
   for (long i = 0; i < x->n; i++)
     x->data[i] = -(x->data[i]);
+
+  /* return success. */
+  return 1;
 }
 
 /* vector_disp(): display function for matte vectors.
@@ -263,7 +276,7 @@ int vector_disp (Zone z, Vector x) {
   /* print the vector contents. */
   printf("\n");
   const long n = vector_get_length(x);
-  for (long i = 0; i < x->n; i++)
+  for (long i = 0; i < n; i++)
     printf("\n  %lg", vector_get(x, i));
 
   /* print newlines and return success. */
@@ -280,53 +293,35 @@ Object vector_plus (Zone z, Object a, Object b) {
       Vector va = (Vector) a;
       Vector vb = (Vector) b;
 
-      if (va->n != vb->n || va->tr != vb->tr) {
-        error(ERR_SIZE_MISMATCH);
-        return NULL;
+      if (va->tr == vb->tr) {
+        Vector vc = vector_copy(z, va);
+        if (matte_daxpy(1.0, vb, vc))
+          return (Object) vc;
       }
-
-      Vector vc = vector_copy(z, va);
-      if (!vc)
-        return NULL;
-
-      cblas_daxpy(vc->n, 1.0, vb->data, 1, va->data, 1);
-      return (Object) vc;
+      else {
+        /* FIXME: implement broadcasting vector addition. */
+      }
     }
     else if (IS_COMPLEX(b)) {
       /* vector + complex => complex vector */
       complex double fval = complex_get_value((Complex) b);
       ComplexVector v = complex_vector_new_from_vector(z, (Vector) a);
-      if (!v)
-        return NULL;
-
-      for (long i = 0; i < v->n; i++)
-        v->data[i] += fval;
-
-      return (Object) v;
+      if (complex_vector_add_const(v, fval))
+        return (Object) v;
     }
     else if (IS_FLOAT(b)) {
       /* vector + float => vector */
       double fval = float_get_value((Float) b);
       Vector v = vector_copy(z, (Vector) a);
-      if (!v)
-        return NULL;
-
-      for (long i = 0; i < v->n; i++)
-        v->data[i] += fval;
-
-      return (Object) v;
+      if (vector_add_const(v, fval))
+        return (Object) v;
     }
     else if (IS_INT(b)) {
       /* vector + int => vector */
       double fval = (double) int_get_value((Int) b);
       Vector v = vector_copy(z, (Vector) a);
-      if (!v)
-        return NULL;
-
-      for (long i = 0; i < v->n; i++)
-        v->data[i] += fval;
-
-      return (Object) v;
+      if (vector_add_const(v, fval))
+        return (Object) v;
     }
   }
   else if (IS_VECTOR(b)) {
@@ -334,37 +329,22 @@ Object vector_plus (Zone z, Object a, Object b) {
       /* complex + vector => complex vector */
       complex double fval = complex_get_value((Complex) a);
       ComplexVector v = complex_vector_new_from_vector(z, (Vector) b);
-      if (!v)
-        return NULL;
-
-      for (long i = 0; i < v->n; i++)
-        v->data[i] += fval;
-
-      return (Object) v;
+      if (complex_vector_add_const(v, fval))
+        return (Object) v;
     }
     else if (IS_FLOAT(a)) {
       /* float + vector => vector */
       double fval = float_get_value((Float) a);
       Vector v = vector_copy(z, (Vector) b);
-      if (!v)
-        return NULL;
-
-      for (long i = 0; i < v->n; i++)
-        v->data[i] += fval;
-
-      return (Object) v;
+      if (vector_add_const(v, fval))
+        return (Object) v;
     }
     else if (IS_INT(a)) {
       /* int + vector => vector */
       double fval = (double) int_get_value((Int) a);
       Vector v = vector_copy(z, (Vector) b);
-      if (!v)
-        return NULL;
-
-      for (long i = 0; i < v->n; i++)
-        v->data[i] += fval;
-
-      return (Object) v;
+      if (vector_add_const(v, fval))
+        return (Object) v;
     }
   }
 
@@ -380,51 +360,35 @@ Object vector_minus (Zone z, Object a, Object b) {
       Vector va = (Vector) a;
       Vector vb = (Vector) b;
 
-      if (va->n != vb->n || va->tr != vb->tr)
-        return NULL;
-
-      Vector vc = vector_copy(z, va);
-      if (!vc)
-        return NULL;
-
-      cblas_daxpy(vc->n, -1.0, vb->data, 1, vc->data, 1);
-      return (Object) vc;
+      if (va->tr == vb->tr) {
+        Vector vc = vector_copy(z, va);
+        if (matte_daxpy(-1.0, vb, vc))
+          return (Object) vc;
+      }
+      else {
+        /* FIXME: implement broadcasting vector addition. */
+      }
     }
     else if (IS_COMPLEX(b)) {
       /* vector - complex => complex vector */
       complex double fval = complex_get_value((Complex) b);
       ComplexVector v = complex_vector_new_from_vector(z, (Vector) a);
-      if (!v)
-        return NULL;
-
-      for (long i = 0; i < v->n; i++)
-        v->data[i] -= fval;
-
-      return (Object) v;
+      if (complex_vector_add_const(v, -fval))
+        return (Object) v;
     }
     else if (IS_FLOAT(b)) {
       /* vector - float => vector */
       double fval = float_get_value((Float) b);
       Vector v = vector_copy(z, (Vector) a);
-      if (!v)
-        return NULL;
-
-      for (long i = 0; i < v->n; i++)
-        v->data[i] -= fval;
-
-      return (Object) v;
+      if (vector_add_const(v, -fval))
+        return (Object) v;
     }
     else if (IS_INT(b)) {
       /* vector - int => vector */
       double fval = (double) int_get_value((Int) b);
       Vector v = vector_copy(z, (Vector) a);
-      if (!v)
-        return NULL;
-
-      for (long i = 0; i < v->n; i++)
-        v->data[i] -= fval;
-
-      return (Object) v;
+      if (vector_add_const(v, -fval))
+        return (Object) v;
     }
   }
   else if (IS_VECTOR(b)) {
@@ -432,37 +396,23 @@ Object vector_minus (Zone z, Object a, Object b) {
       /* complex - vector => complex vector */
       complex double fval = complex_get_value((Complex) a);
       ComplexVector v = complex_vector_new_from_vector(z, (Vector) b);
-      if (!v)
-        return NULL;
-
-      for (long i = 0; i < v->n; i++)
-        v->data[i] = fval - v->data[i];
-
-      return (Object) v;
+      if (complex_vector_add_const(v, -fval) &&
+          complex_vector_negate(v))
+        return (Object) v;
     }
     else if (IS_FLOAT(a)) {
       /* float - vector => vector */
       double fval = float_get_value((Float) a);
       Vector v = vector_copy(z, (Vector) b);
-      if (!v)
-        return NULL;
-
-      for (long i = 0; i < v->n; i++)
-        v->data[i] = fval - v->data[i];
-
-      return (Object) v;
+      if (vector_add_const(v, -fval) && vector_negate(v))
+        return (Object) v;
     }
     else if (IS_INT(a)) {
       /* int - vector => vector */
       double fval = (double) int_get_value((Int) a);
       Vector v = vector_copy(z, (Vector) b);
-      if (!v)
-        return NULL;
-
-      for (long i = 0; i < v->n; i++)
-        v->data[i] = fval - v->data[i];
-
-      return (Object) v;
+      if (vector_add_const(v, -fval) && vector_negate(v))
+        return (Object) v;
     }
   }
 
@@ -473,12 +423,10 @@ Object vector_minus (Zone z, Object a, Object b) {
  */
 Vector vector_uminus (Zone z, Vector a) {
   Vector aneg = vector_new_with_length(z, a->n);
-  if (!aneg)
+  if (!matte_daxpy(-1.0, a, aneg))
     return NULL;
 
-  cblas_daxpy(aneg->n, -1.0, a->data, 1, aneg->data, 1);
   aneg->tr = a->tr;
-
   return aneg;
 }
 

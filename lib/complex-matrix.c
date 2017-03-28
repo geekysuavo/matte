@@ -316,8 +316,9 @@ int complex_matrix_disp (Zone z, ComplexMatrix A) {
   for (long i = 0; i < A->m; i++) {
     printf("\n");
     for (long j = 0; j < A->n; j++) {
-      const double re = creal(A->data[i * A->n + j]);
-      const double im = cimag(A->data[i * A->n + j]);
+      const complex double cij = complex_matrix_get(A, i, j);
+      const double re = creal(cij);
+      const double im = cimag(cij);
       printf("  %lg %s %lg", re,
              im < 0.0 ? "-" : "+",
              im < 0.0 ? -im : im);

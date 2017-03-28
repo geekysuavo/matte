@@ -18,11 +18,43 @@
 /* include the atlas blas header. */
 #include <cblas.h>
 
-/* function declarations (blas.c): */
+/* function declarations, level 1, double (blas.c): */
 
-void matte_dscal (double alpha, Vector x);
+int matte_daxpy (double alpha, Vector x, Vector y);
 
-void matte_zscal (complex double alpha, ComplexVector x);
+int matte_dscal (double alpha, Vector x);
+
+int matte_ddot (Vector x, Vector y, double *out);
+
+int matte_dnrm2 (Vector x, double *out);
+
+/* function declarations, level 1, complex double (blas.c): */
+
+int matte_zaxpy (complex double alpha, ComplexVector x, ComplexVector y);
+
+int matte_zscal (complex double alpha, ComplexVector x);
+
+int matte_zdotu (ComplexVector x, ComplexVector y, complex double *out);
+
+int matte_zdotc (ComplexVector x, ComplexVector y, complex double *out);
+
+int matte_znrm2 (ComplexVector x, double *out);
+
+/* function declarations, level 2, double (blas.c): */
+
+/* FIXME */
+
+/* function declarations, level 2, complex double (blas.c): */
+
+/* FIXME */
+
+/* function declarations, level 3, double (blas.c): */
+
+/* FIXME */
+
+/* function declarations, level 3, complex double (blas.c): */
+
+/* FIXME */
 
 #endif /* !__MATTE_BLAS_H__ */
 

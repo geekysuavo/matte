@@ -1,5 +1,5 @@
 
-/* Copyright (c) 2016 Bradley Worley <geekysuavo@gmail.com>
+/* Copyright (c) 2016, 2017 Bradley Worley <geekysuavo@gmail.com>
  * Released under the MIT License.
  */
 
@@ -67,6 +67,14 @@
 
 #define ERR_SIZE_MISMATCH \
   "matte:size-mismatch", "operand sizes do not match"
+
+#define ERR_SIZE_MISMATCH_VV(x,y) \
+  "matte:size-mismatch", \
+  "operand sizes do not conform (%ldx%ld, %ldx%ld)", \
+  (x)->tr == CblasNoTrans ? (x)->n : 1L, \
+  (x)->tr == CblasNoTrans ? 1L : (x)->n, \
+  (y)->tr == CblasNoTrans ? (y)->n : 1L, \
+  (y)->tr == CblasNoTrans ? 1L : (y)->n
 
 #define ERR_INVALID_ARGIN \
   "matte:invalid-input-arg", "one or more invalid arguments"

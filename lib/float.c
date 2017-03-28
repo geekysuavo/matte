@@ -142,11 +142,8 @@ Object float_plus (Zone z, Object a, Object b) {
       /* float + range => vector */
       double fval = float_get_value((Float) a);
       Vector x = vector_new_from_range(z, (Range) b);
-      if (!x)
-        return NULL;
-
-      vector_add_const(x, fval);
-      return (Object) x;
+      if (vector_add_const(x, fval))
+        return (Object) x;
     }
   }
   else if (IS_FLOAT(b)) {
@@ -160,11 +157,8 @@ Object float_plus (Zone z, Object a, Object b) {
       /* range + float => vector */
       double fval = float_get_value((Float) b);
       Vector x = vector_new_from_range(z, (Range) a);
-      if (!x)
-        return NULL;
-
-      vector_add_const(x, fval);
-      return (Object) x;
+      if (vector_add_const(x, fval))
+        return (Object) x;
     }
   }
 
@@ -191,12 +185,8 @@ Object float_minus (Zone z, Object a, Object b) {
       /* float - range => vector */
       double fval = float_get_value((Float) a);
       Vector x = vector_new_from_range(z, (Range) b);
-      if (!x)
-        return NULL;
-
-      vector_add_const(x, -fval);
-      vector_negate(x);
-      return (Object) x;
+      if (vector_add_const(x, -fval) && vector_negate(x))
+        return (Object) x;
     }
   }
   else if (IS_FLOAT(b)) {
@@ -210,11 +200,8 @@ Object float_minus (Zone z, Object a, Object b) {
       /* range - float => vector */
       double fval = float_get_value((Float) b);
       Vector x = vector_new_from_range(z, (Range) a);
-      if (!x)
-        return NULL;
-
-      vector_add_const(x, -fval);
-      return (Object) x;
+      if (vector_add_const(x, -fval))
+        return (Object) x;
     }
   }
 
@@ -248,11 +235,8 @@ Object float_times (Zone z, Object a, Object b) {
       /* float .* range => vector */
       double fval = float_get_value((Float) a);
       Vector x = vector_new_from_range(z, (Range) b);
-      if (!x)
-        return NULL;
-
-      matte_dscal(fval, x);
-      return (Object) x;
+      if (matte_dscal(fval, x))
+        return (Object) x;
     }
   }
   else if (IS_FLOAT(b)) {
@@ -266,11 +250,8 @@ Object float_times (Zone z, Object a, Object b) {
       /* range .* float => vector */
       double fval = float_get_value((Float) b);
       Vector x = vector_new_from_range(z, (Range) a);
-      if (!x)
-        return NULL;
-
-      matte_dscal(fval, x);
-      return (Object) x;
+      if (matte_dscal(fval, x))
+        return (Object) x;
     }
   }
 
@@ -317,8 +298,9 @@ Object float_rdivide (Zone z, Object a, Object b) {
       if (!x)
         return NULL;
 
-      for (long i = 0; i < x->n; i++)
-        x->data[i] = fval / x->data[i];
+      const long n = vector_get_length(x);
+      for (long i = 0; i < n; i++)
+        vector_set(x, i, fval / vector_get(x, i));
 
       return (Object) x;
     }
@@ -328,11 +310,8 @@ Object float_rdivide (Zone z, Object a, Object b) {
       /* range ./ float => vector */
       double fval = float_get_value((Float) b);
       Vector x = vector_new_from_range(z, (Range) a);
-      if (!x)
-        return NULL;
-
-      matte_dscal(1.0 / fval, x);
-      return (Object) x;
+      if (matte_dscal(1.0 / fval, x))
+        return (Object) x;
     }
   }
 
@@ -376,11 +355,8 @@ Object float_ldivide (Zone z, Object a, Object b) {
       /* float .\ range => vector */
       double fval = float_get_value((Float) a);
       Vector x = vector_new_from_range(z, (Range) b);
-      if (!x)
-        return NULL;
-
-      matte_dscal(1.0 / fval, x);
-      return (Object) x;
+      if (matte_dscal(1.0 / fval, x))
+        return (Object) x;
     }
   }
   else if (IS_FLOAT(b)) {
@@ -391,8 +367,9 @@ Object float_ldivide (Zone z, Object a, Object b) {
       if (!x)
         return NULL;
 
-      for (long i = 0; i < x->n; i++)
-        x->data[i] = fval / x->data[i];
+      const long n = vector_get_length(x);
+      for (long i = 0; i < n; i++)
+        vector_set(x, i, fval / vector_get(x, i));
 
       return (Object) x;
     }
@@ -441,8 +418,9 @@ Object float_power (Zone z, Object a, Object b) {
       if (!x)
         return NULL;
 
-      for (long i = 0; i < x->n; i++)
-        x->data[i] = pow(fval, x->data[i]);
+      const long n = vector_get_length(x);
+      for (long i = 0; i < n; i++)
+        vector_set(x, i, pow(fval, vector_get(x, i)));
 
       return (Object) x;
     }
@@ -455,8 +433,9 @@ Object float_power (Zone z, Object a, Object b) {
       if (!x)
         return NULL;
 
-      for (long i = 0; i < x->n; i++)
-        x->data[i] = pow(x->data[i], fval);
+      const long n = vector_get_length(x);
+      for (long i = 0; i < n; i++)
+        vector_set(x, i, pow(vector_get(x, i), fval));
 
       return (Object) x;
     }
@@ -626,7 +605,7 @@ Vector float_colon (Zone z, Object a, Object b, Object c) {
     return NULL;
 
   for (long i = 0; i < n; i++, begin += step)
-    x->data[i] = begin;
+    vector_set(x, i, begin);
 
   return x;
 }
@@ -642,20 +621,20 @@ Vector float_horzcat (Zone z, int n, va_list vl) {
     Object obj = (Object) va_arg(vl, Object);
 
     if (IS_FLOAT(obj)) {
-      if (!vector_set_length(x, x->n + 1)) {
+      if (!vector_set_length(x, vector_get_length(x) + 1)) {
         object_free(z, x);
         return NULL;
       }
 
-      x->data[ix++] = float_get_value((Float) obj);
+      vector_set(x, ix++, float_get_value((Float) obj));
     }
     else if (IS_INT(obj)) {
-      if (!vector_set_length(x, x->n + 1)) {
+      if (!vector_set_length(x, vector_get_length(x) + 1)) {
         object_free(z, x);
         return NULL;
       }
 
-      x->data[ix++] = (double) int_get_value((Int) obj);
+      vector_set(x, ix++, (double) int_get_value((Int) obj));
     }
     else if (IS_RANGE(obj)) {
       Range r = (Range) obj;
@@ -667,7 +646,7 @@ Vector float_horzcat (Zone z, int n, va_list vl) {
       }
 
       for (long elem = r->begin; elem <= r->end; elem += r->step)
-        x->data[ix++] = (double) elem;
+        vector_set(x, ix++, (double) elem);
     }
     else {
       object_free(z, x);
@@ -689,10 +668,10 @@ Vector float_vertcat (Zone z, int n, va_list vl) {
     Object obj = (Object) va_arg(vl, Object);
 
     if (IS_FLOAT(obj)) {
-      x->data[i] = float_get_value((Float) obj);
+      vector_set(x, i, float_get_value((Float) obj));
     }
     else if (IS_INT(obj)) {
-      x->data[i] = (double) int_get_value((Int) obj);
+      vector_set(x, i, (double) int_get_value((Int) obj));
     }
     else {
       object_free(z, x);

@@ -231,11 +231,8 @@ Object complex_plus (Zone z, Object a, Object b) {
       /* complex + range => complex vector */
       complex double fval = complex_get_value((Complex) a);
       ComplexVector v = complex_vector_new_from_range(z, (Range) b);
-      if (!v)
-        return NULL;
-
-      complex_vector_add_const(v, fval);
-      return (Object) v;
+      if (complex_vector_add_const(v, fval))
+        return (Object) v;
     }
   }
   else if (IS_COMPLEX(b)) {
@@ -257,11 +254,8 @@ Object complex_plus (Zone z, Object a, Object b) {
       /* range + complex => complex vector */
       complex double fval = complex_get_value((Complex) b);
       ComplexVector v = complex_vector_new_from_range(z, (Range) a);
-      if (!v)
-        return NULL;
-
-      complex_vector_add_const(v, fval);
-      return (Object) v;
+      if (complex_vector_add_const(v, fval))
+        return (Object) v;
     }
   }
 
@@ -294,12 +288,9 @@ Object complex_minus (Zone z, Object a, Object b) {
       /* complex - range => complex vector */
       complex double fval = complex_get_value((Complex) a);
       ComplexVector v = complex_vector_new_from_range(z, (Range) b);
-      if (!v)
-        return NULL;
-
-      complex_vector_add_const(v, -fval);
-      complex_vector_negate(v);
-      return (Object) v;
+      if (complex_vector_add_const(v, -fval) &&
+          complex_vector_negate(v))
+        return (Object) v;
     }
   }
   else if (IS_COMPLEX(b)) {
@@ -321,11 +312,8 @@ Object complex_minus (Zone z, Object a, Object b) {
       /* range - complex => complex vector */
       complex double fval = complex_get_value((Complex) b);
       ComplexVector v = complex_vector_new_from_range(z, (Range) a);
-      if (!v)
-        return NULL;
-
-      complex_vector_add_const(v, -fval);
-      return (Object) v;
+      if (complex_vector_add_const(v, -fval))
+        return (Object) v;
     }
   }
 
@@ -365,11 +353,8 @@ Object complex_times (Zone z, Object a, Object b) {
       /* complex .* range => complex vector */
       complex double fval = complex_get_value((Complex) a);
       ComplexVector v = complex_vector_new_from_range(z, (Range) b);
-      if (!v)
-        return NULL;
-
-      matte_zscal(fval, v);
-      return (Object) v;
+      if (matte_zscal(fval, v))
+        return (Object) v;
     }
   }
   else if (IS_COMPLEX(b)) {
@@ -391,11 +376,8 @@ Object complex_times (Zone z, Object a, Object b) {
       /* range .* complex => complex vector */
       complex double fval = complex_get_value((Complex) b);
       ComplexVector v = complex_vector_new_from_range(z, (Range) a);
-      if (!v)
-        return NULL;
-
-      matte_zscal(fval, v);
-      return (Object) v;
+      if (matte_zscal(fval, v))
+        return (Object) v;
     }
   }
 
@@ -431,8 +413,9 @@ Object complex_rdivide (Zone z, Object a, Object b) {
       if (!v)
         return NULL;
 
+      const long n = complex_vector_get_length(v);
       for (long i = 0; i < v->n; i++)
-        v->data[i] = fval / v->data[i];
+        complex_vector_set(v, i, fval / complex_vector_get(v, i));
 
       return (Object) v;
     }
@@ -456,11 +439,8 @@ Object complex_rdivide (Zone z, Object a, Object b) {
       /* range ./ complex => complex vector */
       complex double fval = complex_get_value((Complex) b);
       ComplexVector v = complex_vector_new_from_range(z, (Range) a);
-      if (!v)
-        return NULL;
-
-      matte_zscal(1.0 / fval, v);
-      return (Object) v;
+      if (matte_zscal(1.0 / fval, v))
+        return (Object) v;
     }
   }
 
@@ -495,11 +475,8 @@ Object complex_ldivide (Zone z, Object a, Object b) {
       /* complex .\ range => complex vector */
       complex double fval = complex_get_value((Complex) a);
       ComplexVector v = complex_vector_new_from_range(z, (Range) b);
-      if (!v)
-        return NULL;
-
-      matte_zscal(1.0 / fval, v);
-      return (Object) v;
+      if (matte_zscal(1.0 / fval, v))
+        return (Object) v;
     }
   }
   else if (IS_COMPLEX(b)) {
@@ -525,7 +502,7 @@ Object complex_ldivide (Zone z, Object a, Object b) {
         return NULL;
 
       for (long i = 0; i < v->n; i++)
-        v->data[i] = fval / v->data[i];
+        complex_vector_set(v, i, fval / complex_vector_get(v, i));
 
       return (Object) v;
     }
@@ -567,7 +544,7 @@ Object complex_power (Zone z, Object a, Object b) {
         return NULL;
 
       for (long i = 0; i < v->n; i++)
-        v->data[i] = cpow(fval, v->data[i]);
+        complex_vector_set(v, i, cpow(fval, complex_vector_get(v, i)));
 
       return (Object) v;
     }
@@ -595,7 +572,7 @@ Object complex_power (Zone z, Object a, Object b) {
         return NULL;
 
       for (long i = 0; i < v->n; i++)
-        v->data[i] = cpow(v->data[i], fval);
+        complex_vector_set(v, i, cpow(complex_vector_get(v, i), fval));
 
       return (Object) v;
     }
@@ -787,7 +764,7 @@ ComplexVector complex_colon (Zone z, Object a, Object b, Object c) {
     return NULL;
 
   for (long i = 0; i < n; i++, begin += step)
-    x->data[i] = begin;
+    complex_vector_set(x, i, begin);
 
   return x;
 }
@@ -803,31 +780,33 @@ ComplexVector complex_horzcat (Zone z, int n, va_list vl) {
     Object obj = (Object) va_arg(vl, Object);
 
     if ((IS_COMPLEX(obj) || IS_FLOAT(obj) || IS_INT(obj)) &&
-        !complex_vector_set_length(x, x->n + 1)) {
+        !complex_vector_set_length(x, complex_vector_get_length(x) + 1)) {
       object_free(z, x);
       return NULL;
     }
 
     if (IS_COMPLEX(obj)) {
-      x->data[ix++] = complex_get_value((Complex) obj);
+      complex_vector_set(x, ix++, complex_get_value((Complex) obj));
     }
     else if (IS_FLOAT(obj)) {
-      x->data[ix++] = (complex double) float_get_value((Float) obj);
+      complex_vector_set(x, ix++,
+        (complex double) float_get_value((Float) obj));
     }
     else if (IS_INT(obj)) {
-      x->data[ix++] = (complex double) int_get_value((Int) obj);
+      complex_vector_set(x, ix++,
+        (complex double) int_get_value((Int) obj));
     }
     else if (IS_RANGE(obj)) {
       Range r = (Range) obj;
       long nr = range_get_length(r);
 
-      if (!complex_vector_set_length(x, x->n + nr)) {
+      if (!complex_vector_set_length(x, complex_vector_get_length(x) + nr)) {
         object_free(z, x);
         return NULL;
       }
 
       for (long elem = r->begin; elem <= r->end; elem += r->step)
-        x->data[ix++] = (complex double) elem;
+        complex_vector_set(x, ix++, (complex double) elem);
     }
     else {
       object_free(z, x);
@@ -849,13 +828,15 @@ ComplexVector complex_vertcat (Zone z, int n, va_list vl) {
     Object obj = (Object) va_arg(vl, Object);
 
     if (IS_COMPLEX(obj)) {
-      x->data[i] = complex_get_value((Complex) obj);
+      complex_vector_set(x, i, complex_get_value((Complex) obj));
     }
     else if (IS_FLOAT(obj)) {
-      x->data[i] = (complex double) float_get_value((Float) obj);
+      complex_vector_set(x, i,
+        (complex double) float_get_value((Float) obj));
     }
     else if (IS_INT(obj)) {
-      x->data[i] = (complex double) int_get_value((Int) obj);
+      complex_vector_set(x, i,
+        (complex double) int_get_value((Int) obj));
     }
     else {
       object_free(z, x);

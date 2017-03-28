@@ -505,7 +505,7 @@ Vector range_not (Zone z, Range a) {
     return NULL;
 
   for (long i = 0; i < x->n; i++)
-    x->data[i] = !x->data[i];
+    vector_set(x, i, !vector_get(x, i));
 
   return x;
 }
@@ -534,7 +534,7 @@ Vector range_horzcat (Zone z, int n, va_list vl) {
         return NULL;
       }
 
-      x->data[ix++] = (double) int_get_value((Int) obj);
+      vector_set(x, ix++, (double) int_get_value((Int) obj));
     }
     else if (IS_RANGE(obj)) {
       Range r = (Range) obj;
@@ -546,7 +546,7 @@ Vector range_horzcat (Zone z, int n, va_list vl) {
       }
 
       for (long elem = r->begin; elem <= r->end; elem += r->step)
-        x->data[ix++] = (double) elem;
+        vector_set(x, ix++, (double) elem);
     }
     else {
       object_free(z, x);

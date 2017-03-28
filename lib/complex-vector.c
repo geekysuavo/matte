@@ -3,9 +3,10 @@
  * Released under the MIT License
  */
 
-/* include the complex vector and exception headers. */
+/* include the complex vector, exception and blas headers. */
 #include <matte/complex-vector.h>
 #include <matte/except.h>
+#include <matte/blas.h>
 
 /* include headers for inferior types. */
 #include <matte/int.h>
@@ -266,30 +267,42 @@ inline void complex_vector_set (ComplexVector x, long i,
  * arguments:
  *  @x: matte complex vector to modify.
  *  @f: constant to add to @x.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
  */
-inline void complex_vector_add_const (ComplexVector x, complex double f) {
-  /* return if the vector is null. */
+int complex_vector_add_const (ComplexVector x, complex double f) {
+  /* fail if the vector is null. */
   if (!x)
-    return;
+    fail(ERR_INVALID_ARGIN);
 
   /* add the constant to every element of the vector. */
   for (long i = 0; i < x->n; i++)
     x->data[i] += f;
+
+  /* return success. */
+  return 1;
 }
 
 /* complex_vector_negate(): negate the elements of a matte complex vector.
  *
  * arguments:
  *  @x: matte complex vector to modify.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
  */
-inline void complex_vector_negate (ComplexVector x) {
-  /* return if the vector is null. */
+int complex_vector_negate (ComplexVector x) {
+  /* fail if the vector is null. */
   if (!x)
-    return;
+    fail(ERR_INVALID_ARGIN);
 
   /* negate every element of the vector. */
   for (long i = 0; i < x->n; i++)
     x->data[i] = -(x->data[i]);
+
+  /* return success. */
+  return 1;
 }
 
 /* complex_vector_disp(): display function for matte complex vectors.
@@ -297,9 +310,12 @@ inline void complex_vector_negate (ComplexVector x) {
 int complex_vector_disp (Zone z, ComplexVector x) {
   /* print the vector contents. */
   printf("\n");
-  for (long i = 0; i < x->n; i++) {
-    const double re = creal(x->data[i]);
-    const double im = cimag(x->data[i]);
+  const long n = complex_vector_get_length(x);
+  for (long i = 0; i < n; i++) {
+    const complex double xi = complex_vector_get(x, i);
+    const double re = creal(xi);
+    const double im = cimag(xi);
+
     printf("\n  %lg %s %lgi", re,
            im < 0.0 ? "-" : "+",
            im < 0.0 ? -im : im);
@@ -346,6 +362,18 @@ ComplexVector complex_vector_transpose (Zone z, ComplexVector a) {
   return atr;
 }
 
+/* complex_vector_uminus(): unary negation function for matte
+ * complex vectors.
+ */
+ComplexVector complex_vector_uminus (Zone z, ComplexVector a) {
+  ComplexVector aneg = complex_vector_new_with_length(z, a->n);
+  if (!matte_zaxpy(-1.0, a, aneg))
+    return NULL;
+
+  aneg->tr = a->tr;
+  return aneg;
+}
+
 /* ComplexVector_type: object type structure for matte complex vectors.
  */
 struct _ObjectType ComplexVector_type = {
@@ -361,7 +389,7 @@ struct _ObjectType ComplexVector_type = {
 
   NULL,                                          /* fn_plus       */
   NULL,                                          /* fn_minus      */
-  NULL,                                          /* fn_uminus     */
+  (obj_unary)    complex_vector_uminus,          /* fn_uminus     */
   NULL,                                          /* fn_times      */
   NULL,                                          /* fn_mtimes     */
   NULL,                                          /* fn_rdivide    */

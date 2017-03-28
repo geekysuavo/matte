@@ -14,7 +14,7 @@ Vector FUNCTION(F) (Zone z, Object a, Object b) {
         return NULL;
 
       for (long i = 0; i < v->n; i++)
-        v->data[i] = (v->data[i] OP fval);
+        vector_set(v, i, vector_get(v, i) OP fval);
 
       return v;
     }
@@ -29,7 +29,7 @@ Vector FUNCTION(F) (Zone z, Object a, Object b) {
         return NULL;
 
       for (long i = 0, elem = r->begin; i < v->n; i++, elem += r->step)
-        v->data[i] = (v->data[i] OP (double) elem);
+        vector_set(v, i, vector_get(v, i) OP (double) elem);
 
       return v;
     }
@@ -43,7 +43,7 @@ Vector FUNCTION(F) (Zone z, Object a, Object b) {
         return NULL;
 
       for (long i = 0; i < v->n; i++)
-        v->data[i] = (fval OP v->data[i]);
+        vector_set(v, i, fval OP vector_get(v, i));
 
       return v;
     }

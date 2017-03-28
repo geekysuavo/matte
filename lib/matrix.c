@@ -307,8 +307,10 @@ int matrix_disp (Zone z, Matrix A) {
   printf("\n");
   for (long i = 0; i < A->m; i++) {
     printf("\n");
-    for (long j = 0; j < A->n; j++)
-      printf("  %lg", A->data[i * A->n + j]);
+    for (long j = 0; j < A->n; j++) {
+      const double aij = matrix_get(A, i, j);
+      printf("  %lg", aij);
+    }
   }
 
   /* print newlines and return success. */

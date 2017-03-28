@@ -62,9 +62,9 @@ int complex_vector_set_length (ComplexVector x, long n);
 void complex_vector_set (ComplexVector x, long i,
                          complex double xi);
 
-void complex_vector_add_const (ComplexVector x, complex double f);
+int complex_vector_add_const (ComplexVector x, complex double f);
 
-void complex_vector_negate (ComplexVector x);
+int complex_vector_negate (ComplexVector x);
 
 #endif /* !__MATTE_COMPLEX_VECTOR_H__ */
 

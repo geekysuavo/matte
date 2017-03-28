@@ -33,7 +33,7 @@ Object FUNCTION(F) (Zone z, Object a, Object b) {
         return NULL;
 
       for (long i = 0; i < v->n; i++)
-        v->data[i] = (areal OP v->data[i] && aimag == 0.0);
+        vector_set(v, i, areal OP vector_get(v, i) && aimag == 0.0);
 
       return (Object) v;
     }
@@ -60,7 +60,7 @@ Object FUNCTION(F) (Zone z, Object a, Object b) {
         return NULL;
 
       for (long i = 0; i < v->n; i++)
-        v->data[i] = (breal OP v->data[i] && bimag == 0.0);
+        vector_set(v, i, breal OP vector_get(v, i) && bimag == 0.0);
 
       return (Object) v;
     }

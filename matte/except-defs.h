@@ -76,6 +76,26 @@
   (y)->tr == CblasNoTrans ? (y)->n : 1L, \
   (y)->tr == CblasNoTrans ? 1L : (y)->n
 
+#define ERR_SIZE_MISMATCH_MV(trA,A,x) \
+  "matte:size-mismatch", \
+  "operand sizes do not conform (%ldx%ld, %ldx%ld)", \
+  trA == CblasNoTrans ? (A)->m : (A)->n, \
+  trA == CblasNoTrans ? (A)->n : (A)->m, \
+  (x)->tr == CblasNoTrans ? (x)->n : 1L, \
+  (x)->tr == CblasNoTrans ? 1L : (x)->n
+
+#define ERR_SIZE_MISMATCH_MM(trA,trB,A,B) \
+  "matte:size-mismatch", \
+  "operand sizes do not conform (%ldx%ld, %ldx%ld)", \
+  trA == CblasNoTrans ? (A)->m : (A)->n, \
+  trA == CblasNoTrans ? (A)->n : (A)->m, \
+  trB == CblasNoTrans ? (B)->m : (B)->n, \
+  trB == CblasNoTrans ? (B)->n : (B)->m
+
+#define ERR_SIZE_NONSQUARE(A) \
+  "matte:size-mismatch", \
+  "matrix operand is not square (%ldx%ld)", (A)->m, (A)->n
+
 #define ERR_INVALID_ARGIN \
   "matte:invalid-input-arg", "one or more invalid arguments"
 

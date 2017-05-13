@@ -43,9 +43,6 @@ ComplexMatrix complex_matrix_new (Zone z, Object args) {
   A->m = 0;
   A->n = 0;
 
-  /* initialize the transposition status. */
-  A->tr = CblasNoTrans;
-
   /* return the new matrix. */
   return A;
 }
@@ -99,9 +96,6 @@ ComplexMatrix complex_matrix_copy (Zone z, ComplexMatrix A) {
   const long bytes = Anew->m * Anew->n * sizeof(complex double);
   if (bytes)
     memcpy(Anew->data, A->data, bytes);
-
-  /* copy the transposition state. */
-  Anew->tr = A->tr;
 
   /* return the new matrix. */
   return Anew;

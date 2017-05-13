@@ -26,15 +26,11 @@ struct _Matrix {
   OBJECT_BASE;
 
   /* @data: array of matrix elements.
-   * @m: number of matrix rows, when untransposed.
-   * @n: number of matrix columns, when untransposed.
+   * @m: number of matrix rows.
+   * @n: number of matrix columns.
    */
   double *data;
   long m, n;
-
-  /* @tr: transposition status of the matrix.
-   */
-  MatteTranspose tr;
 };
 
 /* function declarations (matrix.c): */

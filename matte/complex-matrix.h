@@ -26,15 +26,11 @@ struct _ComplexMatrix {
   OBJECT_BASE;
 
   /* @data: array of vector elements.
-   * @m: number of matrix rows, when untransposed.
-   * @n: number of matrix columns, when untransposed.
+   * @m: number of matrix rows.
+   * @n: number of matrix columns.
    */
   complex double *data;
   long m, n;
-
-  /* @tr: transposition status of the matrix.
-   */
-  MatteTranspose tr;
 };
 
 /* function declarations (complex-matrix.c): */

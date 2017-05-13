@@ -1,5 +1,5 @@
 
-/* Copyright (c) 2016 Bradley Worley <geekysuavo@gmail.com>
+/* Copyright (c) 2016, 2017 Bradley Worley <geekysuavo@gmail.com>
  * Released under the MIT License
  */
 
@@ -26,9 +26,14 @@
 /* include the required matte headers. */
 #include <matte/zone.h>
 
-/* MatteTranspose: type definition of blas/lapack transpose options.
+/* type definitions of blas/lapack enumerations:
+ *  MatteTranspose: transpose options.
+ *  MatteTriangle: triangle options.
+ *  MatteDiagonal: diagonal options.
  */
 typedef enum CBLAS_TRANSPOSE MatteTranspose;
+typedef enum CBLAS_UPLO MatteTriangle;
+typedef enum CBLAS_DIAG MatteDiagonal;
 
 /* MATTE_TYPE: macro to obtain the type structure pointer of an object.
  */

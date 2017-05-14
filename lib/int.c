@@ -273,6 +273,7 @@ Vector int_horzcat (Zone z, int n, va_list vl) {
     vector_set(x, i, (double) iobj->value);
   }
 
+  x->tr = CblasTrans;
   return x;
 }
 
@@ -294,7 +295,6 @@ Vector int_vertcat (Zone z, int n, va_list vl) {
     vector_set(x, i, (double) iobj->value);
   }
 
-  x->tr = CblasTrans;
   return x;
 }
 

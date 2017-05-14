@@ -69,7 +69,22 @@ ComplexMatrix complex_matrix_new_with_size (Zone z, long m, long n) {
 }
 
 ComplexMatrix complex_matrix_new_from_matrix (Zone z, Matrix A) {
-  /* FIXME: implement! */ return NULL;
+  /* return null if the input matrix is null. */
+  if (!A)
+    return NULL;
+
+  /* allocate a new complex matrix. */
+  ComplexMatrix B = complex_matrix_new_with_size(z, A->m, A->n);
+  if (!B)
+    return NULL;
+
+  /* copy the real data into the complex array. */
+  const long len = A->m * A->n;
+  for (long i = 0; i < len; i++)
+    B->data[i] = (complex double) A->data[i];
+
+  /* return the new complex matrix. */
+  return B;
 }
 
 /* complex_matrix_copy(): allocate a new matte complex matrix from
@@ -98,6 +113,35 @@ ComplexMatrix complex_matrix_copy (Zone z, ComplexMatrix A) {
     memcpy(Anew->data, A->data, bytes);
 
   /* return the new matrix. */
+  return Anew;
+}
+
+/* complex_matrix_copy_trans(): allocate a new, transposed matte complex
+ * matrix from another matte complex matrix.
+ *
+ * arguments:
+ *  @z: zone allocator to utilize.
+ *  @A: matte complex matrix to copy.
+ *
+ * returns:
+ *  transpoed duplicate matte complex matrix.
+ */
+ComplexMatrix complex_matrix_copy_trans (Zone z, ComplexMatrix A) {
+  /* return null if the input argument is null. */
+  if (!A)
+    return NULL;
+
+  /* allocate a new matrix of the same size. */
+  ComplexMatrix Anew = complex_matrix_new_with_size(z, A->n, A->m);
+  if (!Anew)
+    return NULL;
+
+  /* copy the memory contents of the input matrix into the duplicate. */
+  for (long i = 0; i < A->m; i++)
+    for (long j = 0; j < A->n; j++)
+      complex_matrix_set(Anew, j, i, complex_matrix_get(A, i, j));
+
+  /* return the new complex matrix. */
   return Anew;
 }
 
@@ -302,6 +346,28 @@ inline void complex_matrix_set_element (ComplexMatrix A, long i,
     A->data[i] = ai;
 }
 
+/* complex_matrix_conj(): conjugate the elements of a matte complex matrix.
+ *
+ * arguments:
+ *  @A: matte complex matrix to conjugate.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+int complex_matrix_conj (ComplexMatrix A) {
+  /* fail if the matrix is null. */
+  if (!A)
+    fail(ERR_INVALID_ARGIN);
+
+  /* conjugate every element of the matrix. */
+  const long len = A->m * A->n;
+  for (long i = 0; i < len; i++)
+    A->data[i] = conj(A->data[i]);
+
+  /* return success. */
+  return 1;
+}
+
 /* complex_matrix_disp(): display function for matte complex matrices.
  */
 int complex_matrix_disp (Zone z, ComplexMatrix A) {
@@ -322,6 +388,25 @@ int complex_matrix_disp (Zone z, ComplexMatrix A) {
   /* print newlines and return success. */
   printf("\n\n");
   return 1;
+}
+
+/* complex_matrix_ctranspose(): conjugate transposition function for
+ * matte complex matrices.
+ */
+ComplexMatrix complex_matrix_ctranspose (Zone z, ComplexMatrix A) {
+  ComplexMatrix Atr = complex_matrix_copy_trans(z, A);
+  if (!Atr)
+    return NULL;
+
+  complex_matrix_conj(Atr);
+  return Atr;
+}
+
+/* complex_matrix_transpose(): matrix transposition function for
+ * matte complex matrices.
+ */
+ComplexMatrix complex_matrix_transpose (Zone z, ComplexMatrix A) {
+  return complex_matrix_copy_trans(z, A);
 }
 
 /* ComplexMatrix_type: object type structure for matte complex matrices.
@@ -360,8 +445,8 @@ struct _ObjectType ComplexMatrix_type = {
   NULL,                                          /* fn_mor        */
   NULL,                                          /* fn_not        */
   NULL,                                          /* fn_colon      */
-  NULL,                                          /* fn_ctranspose */
-  NULL,                                          /* fn_transpose  */
+  (obj_unary)    complex_matrix_ctranspose,      /* fn_ctranspose */
+  (obj_unary)    complex_matrix_transpose,       /* fn_transpose  */
   NULL,                                          /* fn_horzcat    */
   NULL,                                          /* fn_vertcat    */
   NULL,                                          /* fn_subsref    */

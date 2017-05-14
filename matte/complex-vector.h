@@ -66,5 +66,7 @@ int complex_vector_add_const (ComplexVector x, complex double f);
 
 int complex_vector_negate (ComplexVector x);
 
+int complex_vector_conj (ComplexVector x);
+
 #endif /* !__MATTE_COMPLEX_VECTOR_H__ */
 

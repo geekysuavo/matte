@@ -43,6 +43,8 @@ ComplexMatrix complex_matrix_new_with_size (Zone z, long m, long n);
 
 ComplexMatrix complex_matrix_copy (Zone z, ComplexMatrix A);
 
+ComplexMatrix complex_matrix_copy_trans (Zone z, ComplexMatrix A);
+
 void complex_matrix_delete (Zone z, ComplexMatrix A);
 
 long complex_matrix_get_rows (ComplexMatrix A);
@@ -66,6 +68,8 @@ void complex_matrix_set (ComplexMatrix A, long i, long j,
 
 void complex_matrix_set_element (ComplexMatrix A, long i,
                                  complex double ai);
+
+int complex_matrix_conj (ComplexMatrix A);
 
 #endif /* !__MATTE_COMPLEX_MATRIX_H__ */
 

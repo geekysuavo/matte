@@ -654,6 +654,7 @@ Vector float_horzcat (Zone z, int n, va_list vl) {
     }
   }
 
+  x->tr = CblasTrans;
   return x;
 }
 
@@ -679,7 +680,6 @@ Vector float_vertcat (Zone z, int n, va_list vl) {
     }
   }
 
-  x->tr = CblasTrans;
   return x;
 }
 

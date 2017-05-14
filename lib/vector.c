@@ -227,6 +227,46 @@ inline void vector_set (Vector x, long i, double xi) {
     x->data[i] = xi;
 }
 
+/* vector_any(): inline short-circuit evaluator that any elements of
+ * a vector are nonzero.
+ *
+ * arguments:
+ *  @x: matte vector to access.
+ *
+ * returns:
+ *  long integer indicating the result.
+ */
+inline long vector_any (Vector x) {
+  /* loop over the elements of the vector to evaluate the result. */
+  for (long i = 0; i < x->n; i++) {
+    /* short-circuit to true if any element is nonzero. */
+    if (vector_get(x, i)) return 1L;
+  }
+
+  /* return false. */
+  return 0L;
+}
+
+/* vector_all(): inline short-circuit evaluator that all elements of
+ * a vector are nonzero.
+ *
+ * arguments:
+ *  @x: matte vector to access.
+ *
+ * returns:
+ *  long integer indicating the result.
+ */
+inline long vector_all (Vector x) {
+  /* loop over the elements of the vector to evaluate the test. */
+  for (long i = 0; i < x->n; i++) {
+    /* short-circuit to false if any element is zero. */
+    if (!vector_get(x, i)) return 0L;
+  }
+
+  /* return true. */
+  return 1L;
+}
+
 /* vector_add_const(): add a constant value to a matte vector.
  *
  * arguments:
@@ -284,7 +324,7 @@ int vector_disp (Zone z, Vector x) {
   return 1;
 }
 
-/* vector_plus(): addition function for matte vectors.
+/* vector_plus(): addition function for vectors.
  */
 Object vector_plus (Zone z, Object a, Object b) {
   if (IS_VECTOR(a)) {
@@ -298,9 +338,8 @@ Object vector_plus (Zone z, Object a, Object b) {
         if (matte_daxpy(1.0, vb, vc))
           return (Object) vc;
       }
-      else {
-        /* FIXME: implement broadcasting vector addition. */
-      }
+      else
+        return (Object) matrix_new_from_vector_sum(z, 1.0, va, vb);
     }
     else if (IS_COMPLEX(b)) {
       /* vector + complex => complex vector */
@@ -351,7 +390,7 @@ Object vector_plus (Zone z, Object a, Object b) {
   return NULL;
 }
 
-/* vector_minus(): subtraction function for matte vectors.
+/* vector_minus(): subtraction function for vectors.
  */
 Object vector_minus (Zone z, Object a, Object b) {
   if (IS_VECTOR(a)) {
@@ -365,9 +404,8 @@ Object vector_minus (Zone z, Object a, Object b) {
         if (matte_daxpy(-1.0, vb, vc))
           return (Object) vc;
       }
-      else {
-        /* FIXME: implement broadcasting vector addition. */
-      }
+      else
+        return (Object) matrix_new_from_vector_sum(z, -1.0, va, vb);
     }
     else if (IS_COMPLEX(b)) {
       /* vector - complex => complex vector */
@@ -419,7 +457,7 @@ Object vector_minus (Zone z, Object a, Object b) {
   return NULL;
 }
 
-/* vector_uminus(): unary negation function for matte vectors.
+/* vector_uminus(): unary negation function for vectors.
  */
 Vector vector_uminus (Zone z, Vector a) {
   Vector aneg = vector_new_with_length(z, a->n);
@@ -430,7 +468,303 @@ Vector vector_uminus (Zone z, Vector a) {
   return aneg;
 }
 
-/* vector_transpose(): transposition function for matte vectors.
+/* vector_times(): element-wise multiplication function for vectors.
+ */
+Object vector_times (Zone z, Object a, Object b) {
+  if (IS_VECTOR(a) && IS_VECTOR(b)) {
+    /* vector .* vector */
+    Vector va = (Vector) a;
+    Vector vb = (Vector) b;
+
+    if (va->n != vb->n)
+      throw(z, ERR_SIZE_MISMATCH_VV(va, vb));
+
+    Vector vc = vector_new_with_length(z, va->n);
+    if (vc) {
+      for (long i = 0; i < vc->n; i++)
+        vector_set(vc, i, vector_get(va, i) * vector_get(vb, i));
+
+      return (Object) vc;
+    }
+
+    return NULL;
+  }
+
+  /* properly cast the operands. */
+  Vector x;
+  Object s;
+  if (IS_VECTOR(a)) {
+    x = (Vector) a;
+    s = b;
+  }
+  else {
+    x = (Vector) b;
+    s = a;
+  }
+
+  if (IS_COMPLEX(s)) {
+    /* vector .* complex => complex vector */
+    ComplexVector y = complex_vector_new_from_vector(z, x);
+    complex double sval = complex_get_value((Complex) s);
+    if (matte_zscal(sval, y))
+      return (Object) y;
+  }
+  else if (IS_FLOAT(s)) {
+    /* vector .* float => vector */
+    Vector y = vector_copy(z, x);
+    double sval = float_get_value((Float) s);
+    if (matte_dscal(sval, y))
+      return (Object) y;
+  }
+  else if (IS_INT(s)) {
+    /* vector .* int => vector */
+    Vector y = vector_copy(z, x);
+    long sval = int_get_value((Int) s);
+    if (matte_dscal((double) sval, y))
+      return (Object) y;
+  }
+
+  return NULL;
+}
+
+/* vector_mtimes(): matrix multiplication function for vectors.
+ */
+Object vector_mtimes (Zone z, Object a, Object b) {
+  if (IS_VECTOR(a) && IS_VECTOR(b)) {
+    Vector va = (Vector) a;
+    Vector vb = (Vector) b;
+
+    if (va->tr == CblasNoTrans && vb->tr == CblasTrans) {
+      /* column * row => matrix */
+      Matrix A = matrix_new_with_size(z, va->n, vb->n);
+      if (matte_dger(1.0, va, vb, A))
+        return (Object) A;
+    }
+    else if (va->tr == CblasTrans && vb->tr == CblasNoTrans) {
+      /* row * column => float */
+      double fval;
+      if (matte_ddot(va, vb, &fval))
+        return (Object) float_new_with_value(z, fval);
+    }
+
+    throw(z, ERR_SIZE_MISMATCH_VV(va, vb));
+  }
+
+  return vector_times(z, a, b);
+}
+
+/* FIXME: implement vector division functions. */
+
+/* vector_power(): element-wise exponentiation function for vectors.
+ */
+Object vector_power (Zone z, Object a, Object b) {
+  if (IS_VECTOR(a)) {
+    if (IS_VECTOR(b)) {
+      Vector va = (Vector) a;
+      Vector vb = (Vector) b;
+
+      if (va->tr == vb->tr) {
+        /* column .^ column => column
+         * row    .^ row    => row
+         */
+        if (va->n != vb->n)
+          throw(z, ERR_SIZE_MISMATCH_VV(va, vb));
+
+        Vector vc = vector_new_with_length(z, va->n);
+        vc->tr = va->tr;
+        if (vc) {
+          for (long i = 0; i < vc->n; i++)
+            vector_set(vc, i, pow(vector_get(va, i), vector_get(vb, i)));
+
+          return (Object) vc;
+        }
+      }
+      else if (va->tr == CblasNoTrans) {
+        /* column .^ row => matrix */
+        Matrix A = matrix_new_with_size(z, va->n, vb->n);
+        if (A) {
+          for (long i = 0; i < A->m; i++)
+            for (long j = 0; j < A->n; j++)
+              matrix_set(A, i, j, pow(vector_get(va, i),
+                                      vector_get(vb, j)));
+
+          return (Object) A;
+        }
+      }
+    }
+    else if (IS_COMPLEX(b)) {
+      /* FIXME: vector .^ complex => complex vector */
+    }
+    else if (IS_FLOAT(b)) {
+      /* FIXME: vector .^ float => vector */
+    }
+    else if (IS_INT(b)) {
+      /* FIXME: vector .^ int => vector */
+    }
+  }
+  else if (IS_VECTOR(b)) {
+    if (IS_COMPLEX(a)) {
+      /* FIXME: complex .^ vector => complex vector */
+    }
+    else if (IS_FLOAT(a)) {
+      /* FIXME: float .^ vector => vector */
+    }
+    else if (IS_INT(a)) {
+      /* FIXME: int .^ vector => vector */
+    }
+  }
+
+  return NULL;
+}
+
+/* vector_lt(): less-than comparison operation for vectors. */
+#define F lt
+#define OP <
+#include "vector-cmp.c"
+
+/* vector_gt(): greater-than comparison operation for vectors. */
+#define F gt
+#define OP >
+#include "vector-cmp.c"
+
+/* vector_le(): less-than or equal-to comparison operation for vectors. */
+#define F le
+#define OP <=
+#include "vector-cmp.c"
+
+/* vector_ge(): greater-than or equal-to comparison operation for vectors. */
+#define F ge
+#define OP >=
+#include "vector-cmp.c"
+
+/* vector_ne(): inequality comparison operation for vectors. */
+#define CMPEQ
+#define F ne
+#define OP !=
+#include "vector-cmp.c"
+
+/* vector_eq(): equality comparison operation for vectors. */
+#define CMPEQ
+#define F eq
+#define OP ==
+#include "vector-cmp.c"
+
+/* vector_and(): element-wise logical-and operation for vectors. */
+#define F and
+#define OP &&
+#include "vector-cmp.c"
+
+/* vector_or(): element-wise logical-or operation for vectors. */
+#define F or
+#define OP ||
+#include "vector-cmp.c"
+
+/* vector_mand(): matrix logical-and operation for vectors.
+ */
+Int vector_mand (Zone z, Object a, Object b) {
+  if (IS_VECTOR(a)) {
+    if (IS_VECTOR(b)) {
+      /* vector && vector => int */
+      return int_new_with_value(z,
+        vector_all((Vector) a) && vector_all((Vector) b));
+    }
+    else if (IS_COMPLEX(b)) {
+      /* vector && complex => int */
+      return int_new_with_value(z,
+        vector_all((Vector) a) && complex_get_abs((Complex) b));
+    }
+    else if (IS_FLOAT(b)) {
+      /* vector && float => int */
+      return int_new_with_value(z,
+        vector_all((Vector) a) && float_get_value((Float) b));
+    }
+    else if (IS_INT(b)) {
+      /* vector && int => int */
+      return int_new_with_value(z,
+        vector_all((Vector) a) && int_get_value((Int) b));
+    }
+  }
+  else if (IS_VECTOR(b)) {
+    if (IS_COMPLEX(a)) {
+      /* complex && vector => int */
+      return int_new_with_value(z,
+         complex_get_abs((Complex) a) && vector_all((Vector) b));
+    }
+    else if (IS_FLOAT(a)) {
+      /* float && vector => int */
+      return int_new_with_value(z,
+         float_get_value((Float) a) && vector_all((Vector) b));
+    }
+    else if (IS_INT(a)) {
+      /* int && vector => int */
+      return int_new_with_value(z,
+         int_get_value((Int) a) && vector_all((Vector) b));
+    }
+  }
+
+  return NULL;
+}
+
+/* vector_mor(): matrix logical-or operation for vectors.
+ */
+Int vector_mor (Zone z, Object a, Object b) {
+  if (IS_VECTOR(a)) {
+    if (IS_VECTOR(b)) {
+      /* vector || vector => int */
+      return int_new_with_value(z,
+        vector_all((Vector) a) || vector_all((Vector) b));
+    }
+    else if (IS_COMPLEX(b)) {
+      /* vector || complex => int */
+      return int_new_with_value(z,
+        vector_all((Vector) a) || complex_get_abs((Complex) b));
+    }
+    else if (IS_FLOAT(b)) {
+      /* vector || float => int */
+      return int_new_with_value(z,
+        vector_all((Vector) a) || float_get_value((Float) b));
+    }
+    else if (IS_INT(b)) {
+      /* vector || int => int */
+      return int_new_with_value(z,
+        vector_all((Vector) a) || int_get_value((Int) b));
+    }
+  }
+  else if (IS_VECTOR(b)) {
+    if (IS_COMPLEX(a)) {
+      /* complex || vector => int */
+      return int_new_with_value(z,
+         complex_get_abs((Complex) a) || vector_all((Vector) b));
+    }
+    else if (IS_FLOAT(a)) {
+      /* float || vector => int */
+      return int_new_with_value(z,
+         float_get_value((Float) a) || vector_all((Vector) b));
+    }
+    else if (IS_INT(a)) {
+      /* int || vector => int */
+      return int_new_with_value(z,
+         int_get_value((Int) a) || vector_all((Vector) b));
+    }
+  }
+
+  return NULL;
+}
+
+/* vector_not(): logical negation operation for vectors.
+ */
+Vector vector_not (Zone z, Vector a) {
+  Vector x = vector_copy(z, a);
+  if (!x)
+    return NULL;
+
+  for (long i = 0; i < x->n; i++)
+    vector_set(x, i, !vector_get(x, i));
+
+  return x;
+}
+
+/* vector_transpose(): transposition function for vectors.
  */
 Vector vector_transpose (Zone z, Vector a) {
   Vector atr = vector_copy(z, a);
@@ -463,25 +797,25 @@ struct _ObjectType Vector_type = {
   (obj_binary)   vector_plus,                    /* fn_plus       */
   (obj_binary)   vector_minus,                   /* fn_minus      */
   (obj_unary)    vector_uminus,                  /* fn_uminus     */
-  NULL,                                          /* fn_times      */
-  NULL,                                          /* fn_mtimes     */
+  (obj_binary)   vector_times,                   /* fn_times      */
+  (obj_binary)   vector_mtimes,                  /* fn_mtimes     */
   NULL,                                          /* fn_rdivide    */
   NULL,                                          /* fn_ldivide    */
   NULL,                                          /* fn_mrdivide   */
   NULL,                                          /* fn_mldivide   */
-  NULL,                                          /* fn_power      */
+  (obj_binary)   vector_power,                   /* fn_power      */
   NULL,                                          /* fn_mpower     */
-  NULL,                                          /* fn_lt         */
-  NULL,                                          /* fn_gt         */
-  NULL,                                          /* fn_le         */
-  NULL,                                          /* fn_ge         */
-  NULL,                                          /* fn_ne         */
-  NULL,                                          /* fn_eq         */
-  NULL,                                          /* fn_and        */
-  NULL,                                          /* fn_or         */
-  NULL,                                          /* fn_mand       */
-  NULL,                                          /* fn_mor        */
-  NULL,                                          /* fn_not        */
+  (obj_binary)   vector_lt,                      /* fn_lt         */
+  (obj_binary)   vector_gt,                      /* fn_gt         */
+  (obj_binary)   vector_le,                      /* fn_le         */
+  (obj_binary)   vector_ge,                      /* fn_ge         */
+  (obj_binary)   vector_ne,                      /* fn_ne         */
+  (obj_binary)   vector_eq,                      /* fn_eq         */
+  (obj_binary)   vector_and,                     /* fn_and        */
+  (obj_binary)   vector_or,                      /* fn_or         */
+  (obj_binary)   vector_mand,                    /* fn_mand       */
+  (obj_binary)   vector_mor,                     /* fn_mor        */
+  (obj_unary)    vector_not,                     /* fn_not        */
   NULL,                                          /* fn_colon      */
   (obj_unary)    vector_transpose,               /* fn_ctranspose */
   (obj_unary)    vector_transpose,               /* fn_transpose  */

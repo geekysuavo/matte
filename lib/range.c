@@ -554,6 +554,7 @@ Vector range_horzcat (Zone z, int n, va_list vl) {
     }
   }
 
+  x->tr = CblasTrans;
   return x;
 }
 
@@ -569,6 +570,7 @@ Vector range_vertcat (Zone z, int n, va_list vl) {
   if (!x)
     return NULL;
 
+  x->tr = CblasTrans;
   return x;
 }
 

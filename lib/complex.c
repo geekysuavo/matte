@@ -814,6 +814,7 @@ ComplexVector complex_horzcat (Zone z, int n, va_list vl) {
     }
   }
 
+  x->tr = CblasTrans;
   return x;
 }
 
@@ -844,7 +845,6 @@ ComplexVector complex_vertcat (Zone z, int n, va_list vl) {
     }
   }
 
-  x->tr = CblasTrans;
   return x;
 }
 

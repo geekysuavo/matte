@@ -7,8 +7,9 @@
 #ifndef __MATTE_MATRIX_H__
 #define __MATTE_MATRIX_H__
 
-/* include the object header. */
+/* include the object and vector headers. */
 #include <matte/object.h>
+#include <matte/vector.h>
 
 /* IS_MATRIX: macro to check that an object is a matte matrix.
  */
@@ -41,7 +42,12 @@ Matrix matrix_new (Zone z, Object args);
 
 Matrix matrix_new_with_size (Zone z, long m, long n);
 
+Matrix matrix_new_from_vector_sum (Zone z, double alpha,
+                                   Vector x, Vector y);
+
 Matrix matrix_copy (Zone z, Matrix A);
+
+Matrix matrix_copy_trans (Zone z, Matrix A);
 
 void matrix_delete (Zone z, Matrix A);
 

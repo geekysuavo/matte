@@ -550,9 +550,95 @@ int matte_zher2 (MatteTriangle uplo, complex double alpha,
 
 /* === level 3, double === */
 
+/* matte_dgemm(): wrapper around cblas_dgemm().
+ */
+int matte_dgemm (MatteTranspose transA, MatteTranspose transB,
+                 double alpha, Matrix A, Matrix B,
+                 double beta, Matrix C) {
+  /* fail if any pointer is null. */
+  if (!A || !B || !C)
+    fail(ERR_INVALID_ARGIN);
+
+  /* store the output sizes. */
+  const int m = C->m;
+  const int n = C->n;
+  const int k = (transA == CblasNoTrans ? A->n : A->m);
+
+  /* fail if any first operand sizes do not match. */
+  if (transA == CblasNoTrans) {
+    if (A->m != m)
+      fail(ERR_SIZE_MISMATCH_MM(transA, CblasNoTrans, A, C));
+  }
+  else {
+    if (A->n != m)
+      fail(ERR_SIZE_MISMATCH_MM(transA, CblasNoTrans, A, C));
+  }
+
+  /* fail if any second operand sizes do not match. */
+  if (transB == CblasNoTrans) {
+    if (B->m != k) fail(ERR_SIZE_MISMATCH_MM(transA, transB, A, B));
+    if (B->n != n) fail(ERR_SIZE_MISMATCH_MM(transB, CblasNoTrans, B, C));
+  }
+  else {
+    if (B->n != k) fail(ERR_SIZE_MISMATCH_MM(transA, transB, A, B));
+    if (B->m != n) fail(ERR_SIZE_MISMATCH_MM(transB, CblasNoTrans, B, C));
+  }
+
+  /* execute the cblas function. */
+  cblas_dgemm(CblasColMajor, transA, transB, m, n, k,
+              alpha, A->data, A->m, B->data, B->m,
+              beta, C->data, C->m);
+
+  /* return success. */
+  return 1;
+}
+
 /* FIXME: implement l3-d */
 
 /* === level 3, complex double === */
+
+/* matte_zgemm(): wrapper around cblas_zgemm().
+ */
+int matte_zgemm (MatteTranspose transA, MatteTranspose transB,
+                 complex double alpha, ComplexMatrix A, ComplexMatrix B,
+                 complex double beta, ComplexMatrix C) {
+  /* fail if any pointer is null. */
+  if (!A || !B || !C)
+    fail(ERR_INVALID_ARGIN);
+
+  /* store the output sizes. */
+  const int m = C->m;
+  const int n = C->n;
+  const int k = (transA == CblasNoTrans ? A->n : A->m);
+
+  /* fail if any first operand sizes do not match. */
+  if (transA == CblasNoTrans) {
+    if (A->m != m)
+      fail(ERR_SIZE_MISMATCH_MM(transA, CblasNoTrans, A, C));
+  }
+  else {
+    if (A->n != m)
+      fail(ERR_SIZE_MISMATCH_MM(transA, CblasNoTrans, A, C));
+  }
+
+  /* fail if any second operand sizes do not match. */
+  if (transB == CblasNoTrans) {
+    if (B->m != k) fail(ERR_SIZE_MISMATCH_MM(transA, transB, A, B));
+    if (B->n != n) fail(ERR_SIZE_MISMATCH_MM(transB, CblasNoTrans, B, C));
+  }
+  else {
+    if (B->n != k) fail(ERR_SIZE_MISMATCH_MM(transA, transB, A, B));
+    if (B->m != n) fail(ERR_SIZE_MISMATCH_MM(transB, CblasNoTrans, B, C));
+  }
+
+  /* execute the cblas function. */
+  cblas_zgemm(CblasColMajor, transA, transB, m, n, k,
+              &alpha, A->data, A->m, B->data, B->m,
+              &beta, C->data, C->m);
+
+  /* return success. */
+  return 1;
+}
 
 /* FIXME: implement l3-z */
 

@@ -70,6 +70,54 @@ Matrix matrix_new_with_size (Zone z, long m, long n) {
   return A;
 }
 
+/* matrix_new_from_vector_sum(): allocate a new matte matrix using the
+ * broadcasted sum of two vectors.
+ *
+ * arguments:
+ *  @z: zone allocator to utilize.
+ *  @alpha: scale factor to apply to @y.
+ *  @x, @y: vector operands to addition.
+ *
+ * returns:
+ *  newly allocated and filled matrix.
+ */
+Matrix matrix_new_from_vector_sum (Zone z, double alpha,
+                                   Vector x, Vector y) {
+  /* return null if either input argument is null. */
+  if (!x || !y)
+    return NULL;
+
+  /* return null if the transposition states match. */
+  if (x->tr == y->tr)
+    return NULL;
+
+  /* determine the matrix row and column count. */
+  const long m = (x->tr == CblasNoTrans ? x->n : y->n);
+  const long n = (x->tr == CblasNoTrans ? y->n : x->n);
+
+  /* allocate a new matrix. */
+  Matrix A = matrix_new_with_size(z, m, n);
+  if (!A)
+    return NULL;
+
+  /* compute the matrix elements. */
+  if (x->tr == CblasNoTrans) {
+    /* use 'un-transposed' indices in the sum. */
+    for (long i = 0; i < m; i++)
+      for (long j = 0; j < n; j++)
+        matrix_set(A, i, j, vector_get(x, i) + alpha * vector_get(y, j));
+  }
+  else {
+    /* use 'transposed' indices in the sum. */
+    for (long i = 0; i < m; i++)
+      for (long j = 0; j < n; j++)
+        matrix_set(A, i, j, vector_get(x, j) + alpha * vector_get(y, i));
+  }
+
+  /* return the newly allocated and initialized matrix. */
+  return A;
+}
+
 /* matrix_copy(): allocate a new matte matrix from another matte matrix.
  *
  * arguments:
@@ -84,15 +132,44 @@ Matrix matrix_copy (Zone z, Matrix A) {
   if (!A)
     return NULL;
 
-  /* allocate a new matrix. */
-  Matrix Anew = matrix_new(z, NULL);
-  if (!Anew || matrix_set_size(Anew, A->m, A->n))
+  /* allocate a new matrix of the same size. */
+  Matrix Anew = matrix_new_with_size(z, A->m, A->n);
+  if (!Anew)
     return NULL;
 
   /* copy the memory contents of the input matrix into the duplicate. */
   const long bytes = Anew->m * Anew->n * sizeof(double);
   if (bytes)
     memcpy(Anew->data, A->data, bytes);
+
+  /* return the new matrix. */
+  return Anew;
+}
+
+/* matrix_copy_trans(): allocate a new, transposed matte matrix
+ * from another matte matrix.
+ *
+ * arguments:
+ *  @z: zone allocator to utilize.
+ *  @A: matte matrix to copy.
+ *
+ * returns:
+ *  transpoed duplicate matte matrix.
+ */
+Matrix matrix_copy_trans (Zone z, Matrix A) {
+  /* return null if the input argument is null. */
+  if (!A)
+    return NULL;
+
+  /* allocate a new matrix of the same size. */
+  Matrix Anew = matrix_new_with_size(z, A->n, A->m);
+  if (!Anew)
+    return NULL;
+
+  /* copy the memory contents of the input matrix into the duplicate. */
+  for (long i = 0; i < A->m; i++)
+    for (long j = 0; j < A->n; j++)
+      matrix_set(Anew, j, i, matrix_get(A, i, j));
 
   /* return the new matrix. */
   return Anew;
@@ -312,6 +389,12 @@ int matrix_disp (Zone z, Matrix A) {
   return 1;
 }
 
+/* matrix_transpose(): transposition function for matte matrices.
+ */
+Matrix matrix_transpose (Zone z, Matrix A) {
+  return matrix_copy_trans(z, A);
+}
+
 /* Matrix_type: object type structure for matte matrices.
  */
 struct _ObjectType Matrix_type = {
@@ -348,8 +431,8 @@ struct _ObjectType Matrix_type = {
   NULL,                                          /* fn_mor        */
   NULL,                                          /* fn_not        */
   NULL,                                          /* fn_colon      */
-  NULL,                                          /* fn_ctranspose */
-  NULL,                                          /* fn_transpose  */
+  (obj_unary)    matrix_transpose,               /* fn_ctranspose */
+  (obj_unary)    matrix_transpose,               /* fn_transpose  */
   NULL,                                          /* fn_horzcat    */
   NULL,                                          /* fn_vertcat    */
   NULL,                                          /* fn_subsref    */

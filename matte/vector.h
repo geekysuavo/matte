@@ -59,6 +59,10 @@ int vector_set_length (Vector x, long n);
 
 void vector_set (Vector x, long i, double xi);
 
+long vector_any (Vector x);
+
+long vector_all (Vector x);
+
 int vector_add_const (Vector x, double f);
 
 int vector_negate (Vector x);

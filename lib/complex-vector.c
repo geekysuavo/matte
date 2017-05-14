@@ -127,7 +127,7 @@ ComplexVector complex_vector_new_from_vector (Zone z, Vector x) {
   for (long i = 0; i < x->n; i++)
     y->data[i] = (complex double) x->data[i];
 
-  /* return new complex vector. */
+  /* return the new complex vector. */
   return y;
 }
 
@@ -305,6 +305,27 @@ int complex_vector_negate (ComplexVector x) {
   return 1;
 }
 
+/* complex_vector_conj(): conjugate the elements of a matte complex vector.
+ *
+ * arguments:
+ *  @x: matte complex vector to conjugate.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+int complex_vector_conj (ComplexVector x) {
+  /* fail if the vector is null. */
+  if (!x)
+    fail(ERR_INVALID_ARGIN);
+
+  /* conjugate every element of the vector. */
+  for (long i = 0; i < x->n; i++)
+    x->data[i] = conj(x->data[i]);
+
+  /* return success. */
+  return 1;
+}
+
 /* complex_vector_disp(): display function for matte complex vectors.
  */
 int complex_vector_disp (Zone z, ComplexVector x) {
@@ -335,12 +356,13 @@ ComplexVector complex_vector_ctranspose (Zone z, ComplexVector a) {
     return NULL;
 
   switch (a->tr) {
-    case CblasNoTrans: atr->tr = CblasConjTrans; break;
+    case CblasNoTrans: atr->tr = CblasTrans; break;
     case CblasTrans:
     case CblasConjTrans: atr->tr = CblasNoTrans; break;
     default: break;
   }
 
+  complex_vector_conj(atr);
   return atr;
 }
 

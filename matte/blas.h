@@ -94,9 +94,17 @@ int matte_zher2 (MatteTriangle uplo, complex double alpha,
 
 /* function declarations, level 3, double (blas.c): */
 
+int matte_dgemm (MatteTranspose transA, MatteTranspose transB,
+                 double alpha, Matrix A, Matrix B,
+                 double beta, Matrix C);
+
 /* FIXME */
 
 /* function declarations, level 3, complex double (blas.c): */
+
+int matte_zgemm (MatteTranspose transA, MatteTranspose transB,
+                 complex double alpha, ComplexMatrix A, ComplexMatrix B,
+                 complex double beta, ComplexMatrix C);
 
 /* FIXME */
 

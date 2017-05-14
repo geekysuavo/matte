@@ -295,14 +295,8 @@ Object float_rdivide (Zone z, Object a, Object b) {
       /* float ./ range => vector */
       double fval = float_get_value((Float) a);
       Vector x = vector_new_from_range(z, (Range) b);
-      if (!x)
-        return NULL;
-
-      const long n = vector_get_length(x);
-      for (long i = 0; i < n; i++)
-        vector_set(x, i, fval / vector_get(x, i));
-
-      return (Object) x;
+      if (vector_const_div(fval, x))
+        return (Object) x;
     }
   }
   else if (IS_FLOAT(b)) {
@@ -364,14 +358,8 @@ Object float_ldivide (Zone z, Object a, Object b) {
       /* range .\ float => vector */
       double fval = float_get_value((Float) b);
       Vector x = vector_new_from_range(z, (Range) a);
-      if (!x)
-        return NULL;
-
-      const long n = vector_get_length(x);
-      for (long i = 0; i < n; i++)
-        vector_set(x, i, fval / vector_get(x, i));
-
-      return (Object) x;
+      if (vector_const_div(fval, x))
+        return (Object) x;
     }
   }
 
@@ -415,14 +403,8 @@ Object float_power (Zone z, Object a, Object b) {
       /* float .^ range => vector */
       double fval = float_get_value((Float) a);
       Vector x = vector_new_from_range(z, (Range) b);
-      if (!x)
-        return NULL;
-
-      const long n = vector_get_length(x);
-      for (long i = 0; i < n; i++)
-        vector_set(x, i, pow(fval, vector_get(x, i)));
-
-      return (Object) x;
+      if (vector_const_pow(fval, x))
+        return (Object) x;
     }
   }
   else if (IS_FLOAT(b)) {
@@ -430,14 +412,8 @@ Object float_power (Zone z, Object a, Object b) {
       /* range .^ float => vector */
       double fval = float_get_value((Float) b);
       Vector x = vector_new_from_range(z, (Range) a);
-      if (!x)
-        return NULL;
-
-      const long n = vector_get_length(x);
-      for (long i = 0; i < n; i++)
-        vector_set(x, i, pow(vector_get(x, i), fval));
-
-      return (Object) x;
+      if (vector_pow_const(x, fval))
+        return (Object) x;
     }
   }
 

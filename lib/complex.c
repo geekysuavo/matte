@@ -410,14 +410,8 @@ Object complex_rdivide (Zone z, Object a, Object b) {
       /* complex ./ range => complex vector */
       complex double fval = complex_get_value((Complex) a);
       ComplexVector v = complex_vector_new_from_range(z, (Range) b);
-      if (!v)
-        return NULL;
-
-      const long n = complex_vector_get_length(v);
-      for (long i = 0; i < v->n; i++)
-        complex_vector_set(v, i, fval / complex_vector_get(v, i));
-
-      return (Object) v;
+      if (complex_vector_const_div(fval, v))
+        return (Object) v;
     }
   }
   else if (IS_COMPLEX(b)) {
@@ -498,13 +492,8 @@ Object complex_ldivide (Zone z, Object a, Object b) {
       /* range .\ complex => complex vector */
       complex double fval = complex_get_value((Complex) b);
       ComplexVector v = complex_vector_new_from_range(z, (Range) a);
-      if (!v)
-        return NULL;
-
-      for (long i = 0; i < v->n; i++)
-        complex_vector_set(v, i, fval / complex_vector_get(v, i));
-
-      return (Object) v;
+      if (complex_vector_const_div(fval, v))
+        return (Object) v;
     }
   }
 
@@ -540,13 +529,8 @@ Object complex_power (Zone z, Object a, Object b) {
       /* complex .^ range => complex vector */
       complex double fval = complex_get_value((Complex) a);
       ComplexVector v = complex_vector_new_from_range(z, (Range) b);
-      if (!v)
-        return NULL;
-
-      for (long i = 0; i < v->n; i++)
-        complex_vector_set(v, i, cpow(fval, complex_vector_get(v, i)));
-
-      return (Object) v;
+      if (complex_vector_const_pow(fval, v))
+        return (Object) v;
     }
   }
   else if (IS_COMPLEX(b)) {
@@ -568,13 +552,8 @@ Object complex_power (Zone z, Object a, Object b) {
       /* range .^ complex => complex vector */
       complex double fval = complex_get_value((Complex) b);
       ComplexVector v = complex_vector_new_from_range(z, (Range) a);
-      if (!v)
-        return NULL;
-
-      for (long i = 0; i < v->n; i++)
-        complex_vector_set(v, i, cpow(complex_vector_get(v, i), fval));
-
-      return (Object) v;
+      if (complex_vector_pow_const(v, fval))
+        return (Object) v;
     }
   }
 

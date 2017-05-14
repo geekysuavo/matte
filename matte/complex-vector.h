@@ -64,6 +64,8 @@ void complex_vector_set (ComplexVector x, long i,
 
 int complex_vector_add_const (ComplexVector x, complex double f);
 
+int complex_vector_const_div (complex double f, ComplexVector x);
+
 int complex_vector_pow_const (ComplexVector x, complex double f);
 
 int complex_vector_const_pow (complex double f, ComplexVector x);

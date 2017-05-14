@@ -289,6 +289,28 @@ int vector_add_const (Vector x, double f) {
   return 1;
 }
 
+/* vector_const_div(): divide by the elements a matte vector.
+ *
+ * arguments:
+ *  @f: constant to divide by @x.
+ *  @x: matte vector to modify.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+int vector_const_div (double f, Vector x) {
+  /* fail if the vector is null. */
+  if (!x)
+    fail(ERR_INVALID_ARGIN);
+
+  /* divide the constant by every element of the vector. */
+  for (long i = 0; i < x->n; i++)
+    x->data[i] = f / x->data[i];
+
+  /* return success. */
+  return 1;
+}
+
 /* vector_pow_const(): exponentiate the elements a matte vector.
  *
  * arguments:
@@ -325,7 +347,7 @@ int vector_const_pow (double f, Vector x) {
   if (!x)
     fail(ERR_INVALID_ARGIN);
 
-  /* raise every element of the vector to the constant power. */
+  /* raise the constant by every element of the vector. */
   for (long i = 0; i < x->n; i++)
     x->data[i] = pow(f, x->data[i]);
 

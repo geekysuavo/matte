@@ -284,6 +284,29 @@ int complex_vector_add_const (ComplexVector x, complex double f) {
   return 1;
 }
 
+/* complex_vector_const_div(): divide by the elements a matte
+ * complex vector.
+ *
+ * arguments:
+ *  @f: constant to divide by @x.
+ *  @x: matte complex vector to modify.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+int complex_vector_const_div (complex double f, ComplexVector x) {
+  /* fail if the vector is null. */
+  if (!x)
+    fail(ERR_INVALID_ARGIN);
+
+  /* divide the constant by every element of the vector. */
+  for (long i = 0; i < x->n; i++)
+    x->data[i] = f / x->data[i];
+
+  /* return success. */
+  return 1;
+}
+
 /* complex_vector_pow_const(): exponentiate the elements a matte
  * complex vector.
  *

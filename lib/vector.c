@@ -289,6 +289,50 @@ int vector_add_const (Vector x, double f) {
   return 1;
 }
 
+/* vector_pow_const(): exponentiate the elements a matte vector.
+ *
+ * arguments:
+ *  @x: matte vector to modify.
+ *  @f: constant to exponentiate @x.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+int vector_pow_const (Vector x, double f) {
+  /* fail if the vector is null. */
+  if (!x)
+    fail(ERR_INVALID_ARGIN);
+
+  /* raise every element of the vector to the constant power. */
+  for (long i = 0; i < x->n; i++)
+    x->data[i] = pow(x->data[i], f);
+
+  /* return success. */
+  return 1;
+}
+
+/* vector_const_pow(): exponentiate by the elements a matte vector.
+ *
+ * arguments:
+ *  @f: constant to exponentiate by @x.
+ *  @x: matte vector to modify.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+int vector_const_pow (double f, Vector x) {
+  /* fail if the vector is null. */
+  if (!x)
+    fail(ERR_INVALID_ARGIN);
+
+  /* raise every element of the vector to the constant power. */
+  for (long i = 0; i < x->n; i++)
+    x->data[i] = pow(f, x->data[i]);
+
+  /* return success. */
+  return 1;
+}
+
 /* vector_negate(): negate the elements of a matte vector.
  *
  * arguments:
@@ -593,24 +637,48 @@ Object vector_power (Zone z, Object a, Object b) {
       }
     }
     else if (IS_COMPLEX(b)) {
-      /* FIXME: vector .^ complex => complex vector */
+      /* vector .^ complex => complex vector */
+      ComplexVector v = complex_vector_new_from_vector(z, (Vector) a);
+      complex double fval = complex_get_value((Complex) b);
+      if (complex_vector_pow_const(v, fval))
+        return (Object) v;
     }
     else if (IS_FLOAT(b)) {
-      /* FIXME: vector .^ float => vector */
+      /* vector .^ float => vector */
+      Vector v = vector_copy(z, (Vector) a);
+      double fval = float_get_value((Float) b);
+      if (vector_pow_const(v, fval))
+        return (Object) v;
     }
     else if (IS_INT(b)) {
-      /* FIXME: vector .^ int => vector */
+      /* vector .^ int => vector */
+      Vector v = vector_copy(z, (Vector) a);
+      double fval = int_get_value((Int) b);
+      if (vector_pow_const(v, fval))
+        return (Object) v;
     }
   }
   else if (IS_VECTOR(b)) {
     if (IS_COMPLEX(a)) {
-      /* FIXME: complex .^ vector => complex vector */
+      /* complex .^ vector => complex vector */
+      ComplexVector v = complex_vector_new_from_vector(z, (Vector) b);
+      complex double fval = complex_get_value((Complex) a);
+      if (complex_vector_const_pow(fval, v))
+        return (Object) v;
     }
     else if (IS_FLOAT(a)) {
-      /* FIXME: float .^ vector => vector */
+      /* float .^ vector => vector */
+      Vector v = vector_copy(z, (Vector) b);
+      double fval = float_get_value((Float) a);
+      if (vector_const_pow(fval, v))
+        return (Object) v;
     }
     else if (IS_INT(a)) {
-      /* FIXME: int .^ vector => vector */
+      /* int .^ vector => vector */
+      Vector v = vector_copy(z, (Vector) b);
+      double fval = int_get_value((Int) a);
+      if (vector_const_pow(fval, v))
+        return (Object) v;
     }
   }
 

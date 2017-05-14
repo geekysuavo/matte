@@ -65,6 +65,10 @@ long vector_all (Vector x);
 
 int vector_add_const (Vector x, double f);
 
+int vector_pow_const (Vector x, double f);
+
+int vector_const_pow (double f, Vector x);
+
 int vector_negate (Vector x);
 
 #endif /* !__MATTE_VECTOR_H__ */

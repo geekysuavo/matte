@@ -284,6 +284,52 @@ int complex_vector_add_const (ComplexVector x, complex double f) {
   return 1;
 }
 
+/* complex_vector_pow_const(): exponentiate the elements a matte
+ * complex vector.
+ *
+ * arguments:
+ *  @x: matte complex vector to modify.
+ *  @f: constant to exponentiate @x.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+int complex_vector_pow_const (ComplexVector x, complex double f) {
+  /* fail if the vector is null. */
+  if (!x)
+    fail(ERR_INVALID_ARGIN);
+
+  /* raise every element of the vector to the constant power. */
+  for (long i = 0; i < x->n; i++)
+    x->data[i] = cpow(x->data[i], f);
+
+  /* return success. */
+  return 1;
+}
+
+/* complex_vector_const_pow(): exponentiate by the elements a matte
+ * complex vector.
+ *
+ * arguments:
+ *  @f: constant to exponentiate by @x.
+ *  @x: matte complex vector to modify.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+int complex_vector_const_pow (complex double f, ComplexVector x) {
+  /* fail if the vector is null. */
+  if (!x)
+    fail(ERR_INVALID_ARGIN);
+
+  /* raise every element of the vector to the constant power. */
+  for (long i = 0; i < x->n; i++)
+    x->data[i] = cpow(f, x->data[i]);
+
+  /* return success. */
+  return 1;
+}
+
 /* complex_vector_negate(): negate the elements of a matte complex vector.
  *
  * arguments:

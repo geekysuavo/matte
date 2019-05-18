@@ -227,13 +227,6 @@ Object complex_plus (Zone z, Object a, Object b) {
         complex_new_with_value(z, complex_get_value((Complex) a) +
                                (complex double) int_get_value((Int) b));
     }
-    else if (IS_RANGE(b)) {
-      /* complex + range => complex vector */
-      complex double fval = complex_get_value((Complex) a);
-      ComplexVector v = complex_vector_new_from_range(z, (Range) b);
-      if (complex_vector_add_const(v, fval))
-        return (Object) v;
-    }
   }
   else if (IS_COMPLEX(b)) {
     if (IS_FLOAT(a)) {
@@ -249,13 +242,6 @@ Object complex_plus (Zone z, Object a, Object b) {
         complex_new_with_value(z,
           (complex double) int_get_value((Int) a) +
           complex_get_value((Complex) b));
-    }
-    else if (IS_RANGE(a)) {
-      /* range + complex => complex vector */
-      complex double fval = complex_get_value((Complex) b);
-      ComplexVector v = complex_vector_new_from_range(z, (Range) a);
-      if (complex_vector_add_const(v, fval))
-        return (Object) v;
     }
   }
 
@@ -284,14 +270,6 @@ Object complex_minus (Zone z, Object a, Object b) {
         complex_new_with_value(z, complex_get_value((Complex) a) -
                                (complex double) int_get_value((Int) b));
     }
-    else if (IS_RANGE(b)) {
-      /* complex - range => complex vector */
-      complex double fval = complex_get_value((Complex) a);
-      ComplexVector v = complex_vector_new_from_range(z, (Range) b);
-      if (complex_vector_add_const(v, -fval) &&
-          complex_vector_negate(v))
-        return (Object) v;
-    }
   }
   else if (IS_COMPLEX(b)) {
     if (IS_FLOAT(a)) {
@@ -307,13 +285,6 @@ Object complex_minus (Zone z, Object a, Object b) {
         complex_new_with_value(z,
           (complex double) int_get_value((Int) a) -
           complex_get_value((Complex) b));
-    }
-    else if (IS_RANGE(a)) {
-      /* range - complex => complex vector */
-      complex double fval = complex_get_value((Complex) b);
-      ComplexVector v = complex_vector_new_from_range(z, (Range) a);
-      if (complex_vector_add_const(v, -fval))
-        return (Object) v;
     }
   }
 
@@ -349,13 +320,6 @@ Object complex_times (Zone z, Object a, Object b) {
         complex_new_with_value(z, complex_get_value((Complex) a) *
                                (complex double) int_get_value((Int) b));
     }
-    else if (IS_RANGE(b)) {
-      /* complex .* range => complex vector */
-      complex double fval = complex_get_value((Complex) a);
-      ComplexVector v = complex_vector_new_from_range(z, (Range) b);
-      if (matte_zscal(fval, v))
-        return (Object) v;
-    }
   }
   else if (IS_COMPLEX(b)) {
     if (IS_FLOAT(a)) {
@@ -371,13 +335,6 @@ Object complex_times (Zone z, Object a, Object b) {
         complex_new_with_value(z,
           (complex double) int_get_value((Int) a) *
           complex_get_value((Complex) b));
-    }
-    else if (IS_RANGE(a)) {
-      /* range .* complex => complex vector */
-      complex double fval = complex_get_value((Complex) b);
-      ComplexVector v = complex_vector_new_from_range(z, (Range) a);
-      if (matte_zscal(fval, v))
-        return (Object) v;
     }
   }
 
@@ -406,13 +363,6 @@ Object complex_rdivide (Zone z, Object a, Object b) {
         complex_new_with_value(z, complex_get_value((Complex) a) /
                                (complex double) int_get_value((Int) b));
     }
-    else if (IS_RANGE(b)) {
-      /* complex ./ range => complex vector */
-      complex double fval = complex_get_value((Complex) a);
-      ComplexVector v = complex_vector_new_from_range(z, (Range) b);
-      if (complex_vector_const_div(fval, v))
-        return (Object) v;
-    }
   }
   else if (IS_COMPLEX(b)) {
     if (IS_FLOAT(a)) {
@@ -428,13 +378,6 @@ Object complex_rdivide (Zone z, Object a, Object b) {
         complex_new_with_value(z,
           (complex double) int_get_value((Int) a) /
           complex_get_value((Complex) b));
-    }
-    else if (IS_RANGE(a)) {
-      /* range ./ complex => complex vector */
-      complex double fval = complex_get_value((Complex) b);
-      ComplexVector v = complex_vector_new_from_range(z, (Range) a);
-      if (matte_zscal(1.0 / fval, v))
-        return (Object) v;
     }
   }
 
@@ -465,13 +408,6 @@ Object complex_ldivide (Zone z, Object a, Object b) {
           (complex double) int_get_value((Int) b) /
           complex_get_value((Complex) a));
     }
-    else if (IS_RANGE(b)) {
-      /* complex .\ range => complex vector */
-      complex double fval = complex_get_value((Complex) a);
-      ComplexVector v = complex_vector_new_from_range(z, (Range) b);
-      if (matte_zscal(1.0 / fval, v))
-        return (Object) v;
-    }
   }
   else if (IS_COMPLEX(b)) {
     if (IS_FLOAT(a)) {
@@ -487,13 +423,6 @@ Object complex_ldivide (Zone z, Object a, Object b) {
         complex_new_with_value(z,
           complex_get_value((Complex) b) /
           (complex double) int_get_value((Int) a));
-    }
-    else if (IS_RANGE(a)) {
-      /* range .\ complex => complex vector */
-      complex double fval = complex_get_value((Complex) b);
-      ComplexVector v = complex_vector_new_from_range(z, (Range) a);
-      if (complex_vector_const_div(fval, v))
-        return (Object) v;
     }
   }
 
@@ -525,13 +454,6 @@ Object complex_power (Zone z, Object a, Object b) {
           complex_get_value((Complex) a),
           (complex double) int_get_value((Int) b)));
     }
-    else if (IS_RANGE(b)) {
-      /* complex .^ range => complex vector */
-      complex double fval = complex_get_value((Complex) a);
-      ComplexVector v = complex_vector_new_from_range(z, (Range) b);
-      if (complex_vector_const_pow(fval, v))
-        return (Object) v;
-    }
   }
   else if (IS_COMPLEX(b)) {
     if (IS_FLOAT(a)) {
@@ -547,13 +469,6 @@ Object complex_power (Zone z, Object a, Object b) {
         complex_new_with_value(z, cpow(
           (complex double) int_get_value((Int) a),
           complex_get_value((Complex) b)));
-    }
-    else if (IS_RANGE(a)) {
-      /* range .^ complex => complex vector */
-      complex double fval = complex_get_value((Complex) b);
-      ComplexVector v = complex_vector_new_from_range(z, (Range) a);
-      if (complex_vector_pow_const(v, fval))
-        return (Object) v;
     }
   }
 
@@ -623,11 +538,6 @@ Int complex_mand (Zone z, Object a, Object b) {
       return int_new_with_value(z,
         complex_get_abs((Complex) a) && int_get_value((Int) b));
     }
-    else if (IS_RANGE(b)) {
-      /* complex && range => int */
-      return int_new_with_value(z,
-        complex_get_abs((Complex) a) && range_all((Range) b));
-    }
   }
   else if (IS_COMPLEX(b)) {
     if (IS_FLOAT(a)) {
@@ -639,11 +549,6 @@ Int complex_mand (Zone z, Object a, Object b) {
       /* int && complex => int */
       return int_new_with_value(z,
         int_get_value((Int) a) && complex_get_abs((Complex) b));
-    }
-    else if (IS_RANGE(a)) {
-      /* range && complex => int */
-      return int_new_with_value(z,
-        range_all((Range) a) && complex_get_abs((Complex) b));
     }
   }
 
@@ -669,11 +574,6 @@ Int complex_mor (Zone z, Object a, Object b) {
       return int_new_with_value(z,
         complex_get_abs((Complex) a) || int_get_value((Int) b));
     }
-    else if (IS_RANGE(b)) {
-      /* complex && range => int */
-      return int_new_with_value(z,
-        complex_get_abs((Complex) a) || range_all((Range) b));
-    }
   }
   else if (IS_COMPLEX(b)) {
     if (IS_FLOAT(a)) {
@@ -685,11 +585,6 @@ Int complex_mor (Zone z, Object a, Object b) {
       /* int && complex => int */
       return int_new_with_value(z,
         int_get_value((Int) a) || complex_get_abs((Complex) b));
-    }
-    else if (IS_RANGE(a)) {
-      /* range && complex => int */
-      return int_new_with_value(z,
-        range_all((Range) a) || complex_get_abs((Complex) b));
     }
   }
 

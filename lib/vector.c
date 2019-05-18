@@ -100,6 +100,7 @@ Vector vector_new_from_range (Zone z, Range r) {
     x->data[i] = (double) elem;
 
   /* return the new vector. */
+  x->tr = CblasTrans;
   return x;
 }
 

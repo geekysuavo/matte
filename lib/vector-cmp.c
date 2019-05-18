@@ -38,7 +38,7 @@ Object FUNCTION(F) (Zone z, Object a, Object b) {
         }
       }
 
-      return NULL;
+      throw(z, ERR_SIZE_MISMATCH_VV(va, vb));
     }
 
     /* vector <op> complex => vector

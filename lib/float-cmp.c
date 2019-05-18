@@ -16,38 +16,12 @@ Object FUNCTION(F) (Zone z, Object a, Object b) {
       return (Object) int_new_with_value(z,
         float_get_value((Float) a) OP (double) int_get_value((Int) b));
     }
-    else if (IS_RANGE(b)) {
-      /* float <op> range => vector */
-      double fval = float_get_value((Float) a);
-      Vector v = vector_new_from_range(z, (Range) b);
-      if (!v)
-        return NULL;
-
-      const long n = vector_get_length(v);
-      for (long i = 0; i < n; i++)
-        vector_set(v, i, fval OP vector_get(v, i));
-
-      return (Object) v;
-    }
   }
   else if (IS_FLOAT(b)) {
     if (IS_INT(a)) {
       /* int <op> float => int */
       return (Object) int_new_with_value(z,
         (double) int_get_value((Int) a) OP float_get_value((Float) b));
-    }
-    else if (IS_RANGE(a)) {
-      /* range <op> float => vector */
-      double fval = float_get_value((Float) b);
-      Vector v = vector_new_from_range(z, (Range) a);
-      if (!v)
-        return NULL;
-
-      const long n = vector_get_length(v);
-      for (long i = 0; i < n; i++)
-        vector_set(v, i, vector_get(v, i) OP fval);
-
-      return (Object) v;
     }
   }
 

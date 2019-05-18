@@ -26,17 +26,6 @@ Object FUNCTION(F) (Zone z, Object a, Object b) {
       return (Object) float_new_with_value(z,
         areal OP (double) int_get_value((Int) b) && aimag == 0.0);
     }
-    else if (IS_RANGE(b)) {
-      /* complex <op> range => vector */
-      Vector v = vector_new_from_range(z, (Range) b);
-      if (!v)
-        return NULL;
-
-      for (long i = 0; i < v->n; i++)
-        vector_set(v, i, areal OP vector_get(v, i) && aimag == 0.0);
-
-      return (Object) v;
-    }
   }
   else if (IS_COMPLEX(b)) {
     const complex double bval = complex_get_value((Complex) b);
@@ -52,17 +41,6 @@ Object FUNCTION(F) (Zone z, Object a, Object b) {
       /* int <op> complex => float */
       return (Object) float_new_with_value(z,
         breal OP (double) int_get_value((Int) a) && bimag == 0.0);
-    }
-    else if (IS_RANGE(a)) {
-      /* range <op> complex => vector */
-      Vector v = vector_new_from_range(z, (Range) a);
-      if (!v)
-        return NULL;
-
-      for (long i = 0; i < v->n; i++)
-        vector_set(v, i, breal OP vector_get(v, i) && bimag == 0.0);
-
-      return (Object) v;
     }
   }
 

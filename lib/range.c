@@ -269,11 +269,11 @@ int range_true (Range r) {
 
 /* range_plus(): addition function for ranges.
  */
-Range range_plus (Zone z, Object a, Object b) {
+Object range_plus (Zone z, Object a, Object b) {
   if (IS_RANGE(a) && IS_RANGE(b)) {
     /* range + range => range */
     if (range_get_length((Range) a) != range_get_length((Range) b))
-      return NULL;
+      throw(z, ERR_SIZE_MISMATCH);
 
     const long lb = range_get_begin((Range) a) + range_get_begin((Range) b);
     const long ls = range_get_step((Range) a)  + range_get_step((Range) b);
@@ -281,8 +281,7 @@ Range range_plus (Zone z, Object a, Object b) {
 
     Range r = range_new(z, NULL);
     range_set(r, lb, ls, le);
-
-    return r;
+    return (Object) r;
   }
   else if (IS_RANGE(a) && IS_INT(b)) {
     /* range + int => range */
@@ -290,10 +289,10 @@ Range range_plus (Zone z, Object a, Object b) {
 
     Range r = range_new(z, NULL);
     range_set(r, range_get_begin((Range) a) + bval,
-                 range_get_step((Range) a) + bval,
+                 range_get_step((Range) a),
                  range_get_end((Range) a) + bval);
 
-    return r;
+    return (Object) r;
   }
   else if (IS_RANGE(b) && IS_INT(a)) {
     /* int + range => range */
@@ -301,10 +300,10 @@ Range range_plus (Zone z, Object a, Object b) {
 
     Range r = range_new(z, NULL);
     range_set(r, range_get_begin((Range) b) + aval,
-                 range_get_step((Range) b) + aval,
+                 range_get_step((Range) b),
                  range_get_end((Range) b) + aval);
 
-    return r;
+    return (Object) r;
   }
 
   return NULL;
@@ -312,11 +311,11 @@ Range range_plus (Zone z, Object a, Object b) {
 
 /* range_minus(): subtraction function for ranges.
  */
-Range range_minus (Zone z, Object a, Object b) {
+Object range_minus (Zone z, Object a, Object b) {
   if (IS_RANGE(a) && IS_RANGE(b)) {
     /* range - range => range */
     if (range_get_length((Range) a) != range_get_length((Range) b))
-      return NULL;
+      throw(z, ERR_SIZE_MISMATCH);
 
     const long lb = range_get_begin((Range) a) - range_get_begin((Range) b);
     const long ls = range_get_step((Range) a)  - range_get_step((Range) b);
@@ -324,8 +323,7 @@ Range range_minus (Zone z, Object a, Object b) {
 
     Range r = range_new(z, NULL);
     range_set(r, lb, ls, le);
-
-    return r;
+    return (Object) r;
   }
   else if (IS_RANGE(a) && IS_INT(b)) {
     /* range - int => range */
@@ -333,10 +331,10 @@ Range range_minus (Zone z, Object a, Object b) {
 
     Range r = range_new(z, NULL);
     range_set(r, range_get_begin((Range) a) - bval,
-                 range_get_step((Range) a) - bval,
+                 range_get_step((Range) a),
                  range_get_end((Range) a) - bval);
 
-    return r;
+    return (Object) r;
   }
   else if (IS_RANGE(b) && IS_INT(a)) {
     /* int - range => range */
@@ -344,10 +342,10 @@ Range range_minus (Zone z, Object a, Object b) {
 
     Range r = range_new(z, NULL);
     range_set(r, aval - range_get_begin((Range) b),
-                 aval - range_get_step((Range) b),
+                       -range_get_step((Range) b),
                  aval - range_get_end((Range) b));
 
-    return r;
+    return (Object) r;
   }
 
   return NULL;
@@ -393,45 +391,19 @@ Range range_times (Zone z, Object a, Object b) {
   return NULL;
 }
 
-/* range_lt(): less-than comparison operation for ranges. */
-#define F lt
-#define OP <
-#include "range-cmp.c"
+/* range_eq(): equality operation for ranges.
+ */
+Int range_eq (Zone z, Object a, Object b) {
+  if (!IS_RANGE(a) || !IS_RANGE(b))
+    return int_new_with_value(z, 0L);
 
-/* range_gt(): greater-than comparison operation for ranges. */
-#define F gt
-#define OP >
-#include "range-cmp.c"
+  if ((range_get_begin((Range) a) != range_get_begin((Range) b)) ||
+      (range_get_step((Range) a)  != range_get_step((Range) b)) ||
+      (range_get_end((Range) a)   != range_get_end((Range) b)))
+    return int_new_with_value(z, 0L);
 
-/* range_le(): less-than or equal-to comparison operation for ranges. */
-#define F le
-#define OP <=
-#include "range-cmp.c"
-
-/* range_ge(): greater-than or equal-to comparison operation for ranges. */
-#define F ge
-#define OP >=
-#include "range-cmp.c"
-
-/* range_ne(): inequality comparison operation for ranges. */
-#define F ne
-#define OP !=
-#include "range-cmp.c"
-
-/* range_eq(): equality comparison operation for ranges. */
-#define F eq
-#define OP ==
-#include "range-cmp.c"
-
-/* range_and(): logical-and comparison operation for ranges. */
-#define F and
-#define OP &&
-#include "range-cmp.c"
-
-/* range_or(): logical-or comparison operation for ranges. */
-#define F or
-#define OP ||
-#include "range-cmp.c"
+  return int_new_with_value(z, 1L);
+}
 
 /* range_mand(): matrix logical-and operation for ranges.
  */
@@ -495,27 +467,6 @@ Int range_mor (Zone z, Object a, Object b) {
   }
 
   return NULL;
-}
-
-/* range_not(): logical negation operation for ranges.
- */
-Vector range_not (Zone z, Range a) {
-  Vector x = vector_new_from_range(z, a);
-  if (!x)
-    return NULL;
-
-  for (long i = 0; i < x->n; i++)
-    vector_set(x, i, !vector_get(x, i));
-
-  return x;
-}
-
-/* range_transpose(): transposition function for ranges.
- */
-Vector range_transpose (Zone z, Range a) {
-  Vector x = vector_new_from_range(z, a);
-  x->tr = CblasTrans;
-  return x;
 }
 
 /* range_horzcat(): horizontal concatenation function for ranges.
@@ -587,31 +538,31 @@ struct _ObjectType Range_type = {
   (obj_display)     range_disp,                  /* fn_disp   */
   (obj_assert)      range_true,                  /* fn_true   */
 
-  (obj_binary) range_plus,                       /* fn_plus       */
-  (obj_binary) range_minus,                      /* fn_minus      */
-  (obj_unary)  range_uminus,                     /* fn_uminus     */
-  (obj_binary) range_times,                      /* fn_times      */
-  (obj_binary) range_times,                      /* fn_mtimes     */
+  (obj_binary)   range_plus,                     /* fn_plus       */
+  (obj_binary)   range_minus,                    /* fn_minus      */
+  (obj_unary)    range_uminus,                   /* fn_uminus     */
+  (obj_binary)   range_times,                    /* fn_times      */
+  (obj_binary)   range_times,                    /* fn_mtimes     */
   NULL,                                          /* fn_rdivide    */
   NULL,                                          /* fn_ldivide    */
   NULL,                                          /* fn_mrdivide   */
   NULL,                                          /* fn_mldivide   */
   NULL,                                          /* fn_power      */
   NULL,                                          /* fn_mpower     */
-  (obj_binary)   range_lt,                       /* fn_lt         */
-  (obj_binary)   range_gt,                       /* fn_gt         */
-  (obj_binary)   range_le,                       /* fn_le         */
-  (obj_binary)   range_ge,                       /* fn_ge         */
-  (obj_binary)   range_ne,                       /* fn_ne         */
+  NULL,                                          /* fn_lt         */
+  NULL,                                          /* fn_gt         */
+  NULL,                                          /* fn_le         */
+  NULL,                                          /* fn_ge         */
+  NULL,                                          /* fn_ne         */
   (obj_binary)   range_eq,                       /* fn_eq         */
-  (obj_binary)   range_and,                      /* fn_and        */
-  (obj_binary)   range_or,                       /* fn_or         */
+  NULL,                                          /* fn_and        */
+  NULL,                                          /* fn_or         */
   (obj_binary)   range_mand,                     /* fn_mand       */
   (obj_binary)   range_mor,                      /* fn_mor        */
-  (obj_unary)    range_not,                      /* fn_not        */
+  NULL,                                          /* fn_not        */
   NULL,                                          /* fn_colon      */
-  (obj_unary)    range_transpose,                /* fn_ctranspose */
-  (obj_unary)    range_transpose,                /* fn_transpose  */
+  NULL,                                          /* fn_ctranspose */
+  NULL,                                          /* fn_transpose  */
   (obj_variadic) range_horzcat,                  /* fn_horzcat    */
   (obj_variadic) range_vertcat,                  /* fn_vertcat    */
   NULL,                                          /* fn_subsref    */

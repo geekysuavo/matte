@@ -124,19 +124,15 @@ int int_true (Int i) {
   return i->value;
 }
 
-/* int_plus(): addition function for integers.
- */
-Int int_plus (Zone z, Int a, Int b) {
-  /* compute and return the sum. */
-  return int_new_with_value(z, a->value + b->value);
-}
+/* int_plus(): addition function for integers. */
+#define F plus
+#define OP +
+#include "int-binary.c"
 
-/* int_minus(): subtraction function for integers.
- */
-Int int_minus (Zone z, Int a, Int b) {
-  /* compute and return the difference. */
-  return int_new_with_value(z, a->value - b->value);
-}
+/* int_minus(): subtraction function for integers. */
+#define F minus
+#define OP -
+#include "int-binary.c"
 
 /* int_uminus(): unary negation function for integers.
  */
@@ -145,23 +141,21 @@ Int int_uminus (Zone z, Int a) {
   return int_new_with_value(z, -(a->value));
 }
 
-/* int_times(): multiplication function for integers.
- */
-Int int_times (Zone z, Int a, Int b) {
-  /* compute and return the product. */
-  return int_new_with_value(z, a->value * b->value);
-}
+/* int_times(): multiplication function for integers. */
+#define F times
+#define OP *
+#include "int-binary.c"
 
-/* int_rdivide(): right-division function for integers.
- */
-Int int_rdivide (Zone z, Int a, Int b) {
-  /* compute and return the right-quotient. */
-  return int_new_with_value(z, a->value / b->value);
-}
+/* int_rdivide(): right-division function for integers. */
+#define F rdivide
+#define OP /
+#include "int-binary.c"
 
 /* int_ldivide(): left-division function for integers.
  */
 Int int_ldivide (Zone z, Int a, Int b) {
+  /* FIXME: type checking! */
+
   /* compute and return the left-quotient. */
   return int_new_with_value(z, b->value / a->value);
 }
@@ -169,6 +163,7 @@ Int int_ldivide (Zone z, Int a, Int b) {
 /* int_power(): exponentiation function for integers.
  */
 Int int_power (Zone z, Int a, Int b) {
+  /* FIXME: type checking! */
   /* obtain the values of the base and exponent. */
   long base = a->value;
   long exp =  b->value;
@@ -198,42 +193,42 @@ Int int_power (Zone z, Int a, Int b) {
 /* int_lt(): less-than comparison function for integers. */
 #define F lt
 #define OP <
-#include "int-cmp.c"
+#include "int-binary.c"
 
 /* int_gt(): greater-than comparison function for integers. */
 #define F gt
 #define OP >
-#include "int-cmp.c"
+#include "int-binary.c"
 
 /* int_le(): less-than-or-equal-to comparison function for integers. */
 #define F le
 #define OP <=
-#include "int-cmp.c"
+#include "int-binary.c"
 
 /* int_ge(): greater-than-or-equal-to comparison function for integers. */
 #define F ge
 #define OP >=
-#include "int-cmp.c"
+#include "int-binary.c"
 
 /* int_ne(): inequality comparison function for integers. */
 #define F ne
 #define OP !=
-#include "int-cmp.c"
+#include "int-binary.c"
 
 /* int_eq(): equality comparison function for integers. */
 #define F eq
 #define OP ==
-#include "int-cmp.c"
+#include "int-binary.c"
 
 /* int_and(): logical-and operation for integers. */
 #define F and
 #define OP &&
-#include "int-cmp.c"
+#include "int-binary.c"
 
 /* int_or(): logical-or operation for integers. */
 #define F or
 #define OP ||
-#include "int-cmp.c"
+#include "int-binary.c"
 
 /* int_not(): logical negation operation for integers.
  */

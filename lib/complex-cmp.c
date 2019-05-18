@@ -27,18 +27,6 @@ Object FUNCTION(F) (Zone z, Object a, Object b) {
       return (Object) float_new_with_value(z,
         complex_get_abs((Complex) a) OP (double) int_get_value((Int) b));
     }
-    else if (IS_RANGE(b)) {
-      /* complex <op> range => vector */
-      double fval = complex_get_abs((Complex) a);
-      Vector v = vector_new_from_range(z, (Range) b);
-      if (!v)
-        return NULL;
-
-      for (long i = 0; i < v->n; i++)
-        vector_set(v, i, fval OP vector_get(v, i));
-
-      return (Object) v;
-    }
   }
   else if (IS_COMPLEX(b)) {
     if (IS_FLOAT(a)) {
@@ -50,18 +38,6 @@ Object FUNCTION(F) (Zone z, Object a, Object b) {
       /* int <op> complex => float */
       return (Object) float_new_with_value(z,
         (double) int_get_value((Int) a) OP complex_get_abs((Complex) b));
-    }
-    else if (IS_RANGE(a)) {
-      /* range <op> complex => vector */
-      double fval = complex_get_abs((Complex) b);
-      Vector v = vector_new_from_range(z, (Range) a);
-      if (!v)
-        return NULL;
-
-      for (long i = 0; i < v->n; i++)
-        vector_set(v, i, vector_get(v, i) OP fval);
-
-      return (Object) v;
     }
   }
 

@@ -75,8 +75,3 @@ The above sequence also works for GCC 6.1.0 from homebrew-core.
 The **matte** compiler and runtime library are released under the
 [MIT license](https://opensource.org/licenses/MIT). See the
 [LICENSE.md](LICENSE.md) file for the complete license terms.
-
-Otherwise, enjoy!
-
-*~ Brad.*
-
